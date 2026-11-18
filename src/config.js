@@ -128,11 +128,26 @@ export const ASSISTS = {
 };
 
 // ---------- Cámara ----------
+// Tecla C cambia entre estas vistas, en este orden.
 export const CAMERA = {
-  DISTANCE: 7.5,          // qué tan lejos atrás del auto
-  HEIGHT: 2.6,            // qué tan alto
-  DISTANCE_AT_SPEED: 3,   // cuánto se aleja extra a toda velocidad
+  VIEWS: {
+    lejos:     { label: 'Afuera lejos',  DISTANCE: 11,  HEIGHT: 3.6, LOOK_AHEAD: 6 },
+    cerca:     { label: 'Afuera cerca',  DISTANCE: 6.8, HEIGHT: 2.3, LOOK_AHEAD: 5 },
+    conductor: { label: 'Conductor' },   // adentro del auto (posición de los ojos: DRIVER_EYE de cada auto)
+    frente:    { label: 'Frente' },      // en la trompa: solo se ve el camino
+  },
+  ORDER: ['cerca', 'lejos', 'conductor', 'frente'],
+  DISTANCE_AT_SPEED: 2.5, // cuánto se aleja extra a toda velocidad
   FOV: 62,                // ángulo de visión normal
   FOV_AT_SPEED: 16,       // cuánto se abre a toda velocidad (sensación de velocidad)
   SMOOTHING: 6,           // más alto = la cámara sigue más pegada al auto
+  SWING: 0.2,             // cuánto se corre al costado al doblar (radianes). 0 = nada
+  SWING_SMOOTHING: 2.5,   // qué tan suave entra y sale ese giro
+};
+
+// Dónde van los ojos del conductor en cada auto (metros desde el centro: x adelante, y arriba, z derecha)
+export const DRIVER_EYE = {
+  f1:     { x: 0.05,  y: 0.52, z: 0 },
+  pickup: { x: 0.25,  y: 0.45, z: -0.4 },
+  luxury: { x: -0.2,  y: 0.62, z: -0.38 },
 };

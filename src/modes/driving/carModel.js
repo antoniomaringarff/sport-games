@@ -140,6 +140,8 @@ export function createCarModel(id, profile, vehicle, asset = null) {
       if (o.isMesh) {
         o.castShadow = true;
         o.receiveShadow = true;
+        // de un solo lado: así desde adentro (vista conductor) no se ve la carrocería por dentro
+        for (const m of [o.material].flat()) m.side = THREE.FrontSide;
       }
     });
   } else {

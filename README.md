@@ -19,7 +19,7 @@ Abrir http://localhost:5173, elegir auto (← → y Enter, o clic).
 | A / D | Doblar |
 | Espacio | Freno de mano (derrape) |
 | R | Reubicar el auto |
-| C | Cambiar cámara |
+| C | Cambiar cámara: afuera cerca, afuera lejos, conductor, frente |
 | 1 / 2 / 3 | Cambiar de auto en el lugar |
 | Esc | Volver al menú |
 

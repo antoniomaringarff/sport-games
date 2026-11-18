@@ -127,14 +127,18 @@ let time = 0;
 function frame(now) {
   const dt = Math.min((now - last) / 1000, 0.1);
   last = now;
-  time += dt;
+  tick(dt);
+  render();
+  requestAnimationFrame(frame);
+}
 
+/** Avanza el juego dt segundos (sin dibujar). */
+function tick(dt) {
+  time += dt;
   handleKeys();
 
   if (state === 'menu') {
     showroom.update(dt, renderer);
-    renderer.render(showroom.scene, showroom.camera);
-    requestAnimationFrame(frame);
     return;
   }
 
@@ -157,12 +161,14 @@ function frame(now) {
   model.update(dt);
   world.sync();
 
-  chase.update(model.group, vehicle.kmh, dt);
+  chase.update(model.group, vehicle, carId, dt);
   hud.update(vehicle, carId, chase.modeName, dt);
   sky.follow(model.group.position);
+}
 
-  renderer.render(scene, camera);
-  requestAnimationFrame(frame);
+function render() {
+  if (state === 'menu') renderer.render(showroom.scene, showroom.camera);
+  else renderer.render(scene, camera);
 }
 
 function handleKeys() {
@@ -196,4 +202,12 @@ function handleKeys() {
 requestAnimationFrame(frame);
 
 // Para depurar desde la consola del navegador
-window.__game = { get vehicle() { return vehicle; }, physics, scene, camera, renderer };
+window.__game = {
+  get vehicle() { return vehicle; },
+  physics, scene, camera, renderer,
+  /** Debug: avanzar el juego N segundos de golpe (para probar sin esperar). */
+  advance(seconds) {
+    for (let t = 0; t < seconds; t += 1 / 60) tick(1 / 60);
+    render();
+  },
+};

@@ -297,7 +297,31 @@ Desnivel real ~40 m: la subida a Casino y la bajada a la horquilla tienen que se
 - [ ] Probar vueltas reales con teclado y joystick; ajustar `WALL`, `LIGHT` y `MINIMAP` con el hijo.
 - [ ] Calle de boxes (aunque sea decorativa) y más carteles/tribunas en curvas clave.
 
-**Paso B — La ciudad completa (Fase 4)**
+**Paso B — Multijugador y bots (carrera en Mónaco)**
+
+*Por qué va acá:* necesita el modo carrera terminado (Paso A) y reusa dos cosas de ese paso: el **auto fantasma** (grabar y reproducir un auto que no manejás vos = lo mismo que mostrar a otro jugador) y el **piloto automático** que ya usamos para probar (la base de los bots). Conviene hacerlo **antes de la ciudad**, porque es sobre el circuito, y así la ciudad nace pensando en varios autos.
+
+*Cómo funciona para el jugador:*
+1. En el menú, nuevo lugar/modo: **"Mónaco – multijugador"**.
+2. Se entra a una **sala de espera de 15 segundos**: se ve la lista de jugadores que se van sumando (máximo **10**).
+3. Al terminar los 15 s (o si se llena antes), los lugares vacíos se completan con **bots** hasta el tamaño de grilla elegido.
+4. Todos aparecen en la grilla de largada (orden: por llegada a la sala), semáforo común, carrera de N vueltas, tabla de posiciones en vivo y resultados al final.
+
+*Cómo se arma (versión red local, dos computadoras):*
+- **Servidor chico en Node** (`server/`, con `ws`): maneja la sala, el reloj de 15 s, la largada sincronizada y los resultados. Se corre con `npm run server` en una de las compus.
+- Cada compu abre el juego apuntando a esa compu (`npm run dev -- --host` y entrar a `http://IP-de-la-compu:5173`).
+- **Cada jugador simula su propio auto** (manejo igual que ahora, sin lag) y manda su posición ~20 veces por segundo; los autos de los demás se dibujan **interpolados** y tienen un cuerpo físico "cinemático" para que se puedan tocar.
+- **Bots**: los maneja la compu del primer jugador (el anfitrión) con el piloto automático mejorado (línea de carrera, frenada antes de curva, 3 niveles de dificultad) y los manda como si fueran jugadores.
+- Después, con el Paso F, el mismo servidor se sube a internet.
+
+*Tareas:*
+- [ ] `src/modes/race/ai.js`: piloto automático de verdad (sirve también para rivales en modo un jugador).
+- [ ] `server/`: sala (máx. 10), cuenta regresiva de 15 s, relleno con bots, largada sincronizada, posiciones y resultados.
+- [ ] `src/net/`: conexión, envío/recepción de estado, interpolación, autos remotos con nombre arriba.
+- [ ] HUD: sala de espera, posición (P3/8), tabla en vivo, pantalla de resultados.
+- [ ] Probar entre dos computadoras en la misma red.
+
+**Paso C — La ciudad completa (Fase 4)**
 - [ ] Importar todas las calles de OSM con cruces, rotondas, túneles y calles a distinto nivel (en `import-monaco.mjs`).
 - [ ] **Paseo libre**: el circuito se abre a la ciudad (sin vallas, con cruces); el **modo carrera** vuelve a cerrar todo.
 - [ ] Barrios con su "receta" (Le Rocher con adoquín, Monte-Carlo, Fontvieille, Larvotto con la playa).
@@ -305,20 +329,21 @@ Desnivel real ~40 m: la subida a Casino y la bajada a la horquilla tienen que se
 - [ ] Colisión de edificios (cajas simples) para el paseo libre.
 - [ ] Rendimiento: chunks, LOD, instancing (medir en la notebook del hijo).
 
-**Paso C — Las dos montañas (Fase 5)**
+**Paso D — Las dos montañas (Fase 5)**
 - [ ] Ruta de cornisa hacia Tête de Chien (mirador) y serpentina a Mont Agel (ripio + nieve arriba).
 - [ ] Estacionamiento del centro de ski (futura entrada al snowboard).
 - [ ] Distancias comprimidas para que el viaje dure 2–3 minutos.
 
-**Paso D — Identidad (Fase 6, Higgsfield)**
+**Paso E — Identidad (Fase 6, Higgsfield)**
 - [ ] `STYLE.md` con el hijo; lista de assets con cantidad de generaciones y **confirmación antes de gastar créditos**.
 - [ ] Fachadas por barrio, carteles inventados, cielo, pantalla de título, fondo del showroom, colores/livery de los autos.
 
-**Paso E — Publicar (cuando quieran)**
+**Paso F — Publicar (cuando quieran)**
+- [ ] Servidor de multijugador en internet (hoy solo red local): hosting del servidor WebSocket (Fly.io, Render o similar), con confirmación.
 - [ ] Deploy web (GitHub Pages o Vercel), solo con confirmación.
 - [ ] Partir el bundle (hoy ~4,9 MB por el WASM de Rapier) para que cargue más rápido.
 
-**Después:** snowboard (desde Mont Agel), surf (desde Larvotto), controles táctiles, rivales, tránsito, día/noche.
+**Después:** snowboard (desde Mont Agel), surf (desde Larvotto), controles táctiles, tránsito, día/noche.
 
 ### 5.3 Deuda técnica conocida
 - El relieve viene de datos de ~30 m: algunas pendientes del circuito quedan suavizadas.
@@ -342,9 +367,10 @@ Desnivel real ~40 m: la subida a Casino y la bajada a la horquilla tienen que se
 
 ## 7. Definiciones que hacen falta (para decidir con el hijo)
 
-Las primeras tres cambian lo que se construye en el Paso A y B; conviene decidirlas ya.
+Las primeras tres cambian lo que se construye en los Pasos A, B y C; conviene decidirlas ya.
 
-1. **Carrera: ¿contra quién?** Solo contrarreloj + fantasma, o también **rivales** manejados por la computadora (mucho más trabajo). ¿Cuántas vueltas por carrera?
+1. **Carrera: ¿cuántas vueltas?** Y en modo un jugador, ¿también rivales bot (salen gratis del Paso B) o solo contrarreloj + fantasma?
+   - **Multijugador:** ¿a cuántos autos se completa la grilla con bots (por ejemplo 6, o siempre 10)? ¿Los jugadores pueden elegir auto distinto o todos el mismo? ¿Choques entre autos sí o no?
 2. **Paseo libre por la ciudad: ¿para qué?** Solo pasear, o con un objetivo (repartos, coleccionables, desafíos de tiempo entre dos puntos). ¿Con tránsito?
 3. **Estilo de los autos**: seguir con los autos "juguete" de Kenney o pasar a modelos más realistas (hay un F1 más fino en el Racing Kit). ¿Se pueden elegir colores? ¿Sumamos más autos?
 4. **Dificultad del manejo**: ¿un selector arcade/simulación (ayudas on/off) o un solo nivel?
@@ -355,4 +381,4 @@ Las primeras tres cambian lo que se construye en el Paso A y B; conviene decidir
 9. **Controles**: teclado y joystick ya están; ¿hace falta celular/táctil?
 10. **Nombre del juego y del modo carrera** (sin marcas oficiales).
 11. **Higgsfield**: presupuesto de imágenes y qué va primero (pantalla de título, carteles, fachadas).
-12. **Publicar**: ¿cuándo y dónde? (link para amigos, GitHub Pages, Vercel)
+12. **Publicar**: ¿cuándo y dónde? (link para amigos, GitHub Pages, Vercel). Para jugar multijugador por internet hace falta además un servidor.

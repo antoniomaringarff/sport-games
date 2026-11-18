@@ -54,6 +54,8 @@ export const CARS = {
     ANTI_ROLL: 0.6,            // resistencia a inclinarse en curvas (0 a 1)
     // Agarre extra (o menos) según superficie. 1 = como dice SURFACES.
     OFFROAD: { asfalto: 1, adoquin: 0.95, tierra: 0.6, arena: 0.5, nieve: 0.55, pasto: 0.6 },
+    // Sonido del motor
+    SOUND: { IDLE_RPM: 4500, MAX_RPM: 15000, GEARS: 8, PULSES: 3, GRIT: 0.35, BRIGHT: 1.0, VOLUME: 0.9 },
     stats: { velocidad: 5, agarre: 5, todoterreno: 1 },
   },
 
@@ -85,6 +87,7 @@ export const CARS = {
     SUSPENSION_TRAVEL: 0.28,
     ANTI_ROLL: 0.35,
     OFFROAD: { asfalto: 1, adoquin: 1.1, tierra: 1.45, arena: 1.6, nieve: 1.9, pasto: 1.4 },
+    SOUND: { IDLE_RPM: 750, MAX_RPM: 5200, GEARS: 6, PULSES: 4, GRIT: 0.8, BRIGHT: 0.35, VOLUME: 1.0 },
     stats: { velocidad: 2, agarre: 3, todoterreno: 5 },
   },
 
@@ -116,6 +119,7 @@ export const CARS = {
     SUSPENSION_TRAVEL: 0.16,
     ANTI_ROLL: 0.5,
     OFFROAD: { asfalto: 1, adoquin: 1, tierra: 0.85, arena: 0.7, nieve: 0.75, pasto: 0.85 },
+    SOUND: { IDLE_RPM: 850, MAX_RPM: 7200, GEARS: 7, PULSES: 6, GRIT: 0.25, BRIGHT: 0.6, VOLUME: 0.85 },
     stats: { velocidad: 4, agarre: 4, todoterreno: 2 },
   },
 };
@@ -141,6 +145,18 @@ export const MINIMAP = {
   LOOK_AHEAD: 260,      // cuántos metros de pista que viene se pintan de color
   WARN_DISTANCE: 220,   // a cuántos metros aparece el cartel de la próxima curva
   WARN_CLOSE: 70,       // a cuántos metros el cartel empieza a titilar
+};
+
+// ---------- Sonido ----------
+// Tecla M: silenciar. PULSES = explosiones por vuelta del motor (cilindros / 2): más = más agudo y suave.
+// GRIT = qué tan "sucio"/ronco suena · BRIGHT = qué tan brillante (agudos)
+export const AUDIO = {
+  VOLUME: 0.7,          // volumen general (0 a 1)
+  ENGINE: 0.55,         // volumen del motor
+  SKID: 0.5,            // volumen del derrape
+  HITS: 0.9,            // volumen de golpes y raspones
+  WIND: 0.25,           // viento a alta velocidad
+  TUNNEL_ECHO: 0.9,     // cuánto eco hay en el túnel
 };
 
 // ---------- Golpes contra guardrails y paredes ----------

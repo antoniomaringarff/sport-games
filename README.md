@@ -20,6 +20,7 @@ Abrir http://localhost:5173, elegir auto (← →) y lugar (↑ ↓): **Mónaco 
 | Espacio | Freno de mano (derrape) |
 | R | Reubicar el auto |
 | C | Cambiar cámara: afuera cerca, afuera lejos, conductor, frente |
+| M | Silenciar / activar el sonido |
 | 1 / 2 / 3 | Cambiar de auto en el lugar |
 | Enter (en Mónaco) | Reiniciar la carrera desde la grilla |
 | Esc | Volver al menú |

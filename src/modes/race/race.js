@@ -1,6 +1,7 @@
 // Modo carrera: semáforo de largada, vueltas, sectores, mejor vuelta y "contramano".
 import { CARS } from '../../config.js';
 import { createMinimap } from './minimap.js';
+import { beep } from '../../core/audio.js';
 import { rotateVec } from '../driving/vehicle.js';
 
 const fmt = (t) => {
@@ -33,7 +34,7 @@ export function createRace(track, place) {
   let sectorStart = 0, sector = 0, sectorTimes = [null, null, null];
   let best = null, bestSectors = [null, null, null], last = null;
   let validLap = false, passed = new Set();
-  let wrongWay = 0, msgT = 0;
+  let wrongWay = 0, msgT = 0, lastOn = 0;
 
   const key = () => `sport-games:${place}:mejor:${carId}`;
   function loadBest() {
@@ -81,6 +82,7 @@ export function createRace(track, place) {
       loadBest();
       phase = 'grid';
       lightT = 0;
+      lastOn = 0;
       goAt = 4 + 0.4 + Math.random() * 1.2; // 5 luces (0,8 s c/u) + espera al azar
       idx = n - 14;
       lap = 0;
@@ -110,9 +112,11 @@ export function createRace(track, place) {
       if (phase !== 'carrera') {
         lightT += dt;
         const on = Math.min(5, Math.floor(lightT / 0.8) + 1);
+        if (on !== lastOn && lightT < goAt) { beep(520, 0.15); lastOn = on; }
         el.bulbs.forEach((b, i) => b.classList.toggle('on', i < on && lightT < goAt));
         if (lightT >= goAt) {
           phase = 'carrera';
+          beep(880, 0.45, 0.3);
           lapStart = clock;
           sectorStart = clock;
           lap = 1;

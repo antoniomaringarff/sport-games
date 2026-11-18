@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { CARS, PHYSICS, LIGHT, WALL } from './config.js';
 import { createSparks } from './world/sparks.js';
+import { unlockAudio, CarSound, toggleMute, setEcho, impactSound } from './core/audio.js';
 import { createPhysics } from './core/physics.js';
 import { readDriving, justPressed, clearPressed } from './core/input.js';
 import { createSky } from './world/sky.js';
@@ -21,7 +22,7 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPrefere
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 
 const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 20000);
 window.addEventListener('resize', () => {
@@ -78,7 +79,14 @@ let model = null;
 const prev = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
 const curr = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
 
+// El audio arranca con la primera tecla o clic (regla de los navegadores)
+window.addEventListener('keydown', unlockAudio);
+window.addEventListener('pointerdown', unlockAudio);
+let carSound = null;
+
 function removeCar() {
+  carSound?.dispose();
+  carSound = null;
   if (!vehicle) return;
   world.scene.remove(model.group);
   model.dispose();
@@ -92,6 +100,8 @@ function spawnCar(id, at) {
   const profile = physicsProfile(id);
   vehicle = new Vehicle(world.physics, profile, at);
   model = createCarModel(id, profile, vehicle, carAsset(id));
+  carSound?.dispose();
+  carSound = new CarSound(profile);
   world.scene.add(model.group);
   syncTransforms();
   chase.snap();
@@ -163,6 +173,7 @@ const select = createCarSelect({
     save(LAST_CAR_KEY, id);
     save(LAST_PLACE_KEY, place);
     hud.show(true);
+    carSound?.setActive(true);
     state = 'driving';
     chase.snap();
     clearPressed();
@@ -171,6 +182,7 @@ const select = createCarSelect({
 
 function openMenu() {
   state = 'menu';
+  carSound?.setActive(false);
   hud.show(false);
   world?.race?.show(false);
   renderer.toneMappingExposure = 0.75;
@@ -226,6 +238,8 @@ function tick(dt) {
     acc -= STEP;
   }
   wallEffects(hit, dt);
+  carSound?.update(dt, vehicle, input, { scrape: vehicle.contactPoint ? vehicle.scrape : 0 });
+  setEcho(world.track && world.track.isTunnel[world.race.resetPoint()] ? 1 : 0);
 
   // Interpolar entre los dos últimos pasos de física: movimiento suave en pantallas de 120 Hz
   const alpha = acc / STEP;
@@ -248,6 +262,7 @@ function wallEffects(hit, dt) {
   if (p) {
     const v = vehicle.body.linvel();
     if (hit > 2.5) {
+      impactSound(hit);
       if (WALL.SPARKS) world.sparks.emit(p, v, Math.min(70, Math.round(hit * 5)), 4);
       chase.shake(Math.min(1, hit / 18) * WALL.SHAKE);
     }
@@ -290,6 +305,7 @@ function handleKeys() {
     world.race.start(carId);
   }
   if (justPressed('KeyC', 'Pad2')) chase.nextMode();
+  if (justPressed('KeyM')) toggleMute();
   const ids = Object.keys(CARS);
   for (let i = 0; i < ids.length; i++) {
     if (justPressed(`Digit${i + 1}`) && ids[i] !== carId) {
@@ -307,6 +323,7 @@ requestAnimationFrame(frame);
 window.__game = {
   get vehicle() { return vehicle; },
   get world() { return world; },
+  get carSound() { return carSound; },
   camera, renderer,
   /** Debug: avanzar el juego N segundos de golpe (para probar sin esperar). */
   advance(seconds) {

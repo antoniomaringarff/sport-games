@@ -43,15 +43,20 @@ export class Vehicle {
     this.ctrl = world.createVehicleController(this.body);
     const sag = PHYSICS_G / (4 * p.SUSPENSION_STIFFNESS); // cuánto se hunde quieto
     this.restLength = p.SUSPENSION_TRAVEL + sag;
-    const wheelCenterY = -hy - p.RIDE_HEIGHT + p.WHEEL_RADIUS;
-    const connY = wheelCenterY + p.SUSPENSION_TRAVEL;
-    const ax = p.WHEELBASE / 2, az = p.TRACK / 2;
-    this.wheelPos = [
-      { x: ax, y: connY, z: -az }, // FL
-      { x: ax, y: connY, z: az },  // FR
-      { x: -ax, y: connY, z: -az }, // RL
-      { x: -ax, y: connY, z: az },  // RR
-    ];
+    if (p.WHEELS) {
+      // Ruedas donde las tiene el modelo 3D (posición en reposo)
+      this.wheelPos = p.WHEELS.map((w) => ({ x: w.x, y: w.y + p.SUSPENSION_TRAVEL, z: w.z }));
+    } else {
+      const wheelCenterY = -hy - p.RIDE_HEIGHT + p.WHEEL_RADIUS;
+      const connY = wheelCenterY + p.SUSPENSION_TRAVEL;
+      const ax = p.WHEELBASE / 2, az = p.TRACK / 2;
+      this.wheelPos = [
+        { x: ax, y: connY, z: -az }, // FL
+        { x: ax, y: connY, z: az },  // FR
+        { x: -ax, y: connY, z: -az }, // RL
+        { x: -ax, y: connY, z: az },  // RR
+      ];
+    }
     for (const wp of this.wheelPos) {
       this.ctrl.addWheel(wp, { x: 0, y: -1, z: 0 }, { x: 0, y: 0, z: 1 }, this.restLength, p.WHEEL_RADIUS);
     }

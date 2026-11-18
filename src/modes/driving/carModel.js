@@ -103,24 +103,62 @@ const BUILDERS = {
   },
 };
 
-export function createCarModel(id, profile, vehicle) {
+/**
+ * Crea el auto que se ve. Si hay modelo GLB lo usa; si no, el de cajitas.
+ * vehicle puede ser null (showroom): las ruedas quedan en su lugar de reposo.
+ */
+export function createCarModel(id, profile, vehicle, asset = null) {
   const group = new THREE.Group();
-  const chassis = new THREE.Group(); // la carrocería (se puede inclinar aparte de las ruedas)
-  group.add(chassis);
-  const { wheelWidth } = BUILDERS[id](chassis, profile);
-
   const wheels = [];
-  for (let i = 0; i < 4; i++) {
-    const front = i < 2;
-    const w = makeWheel(profile.WHEEL_RADIUS, front ? wheelWidth[0] : wheelWidth[1]);
-    group.add(w.pivot);
-    wheels.push({ ...w, angle: 0 });
+
+  if (asset) {
+    // ---- Modelo GLB ----
+    const off = profile.MODEL_OFFSET;
+    const body = asset.scene.clone(true);
+    body.position.set(off.x, off.y, off.z);
+    group.add(body);
+    const names = ['wheel_FL', 'wheel_FR', 'wheel_RL', 'wheel_RR'];
+    const keys = ['FL', 'FR', 'RL', 'RR'];
+    names.forEach((name, i) => {
+      const node = body.getObjectByName(name);
+      const c = asset.info.wheels[keys[i]].center;
+      const pivot = new THREE.Group();
+      const spin = new THREE.Group();
+      pivot.add(spin);
+      group.add(pivot);
+      if (node) {
+        // la rueda pasa a girar alrededor de su centro
+        node.removeFromParent();
+        node.position.set(node.position.x - c[0], node.position.y - c[1], node.position.z - c[2]);
+        spin.add(node);
+      }
+      const rest = profile.WHEELS[i];
+      pivot.position.set(rest.x, rest.y, rest.z);
+      wheels.push({ pivot, spin, angle: 0 });
+    });
+    group.traverse((o) => {
+      if (o.isMesh) {
+        o.castShadow = true;
+        o.receiveShadow = true;
+      }
+    });
+  } else {
+    // ---- Cajitas (por si no cargó el modelo) ----
+    const chassis = new THREE.Group();
+    group.add(chassis);
+    const { wheelWidth } = BUILDERS[id](chassis, profile);
+    for (let i = 0; i < 4; i++) {
+      const w = makeWheel(profile.WHEEL_RADIUS, i < 2 ? wheelWidth[0] : wheelWidth[1]);
+      group.add(w.pivot);
+      wheels.push({ ...w, angle: 0 });
+    }
   }
 
   return {
     group,
     /** Ubica las ruedas según la suspensión y las hace girar. */
     update(dt) {
+      if (!vehicle) return;
       for (let i = 0; i < 4; i++) {
         const s = vehicle.wheelState(i);
         const w = wheels[i];
@@ -131,7 +169,7 @@ export function createCarModel(id, profile, vehicle) {
       }
     },
     dispose() {
-      group.traverse((o) => o.geometry?.dispose());
+      if (!asset) group.traverse((o) => o.geometry?.dispose());
     },
   };
 }

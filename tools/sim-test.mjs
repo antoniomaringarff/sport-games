@@ -2,7 +2,14 @@
 // Uso: node tools/sim-test.mjs [f1|pickup|luxury] [superficie]
 import { createPhysics } from '../src/core/physics.js';
 import { Vehicle, rotateVec } from '../src/modes/driving/vehicle.js';
-import { CARS } from '../src/config.js';
+import fs from 'node:fs';
+import { CARS as BASE } from '../src/config.js';
+import { profileFromModel } from '../src/modes/driving/vehicleProfile.js';
+
+// Usa la geometría de los modelos 3D si existe cars.json
+const manifestUrl = new URL('../public/assets/models/cars/cars.json', import.meta.url);
+const manifest = fs.existsSync(manifestUrl) ? JSON.parse(fs.readFileSync(manifestUrl, 'utf8')) : {};
+const CARS = Object.fromEntries(Object.entries(BASE).map(([id, c]) => [id, profileFromModel(c, manifest[id])]));
 
 const ids = process.argv[2] ? [process.argv[2]] : Object.keys(CARS);
 const surf = process.argv[3] ?? 'asfalto';

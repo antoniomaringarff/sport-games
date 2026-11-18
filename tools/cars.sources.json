@@ -1,0 +1,26 @@
+[
+  {
+    "id": "f1",
+    "source": "assets-raw/car-kit/Models/GLB format/race.glb",
+    "forward": "+z",
+    "length": 4.4,
+    "author": "Kenney (Car Kit 3.1)",
+    "license": "CC0"
+  },
+  {
+    "id": "pickup",
+    "source": "assets-raw/car-kit/Models/GLB format/truck.glb",
+    "forward": "+z",
+    "length": 4.9,
+    "author": "Kenney (Car Kit 3.1)",
+    "license": "CC0"
+  },
+  {
+    "id": "luxury",
+    "source": "assets-raw/car-kit/Models/GLB format/sedan-sports.glb",
+    "forward": "+z",
+    "length": 4.5,
+    "author": "Kenney (Car Kit 3.1)",
+    "license": "CC0"
+  }
+]

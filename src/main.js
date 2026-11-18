@@ -9,6 +9,8 @@ import { Vehicle, yawOf } from './modes/driving/vehicle.js';
 import { createCarModel } from './modes/driving/carModel.js';
 import { ChaseCamera } from './modes/driving/camera.js';
 import { createHud, createCarSelect } from './modes/driving/hud.js';
+import { loadCarAssets, carAsset, physicsProfile } from './modes/driving/carAssets.js';
+import { createShowroom } from './modes/driving/showroom.js';
 
 // ---------- Render ----------
 const canvas = document.getElementById('game');
@@ -28,8 +30,10 @@ window.addEventListener('resize', () => {
 
 const sky = createSky(scene, renderer);
 
-// ---------- Física y mundo ----------
+// ---------- Física, modelos y mundo ----------
+const loadingEl = document.getElementById('loading');
 const physics = await createPhysics();
+await loadCarAssets((f) => (loadingEl.textContent = `Cargando autos… ${Math.round(f * 100)}%`));
 const world = buildTestTrack(physics, scene);
 
 // ---------- Auto ----------
@@ -47,8 +51,9 @@ function spawnCar(id, at = SPAWN) {
     vehicle.dispose();
   }
   carId = id;
-  vehicle = new Vehicle(physics, CARS[id], at);
-  model = createCarModel(id, CARS[id], vehicle);
+  const profile = physicsProfile(id);
+  vehicle = new Vehicle(physics, profile, at);
+  model = createCarModel(id, profile, vehicle, carAsset(id));
   scene.add(model.group);
   storeTransform(curr);
   prev.pos.copy(curr.pos);
@@ -79,14 +84,16 @@ function saveLastCar(id) {
 // ---------- Cámara, HUD, menú ----------
 const chase = new ChaseCamera(camera);
 const hud = createHud();
+const showroom = createShowroom();
 let state = 'menu';
 
 const select = createCarSelect({
   onHighlight(id) {
-    if (id !== carId || !vehicle) spawnCar(id);
+    showroom.show(id);
   },
   onChoose(id) {
-    if (id !== carId) spawnCar(id);
+    if (!vehicle) spawnCar(id);
+    else if (id !== carId) spawnCar(id, currentSpot());
     saveLastCar(id);
     select.close();
     hud.show(true);
@@ -99,11 +106,16 @@ const select = createCarSelect({
 function openMenu() {
   state = 'menu';
   hud.show(false);
-  spawnCar(carId);
   select.open(carId);
 }
 
-document.getElementById('loading').hidden = true;
+/** Lugar actual del auto (para cambiar de auto sin moverse). */
+function currentSpot() {
+  const t = vehicle.body.translation();
+  return { x: t.x, y: t.y + 0.5, z: t.z, yaw: yawOf(vehicle.body.rotation()) };
+}
+
+loadingEl.hidden = true;
 openMenu();
 
 // ---------- Bucle principal ----------
@@ -119,7 +131,14 @@ function frame(now) {
 
   handleKeys();
 
-  const input = state === 'driving' ? readDriving() : { throttle: 0, brake: 0, steer: 0, handbrake: true };
+  if (state === 'menu') {
+    showroom.update(dt, renderer);
+    renderer.render(showroom.scene, showroom.camera);
+    requestAnimationFrame(frame);
+    return;
+  }
+
+  const input = readDriving();
   acc += dt;
   while (acc >= STEP) {
     prev.pos.copy(curr.pos);
@@ -138,12 +157,8 @@ function frame(now) {
   model.update(dt);
   world.sync();
 
-  if (state === 'driving') {
-    chase.update(model.group, vehicle.kmh, dt);
-    hud.update(vehicle, carId, chase.modeName, dt);
-  } else {
-    chase.orbit(model.group, time);
-  }
+  chase.update(model.group, vehicle.kmh, dt);
+  hud.update(vehicle, carId, chase.modeName, dt);
   sky.follow(model.group.position);
 
   renderer.render(scene, camera);
@@ -172,8 +187,7 @@ function handleKeys() {
   for (let i = 0; i < ids.length; i++) {
     if (justPressed(`Digit${i + 1}`) && ids[i] !== carId) {
       // cambiar de auto en el mismo lugar (para comparar)
-      const t = vehicle.body.translation();
-      spawnCar(ids[i], { x: t.x, y: t.y + 0.5, z: t.z, yaw: yawOf(vehicle.body.rotation()) });
+      spawnCar(ids[i], currentSpot());
       saveLastCar(ids[i]);
     }
   }

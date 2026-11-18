@@ -35,9 +35,22 @@ Para medir los autos sin abrir el navegador (0-100, velocidad máxima, frenado, 
 node tools/sim-test.mjs f1 arena
 ```
 
+## Modelos de autos
+
+Los originales (obj / fbx / gltf / glb) van en `assets-raw/` (no se sube al repo).
+Se listan en [tools/cars.sources.json](tools/cars.sources.json) con el eje del frente y el largo en metros, y se convierten con:
+
+```bash
+node tools/convert-models.mjs
+```
+
+Eso genera `public/assets/models/cars/<id>.glb` y `cars.json` (posición y radio de las ruedas, tamaño de la carrocería), que usa la física.
+Las ruedas se detectan por nombre (`wheel`, `tire`, `rueda`) y tienen que ser 4 objetos separados.
+Para `.fbx` hace falta [FBX2glTF](https://github.com/godotengine/FBX2glTF/releases) instalado.
+
 ## Estado
 
 - [x] Fase 0: setup
 - [x] Fase 1: pista de pruebas, 3 autos con perfiles distintos, superficies, ayudas, cámara, HUD, elección de auto
-- [ ] Fase 2: modelos 3D de los autos + showroom
+- [x] Fase 2: modelos 3D de los autos (Kenney Car Kit) + pipeline de conversión + showroom
 - [ ] Fase 3: circuito de Mónaco

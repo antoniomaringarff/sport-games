@@ -2,7 +2,8 @@
 
 > Este plan **amplía** el `plan.md` original (stack, reglas de trabajo, `config.js`, Higgsfield).
 > Todo lo que dice ese archivo sigue vigente salvo donde este lo reemplaza explícitamente.
-> **Todavía no se construye nada: esto es solo el plan.**
+> **Estado (18/11/2026):** Fases 0 a 3 hechas, más cámaras, minimapa y golpes contra guardrails.
+> Rama `claude/sports-game-city-plan-eca3f5`, PR antoniomaringarff/sport-games#1. Ver sección 5.
 
 ---
 
@@ -274,62 +275,56 @@ Desnivel real ~40 m: la subida a Casino y la bajada a la horquilla tienen que se
 
 ---
 
-## 5. Fases
+## 5. Estado y próximos pasos
 
-Cada fase termina con algo **jugable** en `npm run dev`, playtest y commit.
+### 5.1 Lo que ya está hecho
 
-### Fase 0 — Setup
-- [ ] Vite + Three + Rapier, estructura de carpetas de la sección 2.
-- [ ] `GAME.md` con la sesión de diseño (nombres de la ciudad y los autos, colores).
-- **Listo cuando:** canvas con piso y cubo a 60 fps.
+| Fase | Qué quedó | Notas |
+|---|---|---|
+| 0 — Setup | Vite + Three.js + Rapier, estructura de carpetas | `npm run dev` |
+| 1 — Manejo | 3 autos con perfiles distintos, superficies, ayudas, pista de pruebas | El manejo quedó aprobado ("muy bueno"). `node tools/sim-test.mjs` mide los autos |
+| 2 — Autos 3D | Kenney Car Kit, conversor obj/fbx/gltf→glb, showroom | Estilo juguete. obj/fbx sin probar con archivos reales |
+| Cámaras | Afuera cerca/lejos, conductor, frente; ladeo al doblar | Perillas en `CAMERA` y `DRIVER_EYE` |
+| 3 — Mónaco | Circuito real (3.330 m), relieve, túnel, guardrails, 1.284 edificios OSM, tribunas, modo carrera (luces, vueltas, sectores, récord, contramano) | `node tools/import-monaco.mjs` regenera todo |
+| Extras | Minimapa con aviso de próxima curva, golpes realistas con chispas, luz por lugar (`LIGHT`), asfalto más claro | Pedido en la revisión del 18/11 |
 
-### Fase 1 — Pista de pruebas de manejo (la más importante)
-Antes de la ciudad: un **playground** con curvas, rectas, rampas, lomas, zona de adoquín, tierra, arena y una subida empinada.
-- [ ] Vehículo Rapier con perfil configurable, step fijo, input suavizado, cámara.
-- [ ] Los 3 autos como **cajas de colores** con sus perfiles distintos (F1 / camioneta / lujo).
-- [ ] Superficies con fricción distinta.
-- [ ] Ayudas (anti-vuelco, tracción, downforce).
-- [ ] HUD: velocímetro, nombre del auto, tecla para cambiar de auto al vuelo (solo debug).
-- **Listo cuando:** manejar cada auto 2 minutos ya es divertido **y** se sienten claramente distintos.
+### 5.2 Próximos pasos (en orden sugerido)
 
-### Fase 2 — Modelos de autos + pantalla de elección
-- [ ] Buscar y elegir modelos (F1, camioneta, lujo), licencias en `CREDITS.md`.
-- [ ] `tools/convert-models.mjs` (obj/fbx/gltf → glb normalizado) + `cars.json`.
-- [ ] Ruedas visuales que giran, doblan y siguen la suspensión.
-- [ ] Showroom de elección al entrar al juego.
-- **Listo cuando:** se entra, se elige uno de los 3, y se maneja en la pista con su modelo real.
+**Paso A — Pulido de la carrera (corto, alto impacto)**
+- [ ] **Sonido**: motor por auto (tono según RPM, Web Audio), chirrido al derrapar, golpe y raspón contra guardrail, eco en el túnel. Hoy el juego es mudo: es lo que más se nota.
+- [ ] **Auto fantasma** de la mejor vuelta (grabar posición cada 0,1 s y reproducirla semitransparente).
+- [ ] **Tabla de récords** por auto en el menú.
+- [ ] Probar vueltas reales con teclado y joystick; ajustar `WALL`, `LIGHT` y `MINIMAP` con el hijo.
+- [ ] Calle de boxes (aunque sea decorativa) y más carteles/tribunas en curvas clave.
 
-### Fase 3 — El circuito de Mónaco (primero la pista, después la ciudad)
-La parte más emocionante, temprano: se corre en el circuito aunque la ciudad todavía sea "maqueta".
-- [ ] `tools/import-dem.mjs`: heightmap de la zona del circuito (desniveles reales).
-- [ ] `tools/import-osm.mjs` (versión 1): solo el trazado del circuito + línea de costa + puerto → `circuit.json`.
-- [ ] Malla de la pista sobre el terreno, pianos, vallas, túnel, mar y puerto con shader de agua, cielo con atardecer.
-- [ ] Edificios a lo largo de la pista como cajas simples (de las huellas de OSM) para que se sienta encajonado.
-- [ ] Modo carrera: largada, cronómetro, 3 sectores, mejor vuelta en `localStorage`, reubicar en pista.
-- **Listo cuando:** dar una vuelta con el F1 es divertido y se reconocen Sainte Dévote, el Casino, la horquilla, el túnel y la Piscina.
+**Paso B — La ciudad completa (Fase 4)**
+- [ ] Importar todas las calles de OSM con cruces, rotondas, túneles y calles a distinto nivel (en `import-monaco.mjs`).
+- [ ] **Paseo libre**: el circuito se abre a la ciudad (sin vallas, con cruces); el **modo carrera** vuelve a cerrar todo.
+- [ ] Barrios con su "receta" (Le Rocher con adoquín, Monte-Carlo, Fontvieille, Larvotto con la playa).
+- [ ] Hitos low-poly: Casino, Palacio, puerto con yates, estadio, faro.
+- [ ] Colisión de edificios (cajas simples) para el paseo libre.
+- [ ] Rendimiento: chunks, LOD, instancing (medir en la notebook del hijo).
 
-### Fase 4 — La ciudad completa
-- [ ] `import-osm.mjs` completo: todas las calles, edificios, plazas, escaleras, playa de Larvotto.
-- [ ] Malla de calles con cruces, rotondas, túneles y calles a distinto nivel; aplanado del terreno.
-- [ ] Edificios extruidos con receta por barrio (Le Rocher, Condamine, Monte-Carlo, Fontvieille, Larvotto, ladera).
-- [ ] Hitos low-poly: Casino, Palacio, estadio, yates, faro.
-- [ ] Paseo libre vs. modo carrera (vallas que aparecen/desaparecen).
-- [ ] Chunks, instancing, LOD. Herramienta de debug F2 para corregir OSM.
-- **Listo cuando:** atravesar Mónaco de punta a punta es agradable y se mantiene en 60 fps.
+**Paso C — Las dos montañas (Fase 5)**
+- [ ] Ruta de cornisa hacia Tête de Chien (mirador) y serpentina a Mont Agel (ripio + nieve arriba).
+- [ ] Estacionamiento del centro de ski (futura entrada al snowboard).
+- [ ] Distancias comprimidas para que el viaje dure 2–3 minutos.
 
-### Fase 5 — Las dos montañas
-- [ ] Tête de Chien: acantilado + ruta en cornisa + mirador.
-- [ ] Mont Agel: más alta, nevada arriba; serpentina con ripio; estacionamiento del centro de ski.
-- [ ] Distancias comprimidas; Alpes lejanos de fondo.
-- **Listo cuando:** subir con la camioneta es un placer y con el F1 es un desafío, y desde arriba se ve todo Mónaco y el mar.
+**Paso D — Identidad (Fase 6, Higgsfield)**
+- [ ] `STYLE.md` con el hijo; lista de assets con cantidad de generaciones y **confirmación antes de gastar créditos**.
+- [ ] Fachadas por barrio, carteles inventados, cielo, pantalla de título, fondo del showroom, colores/livery de los autos.
 
-### Fase 6 — Pulido + Higgsfield
-- [ ] Sonido de motor por auto, eco en el túnel, derrape, choque, superficies.
-- [ ] Minimapa; auto fantasma de la mejor vuelta.
-- [ ] Higgsfield (con confirmación de créditos, como dice `plan.md`): fachadas por barrio, carteles inventados por el hijo (sin marcas reales), skybox, pantalla de título, fondo del showroom.
+**Paso E — Publicar (cuando quieran)**
+- [ ] Deploy web (GitHub Pages o Vercel), solo con confirmación.
+- [ ] Partir el bundle (hoy ~4,9 MB por el WASM de Rapier) para que cargue más rápido.
 
-### Después (no ahora)
-Rivales en la carrera, tránsito, día/noche, otros objetivos (reparto, coleccionables), **snowboard** (desde Mont Agel), **surf** (desde Larvotto), controles táctiles.
+**Después:** snowboard (desde Mont Agel), surf (desde Larvotto), controles táctiles, rivales, tránsito, día/noche.
+
+### 5.3 Deuda técnica conocida
+- El relieve viene de datos de ~30 m: algunas pendientes del circuito quedan suavizadas.
+- Edificios sin colisión (hoy no importa porque los guardrails contienen el auto).
+- `window.__autopilot` y `__game.advance()` son ganchos de prueba: dejarlos, pero no usarlos en el juego.
+- El panel de vista previa del editor pausa la animación cuando no está a la vista: medir FPS siempre en un navegador normal.
 
 ---
 
@@ -337,22 +332,27 @@ Rivales en la carrera, tránsito, día/noche, otros objetivos (reparto, coleccio
 
 | Riesgo | Mitigación |
 |---|---|
-| El manejo se siente "de jabón" o los autos se parecen | Fase 1 dedicada, centro de masa bajo, perfiles bien distintos, perillas en `config.js` |
-| La API de vehículo de Rapier no da para algo (ej. downforce) | Se aplica como fuerza extra sobre el chasis; plan B: `cannon-es` |
-| Modelos con escalas/ejes/ruedas inconsistentes | Script de normalización + manifest; la física no depende del modelo |
-| Los datos de OSM vienen "sucios" (calles cortadas, huellas raras, túneles mal unidos) | Importar primero solo el circuito; limpiar con filtros + herramienta F2; plan B: dibujar a mano las calles principales |
-| Mónaco es muy empinado y denso: túneles y calles a distinto nivel complican la malla | Empezar por el circuito; túneles como piezas hechas a mano; calles superpuestas por capas |
-| Pista angosta + vallas = frustrante | Ayudas de frenado opcionales, rebote amable en vallas, reubicar rápido |
-| Licencias (OSM, DEM, dataset de circuitos) y marcas | Atribución en `CREDITS.md` y pantalla de créditos; cero logos/sponsors reales |
-| FPS con ciudad densa | Chunks, instancing, LOD, sombras limitadas, medir en cada fase |
+| El sonido sintetizado suena "a juguete" | Empezar con Web Audio (gratis); si no convence, buscar SFX CC0 (Kenney Audio, freesound CC0) |
+| La ciudad completa de OSM trae calles "sucias" y muchos cruces | Importar por barrios; herramienta F2 para corregir; plan B: solo calles principales |
+| FPS con ciudad + montañas | Chunks, LOD, sombras solo cerca, medir en cada paso |
+| Licencias (OSM, Terrain Tiles, Kenney, Higgsfield) y marcas | `CREDITS.md` al día; cero logos/sponsors reales |
+| El chico pierde interés | Pasos cortos que terminan en algo jugable; dejarle retos en `config.js` |
 
 ---
 
-## 7. Decisiones abiertas (para el game designer)
+## 7. Definiciones que hacen falta (para decidir con el hijo)
 
-- Nombre del modo carrera (sin usar marcas oficiales) y del juego.
-- ¿Manejo más arcade o más simulación? (se ajusta en Fase 1)
-- ¿Cámara por defecto lejos o cerca? ¿Cámara de cockpit para el F1?
-- ¿Cuántas vueltas por carrera? ¿Rivales más adelante?
-- ¿Hora del día por defecto? (recomendado: atardecer)
-- Carteles inventados para la ciudad y el circuito.
+Las primeras tres cambian lo que se construye en el Paso A y B; conviene decidirlas ya.
+
+1. **Carrera: ¿contra quién?** Solo contrarreloj + fantasma, o también **rivales** manejados por la computadora (mucho más trabajo). ¿Cuántas vueltas por carrera?
+2. **Paseo libre por la ciudad: ¿para qué?** Solo pasear, o con un objetivo (repartos, coleccionables, desafíos de tiempo entre dos puntos). ¿Con tránsito?
+3. **Estilo de los autos**: seguir con los autos "juguete" de Kenney o pasar a modelos más realistas (hay un F1 más fino en el Racing Kit). ¿Se pueden elegir colores? ¿Sumamos más autos?
+4. **Dificultad del manejo**: ¿un selector arcade/simulación (ayudas on/off) o un solo nivel?
+5. **Daño**: ¿los golpes rompen el auto (se ve abollado, anda peor) o solo frenan?
+6. **Hora del día**: fija (tarde luminosa, como ahora), elegible en el menú, o ciclo día/noche.
+7. **Sonido y música**: ¿motor sintetizado o grabado? ¿Música en el menú y en carrera?
+8. **Montañas**: ¿qué tan cerca de la ciudad? ¿Mont Agel nevado siempre?
+9. **Controles**: teclado y joystick ya están; ¿hace falta celular/táctil?
+10. **Nombre del juego y del modo carrera** (sin marcas oficiales).
+11. **Higgsfield**: presupuesto de imágenes y qué va primero (pantalla de título, carteles, fachadas).
+12. **Publicar**: ¿cuándo y dónde? (link para amigos, GitHub Pages, Vercel)

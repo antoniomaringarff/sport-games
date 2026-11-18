@@ -10,7 +10,7 @@ npm install
 npm run dev
 ```
 
-Abrir http://localhost:5173, elegir auto (← → y Enter, o clic).
+Abrir http://localhost:5173, elegir auto (← →) y lugar (↑ ↓): **Mónaco – circuito** o **Pista de pruebas**. Enter para arrancar.
 
 | Tecla | Acción |
 |---|---|
@@ -21,6 +21,7 @@ Abrir http://localhost:5173, elegir auto (← → y Enter, o clic).
 | R | Reubicar el auto |
 | C | Cambiar cámara: afuera cerca, afuera lejos, conductor, frente |
 | 1 / 2 / 3 | Cambiar de auto en el lugar |
+| Enter (en Mónaco) | Reiniciar la carrera desde la grilla |
 | Esc | Volver al menú |
 
 También anda con joystick (gatillos para acelerar/frenar, A = freno de mano).
@@ -48,9 +49,24 @@ Eso genera `public/assets/models/cars/<id>.glb` y `cars.json` (posición y radio
 Las ruedas se detectan por nombre (`wheel`, `tire`, `rueda`) y tienen que ser 4 objetos separados.
 Para `.fbx` hace falta [FBX2glTF](https://github.com/godotengine/FBX2glTF/releases) instalado.
 
+## Mónaco
+
+Los datos reales se convierten una vez con:
+
+```bash
+node tools/import-monaco.mjs
+```
+
+Lee `assets-raw/monaco/` (circuito de bacinger/f1-circuits, OpenStreetMap vía Overpass y relieve Terrarium) y genera `public/assets/monaco/`:
+`monaco.json` (circuito cada 2 m con altura, túnel, pianos y sectores; edificios; muelles), `terrain.bin` (relieve cercano, con la pista tallada) y `far.bin` (montañas de fondo).
+El sentido de la vuelta se elige solo: la subida al Casino tiene que quedar en la primera mitad.
+
+Para probar desde la consola del navegador: `__game.advance(segundos)` avanza el juego de golpe y `window.__autopilot` permite manejar con una función.
+
 ## Estado
 
 - [x] Fase 0: setup
 - [x] Fase 1: pista de pruebas, 3 autos con perfiles distintos, superficies, ayudas, cámara, HUD, elección de auto
 - [x] Fase 2: modelos 3D de los autos (Kenney Car Kit) + pipeline de conversión + showroom
-- [ ] Fase 3: circuito de Mónaco
+- [x] Fase 3: circuito de Mónaco (relieve real, túnel, guardrails, edificios, tribunas, modo carrera con semáforo, vueltas, sectores y récord)
+- [ ] Fase 4: la ciudad completa

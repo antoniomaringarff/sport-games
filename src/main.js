@@ -1,16 +1,18 @@
-// Arranque del juego: renderer, física, mundo, elección de auto y bucle principal.
+// Arranque del juego: renderer, lugares (mundos), elección de auto y bucle principal.
 import * as THREE from 'three';
 import { CARS, PHYSICS } from './config.js';
 import { createPhysics } from './core/physics.js';
 import { readDriving, justPressed, clearPressed } from './core/input.js';
 import { createSky } from './world/sky.js';
 import { buildTestTrack, SPAWN } from './world/testTrack.js';
+import { loadMonacoData, buildMonaco } from './world/monaco.js';
 import { Vehicle, yawOf } from './modes/driving/vehicle.js';
 import { createCarModel } from './modes/driving/carModel.js';
 import { ChaseCamera } from './modes/driving/camera.js';
 import { createHud, createCarSelect } from './modes/driving/hud.js';
 import { loadCarAssets, carAsset, physicsProfile } from './modes/driving/carAssets.js';
 import { createShowroom } from './modes/driving/showroom.js';
+import { createRace } from './modes/race/race.js';
 
 // ---------- Render ----------
 const canvas = document.getElementById('game');
@@ -20,45 +22,83 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 6000);
+const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 20000);
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-const sky = createSky(scene, renderer);
+// ---------- Lugares ----------
+// Cada lugar tiene su propia escena y su propio mundo de física.
+const PLACES = {
+  monaco: { name: 'Mónaco – circuito' },
+  pista: { name: 'Pista de pruebas' },
+};
+const worlds = {};
 
-// ---------- Física, modelos y mundo ----------
-const loadingEl = document.getElementById('loading');
-const physics = await createPhysics();
-await loadCarAssets((f) => (loadingEl.textContent = `Cargando autos… ${Math.round(f * 100)}%`));
-const world = buildTestTrack(physics, scene);
+async function getWorld(name) {
+  if (worlds[name]) return worlds[name];
+  const physics = await createPhysics();
+  const scene = new THREE.Scene();
+  let w;
+  if (name === 'pista') {
+    const sky = createSky(scene, renderer);
+    const builder = buildTestTrack(physics, scene);
+    w = { physics, scene, sky, builder, spawn: SPAWN, update() {} };
+  } else {
+    // atardecer sobre el Mediterráneo (el sol cae al suroeste, sobre el mar)
+    const sky = createSky(scene, renderer, {
+      elevation: 16,
+      azimuth: 238,
+      sunColor: 0xffd2a1,
+      sunIntensity: 2.8,
+      exposure: 0.72,
+      fog: [0xd9c9b8, 600, 9000],
+    });
+    const data = await loadMonacoData();
+    const m = await buildMonaco(physics, scene, data);
+    w = { physics, scene, sky, builder: m.builder, spawn: m.spawn, spawnAt: m.spawnAt, track: m.track, update: m.update };
+    w.race = createRace(m.track, 'monaco');
+  }
+  worlds[name] = w;
+  return w;
+}
 
 // ---------- Auto ----------
 const LAST_CAR_KEY = 'sport-games:auto';
-let carId = loadLastCar();
+const LAST_PLACE_KEY = 'sport-games:lugar';
+let carId = load(LAST_CAR_KEY, (v) => CARS[v], 'f1');
+let placeId = load(LAST_PLACE_KEY, (v) => PLACES[v], 'monaco');
+let world = null;
 let vehicle = null;
 let model = null;
 const prev = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
 const curr = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
 
-function spawnCar(id, at = SPAWN) {
-  if (vehicle) {
-    scene.remove(model.group);
-    model.dispose();
-    vehicle.dispose();
-  }
+function removeCar() {
+  if (!vehicle) return;
+  world.scene.remove(model.group);
+  model.dispose();
+  vehicle.dispose();
+  vehicle = null;
+}
+
+function spawnCar(id, at) {
+  removeCar();
   carId = id;
   const profile = physicsProfile(id);
-  vehicle = new Vehicle(physics, profile, at);
+  vehicle = new Vehicle(world.physics, profile, at);
   model = createCarModel(id, profile, vehicle, carAsset(id));
-  scene.add(model.group);
+  world.scene.add(model.group);
+  syncTransforms();
+  chase.snap();
+}
+
+function syncTransforms() {
   storeTransform(curr);
   prev.pos.copy(curr.pos);
   prev.quat.copy(curr.quat);
-  chase.snap();
 }
 
 function storeTransform(target) {
@@ -68,16 +108,16 @@ function storeTransform(target) {
   target.quat.set(r.x, r.y, r.z, r.w);
 }
 
-function loadLastCar() {
+function load(key, ok, fallback) {
   try {
-    const id = localStorage.getItem(LAST_CAR_KEY);
-    if (id && CARS[id]) return id;
+    const v = localStorage.getItem(key);
+    if (v && ok(v)) return v;
   } catch {}
-  return 'f1';
+  return fallback;
 }
-function saveLastCar(id) {
+function save(key, v) {
   try {
-    localStorage.setItem(LAST_CAR_KEY, id);
+    localStorage.setItem(key, v);
   } catch {}
 }
 
@@ -85,17 +125,41 @@ function saveLastCar(id) {
 const chase = new ChaseCamera(camera);
 const hud = createHud();
 const showroom = createShowroom();
-let state = 'menu';
+const loadingEl = document.getElementById('loading');
+let state = 'loading';
 
 const select = createCarSelect({
+  places: PLACES,
   onHighlight(id) {
     showroom.show(id);
   },
-  onChoose(id) {
-    if (!vehicle) spawnCar(id);
-    else if (id !== carId) spawnCar(id, currentSpot());
-    saveLastCar(id);
+  async onChoose(id, place) {
     select.close();
+    state = 'loading';
+    const changedPlace = place !== placeId || !world;
+    if (changedPlace) {
+      loadingEl.textContent = `Cargando ${PLACES[place].name}…`;
+      loadingEl.hidden = false;
+      await new Promise((r) => setTimeout(r, 30)); // dejar que se vea el cartel
+      removeCar();
+      if (world?.race) world.race.show(false);
+      world = await getWorld(place);
+      placeId = place;
+      loadingEl.hidden = true;
+    }
+    if (world.race) {
+      // carrera: siempre se arranca desde la grilla
+      spawnCar(id, world.spawn);
+      world.race.show(true);
+      world.race.start(id);
+    } else if (!vehicle || changedPlace) {
+      spawnCar(id, world.spawn);
+    } else if (id !== carId) {
+      spawnCar(id, currentSpot());
+    }
+    renderer.toneMappingExposure = world.sky.exposure;
+    save(LAST_CAR_KEY, id);
+    save(LAST_PLACE_KEY, place);
     hud.show(true);
     state = 'driving';
     chase.snap();
@@ -106,7 +170,9 @@ const select = createCarSelect({
 function openMenu() {
   state = 'menu';
   hud.show(false);
-  select.open(carId);
+  world?.race?.show(false);
+  renderer.toneMappingExposure = 0.75;
+  select.open(carId, placeId);
 }
 
 /** Lugar actual del auto (para cambiar de auto sin moverse). */
@@ -115,6 +181,8 @@ function currentSpot() {
   return { x: t.x, y: t.y + 0.5, z: t.z, yaw: yawOf(vehicle.body.rotation()) };
 }
 
+loadingEl.textContent = 'Cargando autos…';
+await loadCarAssets((f) => (loadingEl.textContent = `Cargando autos… ${Math.round(f * 100)}%`));
 loadingEl.hidden = true;
 openMenu();
 
@@ -122,7 +190,6 @@ openMenu();
 const STEP = 1 / PHYSICS.STEP_HZ;
 let acc = 0;
 let last = performance.now();
-let time = 0;
 
 function frame(now) {
   const dt = Math.min((now - last) / 1000, 0.1);
@@ -134,21 +201,23 @@ function frame(now) {
 
 /** Avanza el juego dt segundos (sin dibujar). */
 function tick(dt) {
-  time += dt;
   handleKeys();
 
   if (state === 'menu') {
     showroom.update(dt, renderer);
     return;
   }
+  if (state !== 'driving') return;
 
-  const input = readDriving();
+  // __autopilot: solo para pruebas desde la consola
+  let input = window.__autopilot ? window.__autopilot(vehicle, world) : readDriving();
+  if (world.race) input = world.race.filterInput(input);
   acc += dt;
   while (acc >= STEP) {
     prev.pos.copy(curr.pos);
     prev.quat.copy(curr.quat);
     vehicle.update(input, STEP);
-    physics.step();
+    world.physics.step();
     storeTransform(curr);
     acc -= STEP;
   }
@@ -159,42 +228,55 @@ function tick(dt) {
   model.group.quaternion.slerpQuaternions(prev.quat, curr.quat, alpha);
   model.group.updateMatrixWorld();
   model.update(dt);
-  world.sync();
+  world.builder.sync();
+  world.update(dt);
+  world.race?.update(dt, vehicle);
 
   chase.update(model.group, vehicle, carId, dt);
   hud.update(vehicle, carId, chase.modeName, dt);
-  sky.follow(model.group.position);
+  world.sky.follow(model.group.position);
 }
 
 function render() {
   if (state === 'menu') renderer.render(showroom.scene, showroom.camera);
-  else renderer.render(scene, camera);
+  else if (state === 'driving') renderer.render(world.scene, camera);
 }
 
 function handleKeys() {
   if (state === 'menu') {
     if (justPressed('ArrowLeft', 'KeyA', 'Pad14')) select.move(-1);
     if (justPressed('ArrowRight', 'KeyD', 'Pad15')) select.move(1);
+    if (justPressed('ArrowUp', 'ArrowDown', 'KeyW', 'KeyS', 'Tab', 'Pad12', 'Pad13')) select.nextPlace();
     if (justPressed('Enter', 'Space', 'Pad0')) select.choose();
     if (justPressed('Digit1')) select.pick(0);
     if (justPressed('Digit2')) select.pick(1);
     if (justPressed('Digit3')) select.pick(2);
     return;
   }
+  if (state !== 'driving') return;
   if (justPressed('Escape', 'Pad9')) return openMenu();
   if (justPressed('KeyR', 'Pad3')) {
-    vehicle.reset();
-    storeTransform(curr);
-    prev.pos.copy(curr.pos);
-    prev.quat.copy(curr.quat);
+    if (world.race) {
+      vehicle.teleport(world.spawnAt(world.race.resetPoint(), 0));
+    } else {
+      vehicle.reset();
+    }
+    syncTransforms();
+  }
+  if (justPressed('Enter') && world.race) {
+    // reiniciar la carrera desde la grilla
+    vehicle.teleport(world.spawn);
+    syncTransforms();
+    world.race.start(carId);
   }
   if (justPressed('KeyC', 'Pad2')) chase.nextMode();
   const ids = Object.keys(CARS);
   for (let i = 0; i < ids.length; i++) {
     if (justPressed(`Digit${i + 1}`) && ids[i] !== carId) {
       // cambiar de auto en el mismo lugar (para comparar)
-      spawnCar(ids[i], currentSpot());
-      saveLastCar(ids[i]);
+      spawnCar(ids[i], world.race ? world.spawn : currentSpot());
+      save(LAST_CAR_KEY, ids[i]);
+      if (world.race) world.race.start(ids[i]);
     }
   }
 }
@@ -204,7 +286,8 @@ requestAnimationFrame(frame);
 // Para depurar desde la consola del navegador
 window.__game = {
   get vehicle() { return vehicle; },
-  physics, scene, camera, renderer,
+  get world() { return world; },
+  camera, renderer,
   /** Debug: avanzar el juego N segundos de golpe (para probar sin esperar). */
   advance(seconds) {
     for (let t = 0; t < seconds; t += 1 / 60) tick(1 / 60);

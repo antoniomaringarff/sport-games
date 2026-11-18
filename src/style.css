@@ -136,3 +136,86 @@ html, body {
   #help { display: none; }
   .card { width: 100%; }
 }
+
+/* ---------- Lugar ---------- */
+#places {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.place {
+  padding: 8px 16px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.place.active { border-color: var(--accent); color: var(--accent); }
+
+/* ---------- Carrera ---------- */
+#race {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 260px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: var(--panel);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+#race .row { display: flex; justify-content: space-between; gap: 16px; }
+#race .row b { font-size: 18px; }
+#race [data-time] { font-size: 22px; font-weight: 800; }
+#race .small { font-size: 13px; opacity: 0.85; }
+#race .sectors { display: flex; justify-content: space-between; gap: 8px; margin: 6px 0 4px; font-size: 13px; }
+#race em { font-style: normal; font-weight: 700; }
+#race em.good { color: #5ee07a; }
+#race em.bad { color: #ffb347; }
+#race .hint { opacity: 0.55; font-size: 11px; }
+#lights {
+  position: fixed;
+  top: 22%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: rgba(10, 10, 12, 0.85);
+  pointer-events: none;
+}
+#lights i {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #3a1010;
+  box-shadow: inset 0 0 8px #000;
+}
+#lights i.on { background: #ff2d2d; box-shadow: 0 0 18px #ff2d2d; }
+#race-msg {
+  position: fixed;
+  top: 36%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: clamp(28px, 5vw, 54px);
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 3px 18px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  white-space: nowrap;
+}
+#credits {
+  position: fixed;
+  right: 8px;
+  bottom: 2px;
+  font-size: 10px;
+  opacity: 0.55;
+  pointer-events: none;
+}

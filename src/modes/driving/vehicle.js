@@ -242,6 +242,17 @@ export class Vehicle {
     this.upsideDownTime = 0;
   }
 
+  /** Lleva el auto a un lugar exacto { x, y, z, yaw }, quieto. */
+  teleport(at) {
+    const body = this.body;
+    body.setTranslation({ x: at.x, y: at.y, z: at.z }, true);
+    body.setRotation(yawQuat(at.yaw ?? 0), true);
+    body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+    this.steer = 0;
+    this.upsideDownTime = 0;
+  }
+
   /** Estado de una rueda en coordenadas del chasis (para dibujarla). */
   wheelState(i) {
     const c = this.wheelPos[i];

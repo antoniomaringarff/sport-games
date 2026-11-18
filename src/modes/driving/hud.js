@@ -36,12 +36,15 @@ export function createHud() {
   };
 }
 
-/** Pantalla de elección. onHighlight(id) al moverse, onChoose(id) al elegir. */
-export function createCarSelect({ onHighlight, onChoose }) {
+/** Pantalla de elección de auto y lugar. onHighlight(id) al moverse, onChoose(id, lugar) al elegir. */
+export function createCarSelect({ places, onHighlight, onChoose }) {
   const root = $('select');
   const list = $('cards');
+  const placesEl = $('places');
   const ids = Object.keys(CARS);
+  const placeIds = Object.keys(places);
   let index = 0;
+  let place = placeIds[0];
 
   list.innerHTML = '';
   ids.forEach((id, i) => {
@@ -63,21 +66,35 @@ export function createCarSelect({ onHighlight, onChoose }) {
     list.appendChild(card);
   });
 
+  placesEl.innerHTML = '';
+  placeIds.forEach((pid) => {
+    const b = document.createElement('button');
+    b.className = 'place';
+    b.textContent = places[pid].name;
+    b.addEventListener('click', () => setPlace(pid));
+    placesEl.appendChild(b);
+  });
+
   function set(i) {
     index = (i + ids.length) % ids.length;
     [...list.children].forEach((c, k) => c.classList.toggle('active', k === index));
     onHighlight(ids[index]);
   }
+  function setPlace(pid) {
+    place = pid;
+    [...placesEl.children].forEach((b, k) => b.classList.toggle('active', placeIds[k] === place));
+  }
   function choose() {
-    onChoose(ids[index]);
+    onChoose(ids[index], place);
   }
 
   return {
     get visible() {
       return !root.hidden;
     },
-    open(currentId) {
+    open(currentId, currentPlace) {
       root.hidden = false;
+      setPlace(places[currentPlace] ? currentPlace : placeIds[0]);
       set(Math.max(0, ids.indexOf(currentId)));
     },
     close() {
@@ -85,6 +102,9 @@ export function createCarSelect({ onHighlight, onChoose }) {
     },
     move(d) {
       set(index + d);
+    },
+    nextPlace() {
+      setPlace(placeIds[(placeIds.indexOf(place) + 1) % placeIds.length]);
     },
     pick(i) {
       set(i);

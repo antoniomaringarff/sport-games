@@ -2,9 +2,12 @@
 import * as THREE from 'three';
 import { Sky } from 'three/addons/objects/Sky.js';
 
-export function createSky(scene, renderer) {
+/**
+ * opts: { elevation, azimuth (grados), fog: [color, cerca, lejos], sunColor, sunIntensity, exposure }
+ */
+export function createSky(scene, renderer, opts = {}) {
   const sky = new Sky();
-  sky.scale.setScalar(5000);
+  sky.scale.setScalar(18000);
   const u = sky.material.uniforms;
   u.turbidity.value = 6;
   u.rayleigh.value = 1.6;
@@ -13,7 +16,7 @@ export function createSky(scene, renderer) {
   scene.add(sky);
 
   // Sol de tarde (alto pero ya bajando)
-  const elevation = 32, azimuth = 210;
+  const { elevation = 32, azimuth = 210 } = opts;
   const sunDir = new THREE.Vector3().setFromSphericalCoords(
     1,
     THREE.MathUtils.degToRad(90 - elevation),
@@ -22,12 +25,12 @@ export function createSky(scene, renderer) {
   u.sunPosition.value.copy(sunDir);
 
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.75;
+  renderer.toneMappingExposure = opts.exposure ?? 0.75;
 
   const hemi = new THREE.HemisphereLight(0xcfe3ff, 0x5a6b3a, 1.1);
   scene.add(hemi);
 
-  const sun = new THREE.DirectionalLight(0xfff0dc, 2.6);
+  const sun = new THREE.DirectionalLight(opts.sunColor ?? 0xfff0dc, opts.sunIntensity ?? 2.6);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
   const S = 45;
@@ -36,10 +39,12 @@ export function createSky(scene, renderer) {
   sun.shadow.normalBias = 0.04;
   scene.add(sun, sun.target);
 
-  scene.fog = new THREE.Fog(0xbfd4e6, 180, 900);
+  const [fogColor, fogNear, fogFar] = opts.fog ?? [0xbfd4e6, 180, 900];
+  scene.fog = new THREE.Fog(fogColor, fogNear, fogFar);
 
   return {
     /** La luz del sol sigue al auto para que las sombras se vean nítidas cerca. */
+    exposure: opts.exposure ?? 0.75,
     follow(pos) {
       sun.target.position.copy(pos);
       sun.position.copy(pos).addScaledVector(sunDir, 150);

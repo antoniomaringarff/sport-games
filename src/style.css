@@ -130,7 +130,7 @@ html, body {
   font-size: 13px;
   opacity: 0.85;
 }
-#fps { position: absolute; right: 20px; top: 16px; font-size: 12px; opacity: 0.6; }
+#fps { position: absolute; right: 20px; bottom: 96px; font-size: 12px; opacity: 0.6; }
 
 @media (max-width: 700px) {
   #help { display: none; }
@@ -218,4 +218,45 @@ html, body {
   font-size: 10px;
   opacity: 0.55;
   pointer-events: none;
+}
+
+/* ---------- Minimapa ---------- */
+#minimap {
+  position: fixed;
+  right: 16px;
+  top: 16px;
+  border-radius: 14px;
+  background: rgba(12, 18, 28, 0.55);
+  pointer-events: none;
+}
+#next-corner {
+  position: fixed;
+  right: 16px;
+  top: calc(16px + 190px + 8px);
+  width: 190px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border-left: 6px solid var(--c, #ffcc33);
+  background: var(--panel);
+  pointer-events: none;
+  transition: background 0.1s;
+}
+#next-corner b { font-size: 34px; line-height: 1; color: var(--c, #ffcc33); }
+#next-corner span { display: block; font-weight: 800; font-size: 14px; }
+#next-corner small { font-size: 13px; opacity: 0.85; font-variant-numeric: tabular-nums; }
+#next-corner.near { background: color-mix(in srgb, var(--c) 45%, rgba(12, 18, 28, 0.8)); }
+@media (max-width: 700px) {
+  #minimap { width: 130px !important; height: 130px !important; }
+  #next-corner { top: calc(16px + 130px + 8px); width: 130px; }
+}
+@media (max-height: 560px) {
+  #minimap { width: 120px !important; height: 120px !important; }
+  #next-corner { top: calc(16px + 120px + 6px); width: 150px; padding: 5px 8px; }
+  #next-corner b { font-size: 24px; }
+  #next-corner span { font-size: 12px; }
+  #speed { font-size: 40px; }
+  #info { display: none; }
 }

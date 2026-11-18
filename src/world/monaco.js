@@ -246,7 +246,7 @@ function buildRoad(b, track) {
   b.scene.add(mesh);
   // Física: la misma malla como trimesh (sin escalones entre tramos)
   const pos = geo.attributes.position.array;
-  const desc = b.R.ColliderDesc.trimesh(new Float32Array(pos), new Uint32Array(geo.index.array)).setFriction(1);
+  const desc = b.R.ColliderDesc.trimesh(new Float32Array(pos), new Uint32Array(geo.index.array), b.R.TriMeshFlags.FIX_INTERNAL_EDGES_TWO_SIDED).setFriction(1);
   const col = b.world.createCollider(desc);
   b.physics.setSurface(col, 'asfalto');
 
@@ -318,22 +318,23 @@ function buildBarriers(b, track) {
       b.scene.add(m);
     }
   }
-  // Física: cajas finitas y altas a los dos lados (no se puede salir de la pista)
-  const stepK = 2;
-  for (let k = 0; k < track.n; k += stepK) {
-    const a = track.p[k], c = track.p[(k + stepK) % track.n];
-    const len = Math.hypot(c.x - a.x, c.z - a.z);
-    const yaw = Math.atan2(-(c.z - a.z), c.x - a.x);
-    const r = track.r[k];
-    for (const s of [-1, 1]) {
-      const off = s * (W + 0.25);
-      const desc = b.R.ColliderDesc.cuboid(len / 2 + 0.4, 2.5, 0.25)
-        .setTranslation((a.x + c.x) / 2 + r.x * off, (a.y + c.y) / 2 + 2, (a.z + c.z) / 2 + r.z * off)
-        .setRotation({ x: 0, y: Math.sin(yaw / 2), z: 0, w: Math.cos(yaw / 2) })
-        .setFriction(0.2)
-        .setRestitution(0.25);
-      b.world.createCollider(desc);
-    }
+  // Física: una pared continua por lado (sin escalones entre tramos), que no rebota
+  // y deja deslizar el auto. El "efecto" del golpe lo maneja vehicle.js (WALL en config.js).
+  const all = rangeIdx(track.n, 0, track.n - 1);
+  for (const s of [-1, 1]) {
+    const g = ribbon(track, all, () => [s * W, -0.6, s * W, 3.5], { closed: true });
+    const desc = b.R.ColliderDesc.trimesh(
+      new Float32Array(g.attributes.position.array),
+      new Uint32Array(g.index.array),
+      b.R.TriMeshFlags.FIX_INTERNAL_EDGES_TWO_SIDED,
+    )
+      .setFriction(0.05)
+      .setFrictionCombineRule(b.R.CoefficientCombineRule.Min)
+      .setRestitution(0)
+      .setRestitutionCombineRule(b.R.CoefficientCombineRule.Min);
+    const col = b.world.createCollider(desc);
+    b.physics.markWall(col);
+    g.dispose();
   }
 }
 

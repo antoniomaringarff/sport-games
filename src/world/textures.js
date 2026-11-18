@@ -36,7 +36,7 @@ function noise(g, size, r, base, spread, count, maxR = 2) {
 }
 
 export const SURFACE_TEXTURES = {
-  asfalto: () => canvasTexture('asfalto', 256, (g, s, r) => noise(g, s, r, '#4a4c50', 0.18, 9000, 2)),
+  asfalto: () => canvasTexture('asfalto', 256, (g, s, r) => noise(g, s, r, '#7a7c80', 0.16, 9000, 2)),
   adoquin: () =>
     canvasTexture('adoquin', 256, (g, s, r) => {
       g.fillStyle = '#5b5148';

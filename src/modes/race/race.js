@@ -1,5 +1,7 @@
 // Modo carrera: semáforo de largada, vueltas, sectores, mejor vuelta y "contramano".
 import { CARS } from '../../config.js';
+import { createMinimap } from './minimap.js';
+import { rotateVec } from '../driving/vehicle.js';
 
 const fmt = (t) => {
   if (t == null || !isFinite(t)) return '--:--.---';
@@ -20,7 +22,8 @@ export function createRace(track, place) {
     msg: document.getElementById('race-msg'),
   };
   const n = track.n;
-  const S = track.sectors; // índices donde empieza cada sector
+  const S = track.sectors;
+  const map = createMinimap(track); // índices donde empieza cada sector
 
   let carId = null;
   let phase = 'grid';   // grid → luces → carrera
@@ -68,6 +71,7 @@ export function createRace(track, place) {
   return {
     show(v) {
       root.hidden = !v;
+      map.show(v);
       if (!v) { el.lights.hidden = true; el.msg.hidden = true; }
     },
 
@@ -99,6 +103,8 @@ export function createRace(track, place) {
 
     update(dt, vehicle) {
       clock += dt;
+      const fwd = rotateVec(vehicle.body.rotation(), { x: 1, y: 0, z: 0 });
+      map.update(dt, idx, vehicle.body.translation(), fwd);
       if (msgT > 0 && (msgT -= dt) <= 0) el.msg.hidden = true;
 
       if (phase !== 'carrera') {

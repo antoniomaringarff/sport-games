@@ -1,6 +1,7 @@
 // Arranque del juego: renderer, lugares (mundos), elección de auto y bucle principal.
 import * as THREE from 'three';
-import { CARS, PHYSICS } from './config.js';
+import { CARS, PHYSICS, LIGHT, WALL } from './config.js';
+import { createSparks } from './world/sparks.js';
 import { createPhysics } from './core/physics.js';
 import { readDriving, justPressed, clearPressed } from './core/input.js';
 import { createSky } from './world/sky.js';
@@ -43,26 +44,27 @@ async function getWorld(name) {
   const scene = new THREE.Scene();
   let w;
   if (name === 'pista') {
-    const sky = createSky(scene, renderer);
+    const sky = createSky(scene, renderer, lightOpts(LIGHT.pista));
     const builder = buildTestTrack(physics, scene);
     w = { physics, scene, sky, builder, spawn: SPAWN, update() {} };
   } else {
-    // atardecer sobre el Mediterráneo (el sol cae al suroeste, sobre el mar)
-    const sky = createSky(scene, renderer, {
-      elevation: 16,
-      azimuth: 238,
-      sunColor: 0xffd2a1,
-      sunIntensity: 2.8,
-      exposure: 0.72,
-      fog: [0xd9c9b8, 600, 9000],
-    });
+    // tarde sobre el Mediterráneo (el sol viene del suroeste, del lado del mar)
+    const sky = createSky(scene, renderer, lightOpts(LIGHT.monaco));
     const data = await loadMonacoData();
     const m = await buildMonaco(physics, scene, data);
     w = { physics, scene, sky, builder: m.builder, spawn: m.spawn, spawnAt: m.spawnAt, track: m.track, update: m.update };
     w.race = createRace(m.track, 'monaco');
   }
+  w.sparks = createSparks(scene);
   worlds[name] = w;
   return w;
+}
+
+function lightOpts(L) {
+  return {
+    elevation: L.ELEVATION, azimuth: L.AZIMUTH, sunColor: L.SUN_COLOR, sunIntensity: L.SUN,
+    skyLight: L.SKY_LIGHT, exposure: L.EXPOSURE, fog: L.FOG,
+  };
 }
 
 // ---------- Auto ----------
@@ -213,14 +215,17 @@ function tick(dt) {
   let input = window.__autopilot ? window.__autopilot(vehicle, world) : readDriving();
   if (world.race) input = world.race.filterInput(input);
   acc += dt;
+  let hit = 0;
   while (acc >= STEP) {
     prev.pos.copy(curr.pos);
     prev.quat.copy(curr.quat);
     vehicle.update(input, STEP);
+    hit = Math.max(hit, vehicle.impact);
     world.physics.step();
     storeTransform(curr);
     acc -= STEP;
   }
+  wallEffects(hit, dt);
 
   // Interpolar entre los dos últimos pasos de física: movimiento suave en pantallas de 120 Hz
   const alpha = acc / STEP;
@@ -235,6 +240,21 @@ function tick(dt) {
   chase.update(model.group, vehicle, carId, dt);
   hud.update(vehicle, carId, chase.modeName, dt);
   world.sky.follow(model.group.position);
+}
+
+/** Chispas y sacudón de cámara al tocar una pared. */
+function wallEffects(hit, dt) {
+  const p = vehicle.contactPoint;
+  if (p) {
+    const v = vehicle.body.linvel();
+    if (hit > 2.5) {
+      if (WALL.SPARKS) world.sparks.emit(p, v, Math.min(70, Math.round(hit * 5)), 4);
+      chase.shake(Math.min(1, hit / 18) * WALL.SHAKE);
+    }
+    if (WALL.SPARKS && vehicle.scrape > 6) world.sparks.emit(p, v, Math.round(vehicle.scrape / 7), 1.5);
+    if (vehicle.scrape > 6) chase.shake(0.03);
+  }
+  world.sparks.update(dt);
 }
 
 function render() {

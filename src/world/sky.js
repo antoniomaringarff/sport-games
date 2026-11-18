@@ -27,7 +27,7 @@ export function createSky(scene, renderer, opts = {}) {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = opts.exposure ?? 0.75;
 
-  const hemi = new THREE.HemisphereLight(0xcfe3ff, 0x5a6b3a, 1.1);
+  const hemi = new THREE.HemisphereLight(0xcfe3ff, 0x7d7a6a, opts.skyLight ?? 1.1);
   scene.add(hemi);
 
   const sun = new THREE.DirectionalLight(opts.sunColor ?? 0xfff0dc, opts.sunIntensity ?? 2.6);

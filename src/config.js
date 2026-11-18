@@ -120,6 +120,39 @@ export const CARS = {
   },
 };
 
+// ---------- Luz de cada lugar ----------
+// ELEVATION: altura del sol en grados (5 = atardecer, 60 = mediodía)
+// AZIMUTH: de dónde viene el sol (180 = sur/mar, 270 = oeste)
+// EXPOSURE: brillo general de la imagen · SKY_LIGHT: luz del cielo que rellena las sombras
+export const LIGHT = {
+  monaco: {
+    ELEVATION: 38, AZIMUTH: 228, SUN_COLOR: 0xfff1dc, SUN: 3.2,
+    SKY_LIGHT: 1.7, EXPOSURE: 0.88, FOG: [0xcfdce6, 700, 9000],
+  },
+  pista: {
+    ELEVATION: 40, AZIMUTH: 210, SUN_COLOR: 0xfff0dc, SUN: 2.8,
+    SKY_LIGHT: 1.3, EXPOSURE: 0.8, FOG: [0xbfd4e6, 180, 900],
+  },
+};
+
+// ---------- Minimapa ----------
+export const MINIMAP = {
+  SIZE: 190,            // tamaño en pantalla (px)
+  LOOK_AHEAD: 260,      // cuántos metros de pista que viene se pintan de color
+  WARN_DISTANCE: 220,   // a cuántos metros aparece el cartel de la próxima curva
+  WARN_CLOSE: 70,       // a cuántos metros el cartel empieza a titilar
+};
+
+// ---------- Golpes contra guardrails y paredes ----------
+export const WALL = {
+  BOUNCE: 0.12,       // cuánto rebota (0 = nada). Más alto = más "pelota"
+  HIT_LOSS: 0.018,    // velocidad que se pierde por cada m/s de golpe de frente
+  SCRAPE: 0.15,       // cuánto frena raspando (por segundo)
+  ALIGN: 3.5,         // qué tan rápido el auto se acomoda paralelo a la pared
+  SPARKS: true,       // chispas al raspar
+  SHAKE: 0.5,         // cuánto tiembla la cámara en un golpe fuerte
+};
+
 // ---------- Ayudas de manejo ----------
 export const ASSISTS = {
   ANTI_FLIP: true,        // ayuda a que el auto no vuelque

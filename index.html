@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sport Games</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <canvas id="game"></canvas>
+
+    <div id="loading">Cargando…</div>
+
+    <section id="select" hidden>
+      <h1>Elegí tu auto</h1>
+      <div id="places"></div>
+      <div id="cards"></div>
+      <p class="hint">← → auto · ↑ ↓ lugar · Enter para elegir · o hacé clic</p>
+    </section>
+
+    <section id="hud" hidden>
+      <div id="speedo">
+        <span id="speed">0</span><small>km/h</small><b id="gear"></b>
+      </div>
+      <div id="info">
+        <div id="car-name"></div>
+        <div>Piso: <span id="surface"></span></div>
+        <div>Cámara: <span id="cam-mode"></span></div>
+      </div>
+      <div id="help">
+        W/↑ acelerar · S/↓ frenar/atrás · A/D doblar · Espacio freno de mano · R reubicar · C cámara (4 vistas) · 1/2/3 cambiar auto · Esc menú
+      </div>
+      <div id="fps"></div>
+    </section>
+
+    <section id="race" hidden>
+      <div class="row"><b data-lap>Grilla</b><span data-time>0:00.000</span></div>
+      <div class="row small"><span>Última</span><span data-last>--</span></div>
+      <div class="row small"><span>Mejor</span><span data-best>--</span></div>
+      <div class="sectors"><span>S1 <em data-sector>—</em></span><span>S2 <em data-sector>—</em></span><span>S3 <em data-sector>—</em></span></div>
+      <div class="row small hint">Enter: reiniciar carrera</div>
+    </section>
+    <div id="lights" hidden><i></i><i></i><i></i><i></i><i></i></div>
+    <div id="race-msg" hidden></div>
+    <div id="credits">Mapa © OpenStreetMap contributors · Modelos Kenney (CC0)</div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

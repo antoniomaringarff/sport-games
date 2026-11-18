@@ -1,0 +1,221 @@
+:root {
+  --ink: #f5f7fa;
+  --panel: rgba(12, 18, 28, 0.62);
+  --accent: #ffcc33;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: var(--ink);
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #9fb9cf;
+}
+#game {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
+[hidden] { display: none !important; }
+
+#loading {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  font-weight: 700;
+  background: #1d2b3a;
+}
+
+/* ---------- Elección de auto ---------- */
+#select {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 24px 16px 28px;
+  background: linear-gradient(transparent, rgba(8, 12, 20, 0.85) 35%);
+  text-align: center;
+}
+#select h1 {
+  margin: 0 0 16px;
+  font-size: clamp(26px, 4vw, 40px);
+  letter-spacing: 0.02em;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+}
+#cards {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.card {
+  position: relative;
+  width: 230px;
+  padding: 16px 18px 14px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-top: 6px solid var(--car);
+  border-radius: 14px;
+  background: var(--panel);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+}
+.card.active {
+  transform: translateY(-6px);
+  border-color: var(--accent);
+  border-top-color: var(--car);
+}
+.card h2 { margin: 0 0 10px; font-size: 20px; }
+.card .key {
+  position: absolute;
+  right: 12px;
+  top: 10px;
+  opacity: 0.5;
+  font-weight: 700;
+}
+.stat {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  align-items: center;
+  gap: 8px;
+  margin: 5px 0;
+  font-size: 13px;
+  text-transform: capitalize;
+}
+.stat i {
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--accent) calc(var(--v) * 20%), rgba(255, 255, 255, 0.15) 0);
+}
+.hint { margin: 14px 0 0; opacity: 0.75; font-size: 14px; }
+
+/* ---------- HUD ---------- */
+#hud { position: fixed; inset: 0; pointer-events: none; }
+#speedo {
+  position: absolute;
+  right: 24px;
+  bottom: 22px;
+  padding: 10px 18px;
+  border-radius: 14px;
+  background: var(--panel);
+  font-variant-numeric: tabular-nums;
+}
+#speed { font-size: 56px; font-weight: 800; line-height: 1; }
+#speedo small { margin-left: 6px; font-size: 16px; opacity: 0.8; }
+#gear { margin-left: 10px; font-size: 28px; color: var(--accent); }
+#info {
+  position: absolute;
+  left: 20px;
+  top: 18px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--panel);
+  font-size: 14px;
+  line-height: 1.5;
+}
+#car-name { font-weight: 800; font-size: 18px; }
+#help {
+  position: absolute;
+  left: 20px;
+  bottom: 22px;
+  max-width: calc(100vw - 260px);
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--panel);
+  font-size: 13px;
+  opacity: 0.85;
+}
+#fps { position: absolute; right: 20px; top: 16px; font-size: 12px; opacity: 0.6; }
+
+@media (max-width: 700px) {
+  #help { display: none; }
+  .card { width: 100%; }
+}
+
+/* ---------- Lugar ---------- */
+#places {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.place {
+  padding: 8px 16px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.place.active { border-color: var(--accent); color: var(--accent); }
+
+/* ---------- Carrera ---------- */
+#race {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 260px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: var(--panel);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+#race .row { display: flex; justify-content: space-between; gap: 16px; }
+#race .row b { font-size: 18px; }
+#race [data-time] { font-size: 22px; font-weight: 800; }
+#race .small { font-size: 13px; opacity: 0.85; }
+#race .sectors { display: flex; justify-content: space-between; gap: 8px; margin: 6px 0 4px; font-size: 13px; }
+#race em { font-style: normal; font-weight: 700; }
+#race em.good { color: #5ee07a; }
+#race em.bad { color: #ffb347; }
+#race .hint { opacity: 0.55; font-size: 11px; }
+#lights {
+  position: fixed;
+  top: 22%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: rgba(10, 10, 12, 0.85);
+  pointer-events: none;
+}
+#lights i {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #3a1010;
+  box-shadow: inset 0 0 8px #000;
+}
+#lights i.on { background: #ff2d2d; box-shadow: 0 0 18px #ff2d2d; }
+#race-msg {
+  position: fixed;
+  top: 36%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: clamp(28px, 5vw, 54px);
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 3px 18px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  white-space: nowrap;
+}
+#credits {
+  position: fixed;
+  right: 8px;
+  bottom: 2px;
+  font-size: 10px;
+  opacity: 0.55;
+  pointer-events: none;
+}

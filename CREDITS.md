@@ -1,0 +1,12 @@
+# Créditos y licencias
+
+| Asset | Autor / fuente | Licencia | Dónde se usa |
+|---|---|---|---|
+| Car Kit 3.1 (`race`, `truck`, `sedan-sports`) | [Kenney](https://kenney.nl/assets/car-kit) | CC0 1.0 | Modelos de F1, camioneta y auto de lujo (`public/assets/models/cars/`) |
+| Racing Kit 2.0 (tribunas, pórtico de largada, banderas, carteles, faroles) | [Kenney](https://kenney.nl/assets/racing-kit) | CC0 1.0 | `public/assets/models/racing/` |
+| Calles, costa, muelles y edificios de Mónaco | © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors | ODbL 1.0 | `public/assets/monaco/monaco.json` (datos derivados) |
+| Trazado del circuito de Mónaco | [bacinger/f1-circuits](https://github.com/bacinger/f1-circuits) | MIT | `public/assets/monaco/monaco.json` |
+| Relieve (Terrarium) | [Terrain Tiles en AWS Open Data](https://registry.opendata.aws/terrain-tiles/) (Mapzen; fuentes SRTM y otras) | Ver atribuciones de Terrain Tiles | `terrain.bin`, `far.bin` |
+
+Las texturas del piso, el agua y las fachadas son procedurales (generadas en código).
+El juego muestra la atribución de OpenStreetMap y Kenney abajo a la derecha.

@@ -1,0 +1,176 @@
+{
+  "f1": {
+    "model": "assets/models/cars/f1.glb",
+    "source": "assets-raw/car-kit/Models/GLB format/race.glb",
+    "author": "Kenney (Car Kit 3.1)",
+    "license": "CC0",
+    "wheels": {
+      "FL": {
+        "node": "wheel_FL",
+        "center": [
+          1.1,
+          0.516,
+          -0.859
+        ]
+      },
+      "FR": {
+        "node": "wheel_FR",
+        "center": [
+          1.1,
+          0.516,
+          0.859
+        ]
+      },
+      "RL": {
+        "node": "wheel_RL",
+        "center": [
+          -1.513,
+          0.516,
+          -0.859
+        ]
+      },
+      "RR": {
+        "node": "wheel_RR",
+        "center": [
+          -1.513,
+          0.516,
+          0.859
+        ]
+      }
+    },
+    "wheelRadius": 0.516,
+    "body": {
+      "min": [
+        -2.2,
+        0.172,
+        -1.031
+      ],
+      "max": [
+        2.2,
+        1.259,
+        1.031
+      ],
+      "size": [
+        4.4,
+        1.087,
+        2.063
+      ]
+    }
+  },
+  "pickup": {
+    "model": "assets/models/cars/pickup.glb",
+    "source": "assets-raw/car-kit/Models/GLB format/truck.glb",
+    "author": "Kenney (Car Kit 3.1)",
+    "license": "CC0",
+    "wheels": {
+      "FR": {
+        "node": "wheel_FR",
+        "center": [
+          1.47,
+          0.498,
+          0.706
+        ]
+      },
+      "FL": {
+        "node": "wheel_FL",
+        "center": [
+          1.47,
+          0.498,
+          -0.706
+        ]
+      },
+      "RR": {
+        "node": "wheel_RR",
+        "center": [
+          -1.221,
+          0.498,
+          0.706
+        ]
+      },
+      "RL": {
+        "node": "wheel_RL",
+        "center": [
+          -1.221,
+          0.498,
+          -0.706
+        ]
+      }
+    },
+    "wheelRadius": 0.498,
+    "body": {
+      "min": [
+        -2.45,
+        0.249,
+        -1.246
+      ],
+      "max": [
+        2.45,
+        2.159,
+        1.246
+      ],
+      "size": [
+        4.9,
+        1.91,
+        2.492
+      ]
+    }
+  },
+  "luxury": {
+    "model": "assets/models/cars/luxury.glb",
+    "source": "assets-raw/car-kit/Models/GLB format/sedan-sports.glb",
+    "author": "Kenney (Car Kit 3.1)",
+    "license": "CC0",
+    "wheels": {
+      "RR": {
+        "node": "wheel_RR",
+        "center": [
+          -1.121,
+          0.529,
+          0.75
+        ]
+      },
+      "RL": {
+        "node": "wheel_RL",
+        "center": [
+          -1.121,
+          0.529,
+          -0.75
+        ]
+      },
+      "FL": {
+        "node": "wheel_FL",
+        "center": [
+          1.209,
+          0.529,
+          -0.75
+        ]
+      },
+      "FR": {
+        "node": "wheel_FR",
+        "center": [
+          1.209,
+          0.529,
+          0.75
+        ]
+      }
+    },
+    "wheelRadius": 0.529,
+    "body": {
+      "min": [
+        -2.25,
+        0.265,
+        -1.147
+      ],
+      "max": [
+        2.25,
+        1.941,
+        1.147
+      ],
+      "size": [
+        4.5,
+        1.676,
+        2.294
+      ]
+    }
+  }
+}

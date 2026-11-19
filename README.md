@@ -28,6 +28,27 @@ Abrir http://localhost:5173, elegir auto (← →) y lugar (↑ ↓): **Mónaco 
 
 También anda con joystick (gatillos para acelerar/frenar, A = freno de mano).
 
+## Multijugador (dos o más compus en la misma red)
+
+En **una** compu (la que hace de servidor), en dos terminales:
+
+```bash
+npm run server
+```
+
+```bash
+npm run dev:lan
+```
+
+El servidor muestra la dirección para las demás compus, por ejemplo `http://192.168.68.50:5173`.
+Cada jugador abre el juego (esa dirección en las otras compus, `http://localhost:5173` en la del servidor), elige auto y **Mónaco – multijugador**.
+
+- La sala espera **15 segundos** desde que entra el primero; se pueden sumar hasta **10**.
+- Si son menos de 6, se completa con **bots** (los maneja la compu del primero que entró).
+- Carrera de **3 vueltas** con semáforo común, posiciones en vivo y resultados. Enter: otra carrera.
+- Todo se ajusta en `MULTI` de `src/config.js`. Para probar rápido: `LAPS=1 LOBBY=5 npm run server`.
+- Si la otra compu no conecta, revisá que el firewall de la Mac deje entrar conexiones a `node`.
+
 ## Ajustar cómo se maneja
 
 Todo está en [src/config.js](src/config.js), con comentarios. Cambiá un número y el juego se recarga solo.

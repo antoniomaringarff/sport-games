@@ -297,7 +297,7 @@ Desnivel real ~40 m: la subida a Casino y la bajada a la horquilla tienen que se
 - [ ] Probar vueltas reales con teclado y joystick; ajustar `WALL`, `LIGHT` y `MINIMAP` con el hijo.
 - [ ] Calle de boxes (aunque sea decorativa) y más carteles/tribunas en curvas clave.
 
-**Paso B — Multijugador y bots (carrera en Mónaco)**
+**Paso B — Multijugador y bots (carrera en Mónaco)** ✅ primera versión hecha
 
 *Por qué va acá:* necesita el modo carrera terminado (Paso A) y reusa dos cosas de ese paso: el **auto fantasma** (grabar y reproducir un auto que no manejás vos = lo mismo que mostrar a otro jugador) y el **piloto automático** que ya usamos para probar (la base de los bots). Conviene hacerlo **antes de la ciudad**, porque es sobre el circuito, y así la ciudad nace pensando en varios autos.
 
@@ -315,11 +315,15 @@ Desnivel real ~40 m: la subida a Casino y la bajada a la horquilla tienen que se
 - Después, con el Paso F, el mismo servidor se sube a internet.
 
 *Tareas:*
-- [ ] `src/modes/race/ai.js`: piloto automático de verdad (sirve también para rivales en modo un jugador).
-- [ ] `server/`: sala (máx. 10), cuenta regresiva de 15 s, relleno con bots, largada sincronizada, posiciones y resultados.
-- [ ] `src/net/`: conexión, envío/recepción de estado, interpolación, autos remotos con nombre arriba.
-- [ ] HUD: sala de espera, posición (P3/8), tabla en vivo, pantalla de resultados.
-- [ ] Probar entre dos computadoras en la misma red.
+- [x] `src/modes/race/ai.js`: bots que siguen la pista, frenan antes de las curvas (según la frenada y el agarre de su auto), van por su carril y se reubican si se traban.
+- [x] `server/`: sala (máx. 10), cuenta de 15 s, relleno con bots hasta 6, largada sincronizada, posiciones y resultados (los que no llegaron, ordenados por lo que recorrieron).
+- [x] `src/net/`: conexión, reloj compartido con el servidor, envío de posición 20 veces por segundo; autos remotos interpolados, con nombre arriba y cuerpo para chocarse.
+- [x] HUD: sala de espera con nombre, posición (P2/6) y tabla en vivo, pantalla de resultados, Enter para otra carrera.
+- [x] Probado con dos pestañas del navegador (dos clientes) y bots: sala, largada, posiciones, llegada y resultados.
+- [ ] **Probar entre dos computadoras de verdad** en la misma red (y revisar el firewall).
+- [ ] Si el anfitrión se va en medio de la carrera, los bots quedan quietos: pasarle los bots al siguiente jugador.
+- [ ] Sonido del motor de los demás autos (hoy solo suena el propio).
+- [ ] Bots más rápidos/variados y que se esquiven entre ellos.
 
 **Paso C — La ciudad completa (Fase 4)**
 - [ ] Importar todas las calles de OSM con cruces, rotondas, túneles y calles a distinto nivel (en `import-monaco.mjs`).

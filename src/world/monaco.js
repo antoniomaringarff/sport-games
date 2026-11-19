@@ -41,11 +41,17 @@ export async function buildMonaco(physics, scene, data) {
     return { x: p.x + r.x * lateral, y: p.y + 1.2, z: p.z + r.z * lateral, yaw: Math.atan2(-d.z, d.x) };
   };
 
+  // Lugares de la grilla de largada (0 = adelante a la izquierda), 8 m entre filas
+  function gridSpot(slot) {
+    return spawnAt(-(10 + slot * 4), slot % 2 ? 2.6 : -2.6);
+  }
+
   return {
     builder: b,
     track,
-    spawn: spawnAt(-14, -2.5),
+    spawn: gridSpot(0),
     spawnAt,
+    gridSpot,
     sunsetSky: true,
     update(dt) {
       sea.update(dt);
@@ -382,9 +388,9 @@ function buildStartLine(scene, track) {
   scene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex })));
   // marcas de la grilla de largada
   const mark = new THREE.MeshBasicMaterial({ color: 0xf2f2ee });
-  for (let s = 0; s < 6; s++) {
-    const k = track.n - 6 - s * 4;
-    const lat = s % 2 ? 2.5 : -2.5;
+  for (let s = 0; s < 10; s++) {
+    const k = track.n - 8 - s * 4;
+    const lat = s % 2 ? 2.6 : -2.6;
     const g2 = ribbon(track, [k, k + 1], () => [lat - 1.2, 0.05, lat + 1.2, 0.05]);
     scene.add(new THREE.Mesh(g2, mark));
   }

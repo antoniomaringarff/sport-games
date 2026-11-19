@@ -147,6 +147,18 @@ export const MINIMAP = {
   WARN_CLOSE: 70,       // a cuántos metros el cartel empieza a titilar
 };
 
+// ---------- Multijugador ----------
+export const MULTI = {
+  PORT: 8787,           // puerto del servidor (npm run server)
+  LOBBY_SECONDS: 15,    // cuánto se espera a que se sumen jugadores
+  MAX_PLAYERS: 10,      // máximo de autos en la carrera (personas + bots)
+  GRID_SIZE: 6,         // si hay menos personas, se completa con bots hasta este número
+  LAPS: 3,              // vueltas de la carrera
+  RESULTS_WAIT: 40,     // segundos que se espera a los demás después de que llega el primero
+  BOT_SKILL: [0.8, 0.95], // qué tan rápidos son los bots (1 = al límite)
+  SEND_HZ: 20,          // cuántas veces por segundo se manda la posición
+};
+
 // ---------- Sonido ----------
 // Tecla M: silenciar. PULSES = explosiones por vuelta del motor (cilindros / 2): más = más agudo y suave.
 // GRIT = qué tan "sucio"/ronco suena · BRIGHT = qué tan brillante (agudos)

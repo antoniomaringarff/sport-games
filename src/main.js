@@ -15,6 +15,7 @@ import { createHud, createCarSelect } from './modes/driving/hud.js';
 import { loadCarAssets, carAsset, physicsProfile } from './modes/driving/carAssets.js';
 import { createShowroom } from './modes/driving/showroom.js';
 import { createRace } from './modes/race/race.js';
+import { createMulti } from './modes/race/multi.js';
 
 // ---------- Render ----------
 const canvas = document.getElementById('game');
@@ -34,8 +35,9 @@ window.addEventListener('resize', () => {
 // ---------- Lugares ----------
 // Cada lugar tiene su propia escena y su propio mundo de física.
 const PLACES = {
-  monaco: { name: 'Mónaco – circuito' },
-  pista: { name: 'Pista de pruebas' },
+  monaco: { name: 'Mónaco – circuito', world: 'monaco' },
+  multi: { name: 'Mónaco – multijugador', world: 'monaco', multi: true },
+  pista: { name: 'Pista de pruebas', world: 'pista' },
 };
 const worlds = {};
 
@@ -53,7 +55,7 @@ async function getWorld(name) {
     const sky = createSky(scene, renderer, lightOpts(LIGHT.monaco));
     const data = await loadMonacoData();
     const m = await buildMonaco(physics, scene, data);
-    w = { physics, scene, sky, builder: m.builder, spawn: m.spawn, spawnAt: m.spawnAt, track: m.track, update: m.update };
+    w = { physics, scene, sky, builder: m.builder, spawn: m.spawn, spawnAt: m.spawnAt, gridSpot: m.gridSpot, track: m.track, update: m.update };
     w.race = createRace(m.track, 'monaco');
   }
   w.sparks = createSparks(scene);
@@ -202,7 +204,10 @@ const select = createCarSelect({
   async onChoose(id, place) {
     select.close();
     state = 'loading';
-    const changedPlace = place !== placeId || !world;
+    const P = PLACES[place];
+    const changedPlace = P.world !== PLACES[placeId]?.world || !world;
+    world?.multi?.leave();
+    document.body.classList.toggle('multi', !!P.multi);
     if (changedPlace) {
       loadingEl.textContent = `Cargando ${PLACES[place].name}…`;
       loadingEl.hidden = false;
@@ -210,11 +215,25 @@ const select = createCarSelect({
       removeCar();
       removeGhost();
       if (world?.race) world.race.show(false);
-      world = await getWorld(place);
+      world = await getWorld(P.world);
       placeId = place;
       loadingEl.hidden = true;
     }
-    if (world.race) {
+    if (P.multi) {
+      // multijugador: sala de espera y después la grilla con los demás y los bots
+      removeGhost();
+      spawnCar(id, world.gridSpot(0));
+      world.race.show(true);
+      world.multi ??= createMulti(world, {
+        vehicle: () => vehicle,
+        carId: () => carId,
+        teleport(spot) {
+          vehicle.teleport(spot);
+          syncTransforms();
+        },
+      });
+      world.multi.enter();
+    } else if (world.race) {
       // carrera: siempre se arranca desde la grilla
       spawnCar(id, world.spawn);
       world.race.show(true);
@@ -238,6 +257,8 @@ const select = createCarSelect({
 
 function openMenu() {
   state = 'menu';
+  world?.multi?.leave();
+  document.body.classList.remove('multi');
   carSound?.setActive(false);
   hud.show(false);
   world?.race?.show(false);
@@ -289,6 +310,7 @@ function tick(dt) {
     prev.quat.copy(curr.quat);
     vehicle.update(input, STEP);
     hit = Math.max(hit, vehicle.impact);
+    world.multi?.beforeStep(STEP);
     world.physics.step();
     storeTransform(curr);
     acc -= STEP;
@@ -306,6 +328,7 @@ function tick(dt) {
   world.builder.sync();
   world.update(dt);
   world.race?.update(dt, vehicle);
+  world.multi?.update(dt);
   updateGhost();
 
   chase.update(model.group, vehicle, carId, dt);
@@ -356,7 +379,9 @@ function handleKeys() {
     }
     syncTransforms();
   }
-  if (justPressed('Enter') && world.race) {
+  if (world.multi?.active) {
+    if (justPressed('Enter')) world.multi.again();
+  } else if (justPressed('Enter') && world.race) {
     // reiniciar la carrera desde la grilla
     vehicle.teleport(world.spawn);
     syncTransforms();
@@ -368,7 +393,7 @@ function handleKeys() {
   if (justPressed('KeyG')) ghostOn = !ghostOn;
   const ids = Object.keys(CARS);
   for (let i = 0; i < ids.length; i++) {
-    if (justPressed(`Digit${i + 1}`) && ids[i] !== carId) {
+    if (!world.multi?.active && justPressed(`Digit${i + 1}`) && ids[i] !== carId) {
       // cambiar de auto en el mismo lugar (para comparar)
       spawnCar(ids[i], world.race ? world.spawn : currentSpot());
       save(LAST_CAR_KEY, ids[i]);

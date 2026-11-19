@@ -44,6 +44,20 @@
     <div id="race-msg" hidden></div>
     <canvas id="minimap" hidden></canvas>
     <div id="next-corner" hidden><b data-arrow>↱</b><div><span data-kind></span><small data-dist></small></div></div>
+    <section id="lobby" hidden>
+      <h1>Sala de espera</h1>
+      <div class="count" id="lobby-count"></div>
+      <label>Tu nombre <input id="lobby-name" maxlength="16" placeholder="Jugador" /></label>
+      <ul id="lobby-list"></ul>
+      <p id="lobby-status"></p>
+      <p class="hint">Esc: volver al menú</p>
+    </section>
+    <section id="positions" hidden></section>
+    <section id="results" hidden>
+      <h1>Resultados</h1>
+      <ol id="results-list"></ol>
+      <p class="hint">Enter: otra carrera · Esc: menú</p>
+    </section>
     <div id="credits">Mapa © OpenStreetMap contributors · Modelos Kenney (CC0)</div>
 
     <script type="module" src="/src/main.js"></script>

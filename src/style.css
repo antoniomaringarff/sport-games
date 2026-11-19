@@ -261,3 +261,61 @@ html, body {
   #speed { font-size: 40px; }
   #info { display: none; }
 }
+
+/* ---------- Multijugador ---------- */
+#lobby, #results {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(420px, calc(100vw - 32px));
+  padding: 20px 22px;
+  border-radius: 16px;
+  background: rgba(10, 16, 26, 0.88);
+  text-align: center;
+}
+#lobby h1, #results h1 { margin: 0 0 6px; font-size: 26px; }
+#lobby .count { font-size: 54px; font-weight: 900; color: var(--accent); line-height: 1.1; min-height: 1em; }
+#lobby label { display: block; margin: 8px 0 12px; font-size: 14px; opacity: 0.9; }
+#lobby input {
+  margin-left: 8px;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink);
+  font: inherit;
+}
+#lobby ul, #results ol { list-style: none; margin: 0; padding: 0; text-align: left; }
+#lobby li, #results li {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 15px;
+}
+#lobby li:nth-child(odd), #results li:nth-child(odd) { background: rgba(255, 255, 255, 0.06); }
+#lobby li.me, #results li.me { outline: 2px solid var(--accent); }
+#lobby li span, #results li span { opacity: 0.75; }
+#results li em { font-style: normal; font-weight: 900; width: 2em; color: var(--accent); }
+#results li b { flex: 1; }
+#lobby-status { margin: 12px 0 0; font-size: 14px; opacity: 0.9; }
+#lobby-status code { background: rgba(255,255,255,0.12); padding: 1px 6px; border-radius: 4px; }
+#positions {
+  position: fixed;
+  left: 16px;
+  top: 16px;
+  min-width: 170px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--panel);
+  pointer-events: none;
+  font-size: 13px;
+}
+#positions .big { font-size: 34px; font-weight: 900; line-height: 1; }
+#positions .big small { font-size: 18px; opacity: 0.7; }
+#positions ol { margin: 6px 0 0; padding-left: 20px; }
+#positions li.me { color: var(--accent); font-weight: 800; }
+body.multi #info { display: none; }
+body.multi #race .hint { display: none; }

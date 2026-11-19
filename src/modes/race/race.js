@@ -39,6 +39,9 @@ export function createRace(track, place) {
   const GHOST_DT = 0.1;
   let rec = [], recNext = 0;
   let ghost = null, ghostI = 0;
+  // Carrera con vueltas (multijugador): cruces de la línea, llegada
+  let laps = null, crossings = 0, goClock = 0, finishTime = null, onFinish = null, waiting = false;
+  let goWall = null; // hora real de la largada (multijugador: igual para todos aunque un cuadro se atrase)
 
   const key = () => `sport-games:${place}:mejor:${carId}`;
   function loadBest() {
@@ -103,8 +106,12 @@ export function createRace(track, place) {
       if (!v) { el.lights.hidden = true; el.msg.hidden = true; }
     },
 
-    /** Arranca de nuevo desde la grilla. */
-    start(id) {
+    /**
+     * Arranca de nuevo desde la grilla.
+     * opts: { goIn: segundos hasta que se apagan las luces (null = esperar a go()),
+     *         laps: vueltas de la carrera (null = libre), onFinish(tiempo), idx: punto de largada }
+     */
+    start(id, opts = {}) {
       carId = id;
       loadBest();
       loadGhost();
@@ -114,21 +121,50 @@ export function createRace(track, place) {
       lightT = 0;
       lastOn = 0;
       goAt = 4 + 0.4 + Math.random() * 1.2; // 5 luces (0,8 s c/u) + espera al azar
-      idx = n - 14;
+      laps = opts.laps ?? null;
+      onFinish = opts.onFinish ?? null;
+      crossings = 0;
+      finishTime = null;
+      waiting = opts.goIn === null;
+      goWall = null;
+      if (opts.goIn != null) this.go(opts.goIn);
+      idx = opts.idx ?? n - 14;
       lap = 0;
       clock = 0;
       sector = 0;
       sectorTimes = [null, null, null];
       last = null;
       passed.clear();
-      el.lights.hidden = false;
+      el.lights.hidden = waiting;
       el.bulbs.forEach((b) => b.classList.remove('on'));
       el.msg.hidden = true;
       this.render(0);
     },
 
+    /** Programa la largada: las luces se apagan dentro de `secs` segundos. */
+    go(secs) {
+      waiting = false;
+      // las 5 luces se prenden en los 4 s anteriores; lightT negativo = todavía nada
+      goAt = Math.max(0.5, Math.min(4.4, secs));
+      lightT = goAt - secs;
+      goWall = performance.now() + secs * 1000;
+      el.lights.hidden = false;
+    },
+
+    /** Progreso en la carrera (para ordenar posiciones): metros desde la largada. */
+    progress() {
+      return ((crossings - 1) * n + idx) * track.step;
+    },
+    get finished() {
+      return finishTime;
+    },
+    get lapNumber() {
+      return Math.max(1, Math.min(crossings, laps ?? crossings));
+    },
+
     /** Durante el semáforo el auto no puede arrancar. */
     filterInput(input) {
+      if (phase === 'fin') return { ...input, throttle: 0, brake: 0.3 };
       if (phase === 'carrera') return input;
       return { ...input, throttle: 0, handbrake: true };
     },
@@ -139,13 +175,18 @@ export function createRace(track, place) {
       map.update(dt, idx, vehicle.body.translation(), fwd);
       if (msgT > 0 && (msgT -= dt) <= 0) el.msg.hidden = true;
 
-      if (phase !== 'carrera') {
-        lightT += dt;
-        const on = Math.min(5, Math.floor(lightT / 0.8) + 1);
-        if (on !== lastOn && lightT < goAt) { beep(520, 0.15); lastOn = on; }
+      if (phase === 'grid' || phase === 'luces') {
+        if (waiting) {
+          this.render(0);
+          return;
+        }
+        lightT = goWall ? goAt - (goWall - performance.now()) / 1000 : lightT + dt;
+        const on = lightT < 0 ? 0 : Math.min(5, Math.floor(lightT / 0.8) + 1);
+        if (on !== lastOn && on > 0 && lightT < goAt) { beep(520, 0.15); lastOn = on; }
         el.bulbs.forEach((b, i) => b.classList.toggle('on', i < on && lightT < goAt));
         if (lightT >= goAt) {
           phase = 'carrera';
+          goClock = clock;
           beep(880, 0.45, 0.3);
           lapStart = clock;
           sectorStart = clock;
@@ -167,6 +208,13 @@ export function createRace(track, place) {
 
       // ¿Cruzó la línea de llegada hacia adelante?
       if (prev > n - 60 && idx < 60) {
+        crossings++;
+        if (laps && crossings > laps && finishTime == null) {
+          finishTime = clock - goClock;
+          phase = 'fin';
+          say(`¡LLEGASTE! ${fmt(finishTime)}`, 3);
+          onFinish?.(finishTime);
+        }
         const lapTime = clock - lapStart;
         if (validLap && passed.size === 2) {
           sectorTimes[2] = clock - sectorStart;
@@ -196,6 +244,7 @@ export function createRace(track, place) {
         passed.clear();
       } else if (prev < 60 && idx > n - 60) {
         validLap = false; // cruzó la línea para atrás
+        crossings--;
       }
       // Sectores
       for (const s of [1, 2]) {
@@ -250,7 +299,9 @@ export function createRace(track, place) {
     },
 
     render(t) {
-      el.lap.textContent = lap ? `Vuelta ${lap}` : 'Grilla';
+      el.lap.textContent = laps
+        ? phase === 'fin' ? '¡Llegada!' : crossings ? `Vuelta ${Math.min(crossings, laps)}/${laps}` : 'Grilla'
+        : lap ? `Vuelta ${lap}` : 'Grilla';
       el.time.textContent = fmt(phase === 'carrera' && validLap ? t : phase === 'carrera' ? t : 0);
       el.last.textContent = fmt(last);
       el.best.textContent = `${fmt(best)}  ·  ${CARS[carId]?.name ?? ''}`;

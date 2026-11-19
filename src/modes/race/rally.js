@@ -1,6 +1,7 @@
 // Modo rally: etapa de punta a punta con cuenta regresiva, parciales, llegada, récord y fantasma.
 // Usa el mismo panel que la carrera de Mónaco y la misma forma de hablar con main.js.
-import { CARS } from '../../config.js';
+import { CARS, COPILOT } from '../../config.js';
+import { createCodriver } from './codriver.js';
 import { createMinimap } from './minimap.js';
 import { beep } from '../../core/audio.js';
 import { rotateVec } from '../driving/vehicle.js';
@@ -27,6 +28,7 @@ export function createRally(track, finishIdx, place = 'rally') {
   const n = track.n;
   const splits = track.splits;
   const map = createMinimap(track);
+  const codriver = createCodriver(track, { enabled: COPILOT.RALLY, finishIdx });
 
   let carId = null;
   let phase = 'grid';
@@ -86,6 +88,7 @@ export function createRally(track, finishIdx, place = 'rally') {
       rec = [];
       recNext = 0;
       ghostI = 0;
+      codriver.reset();
       el.lights.hidden = false;
       el.bulbs.forEach((x) => x.classList.remove('on'));
       el.msg.hidden = true;
@@ -144,6 +147,7 @@ export function createRally(track, finishIdx, place = 'rally') {
       const elapsed = clock - goClock + penalty;
 
       if (phase === 'carrera') {
+        codriver.update(idx, speed);
         // parciales
         splits.forEach((k, i) => {
           if (splitTimes[i] == null && prev < k && idx >= k) {
@@ -197,6 +201,8 @@ export function createRally(track, finishIdx, place = 'rally') {
         say(`Penalización +${PENALTY} s`, 1.5);
       }
     },
+
+    codriver,
 
     resetPoint() {
       return idx;

@@ -331,7 +331,7 @@ Desnivel real ~40 m: la subida a Casino y la bajada a la horquilla tienen que se
 - [x] Ripio, banquinas, postes, pinos/arbustos/piedras (los cercanos se chocan), arcos de largada/parciales/llegada, Mónaco y el mar de fondo.
 - [x] Modo rally: semáforo, 3 parciales contra el récord, llegada, récord y fantasma por auto, +5 s por reubicar, no se puede cortar entre horquillas.
 - [x] Minimapa y cartel de próxima curva (sirven de "copiloto") para caminos abiertos.
-- [ ] Copiloto con voz ("derecha 3, horquilla izquierda…") usando las curvas del minimapa.
+- [x] Copiloto con voz (Web Speech, español): notas de ruta automáticas 1–6 / horquilla, "larga", encadenadas con "y", cantadas ~3 s antes según la velocidad; tecla V. También disponible en Mónaco (`COPILOT.CIRCUIT`).
 - [ ] Más etapas (bajada, de noche, con niebla) y polvo detrás del auto.
 - [ ] Rally multijugador (largadas cada 30 s contra el reloj).
 

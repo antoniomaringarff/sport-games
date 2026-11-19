@@ -10,6 +10,7 @@ import { buildTestTrack, SPAWN } from './world/testTrack.js';
 import { loadMonacoData, buildMonaco } from './world/monaco.js';
 import { loadRallyData, buildRally } from './world/rally.js';
 import { createRally } from './modes/race/rally.js';
+import { toggleCodriverVoice } from './modes/race/codriver.js';
 import { Vehicle, yawOf } from './modes/driving/vehicle.js';
 import { createCarModel } from './modes/driving/carModel.js';
 import { ChaseCamera } from './modes/driving/camera.js';
@@ -401,6 +402,7 @@ function handleKeys() {
   if (justPressed('KeyC', 'Pad2')) chase.nextMode();
   if (justPressed('KeyM')) toggleMute();
   if (justPressed('KeyG')) ghostOn = !ghostOn;
+  if (justPressed('KeyV')) toggleCodriverVoice();
   const ids = Object.keys(CARS);
   for (let i = 0; i < ids.length; i++) {
     if (!world.multi?.active && justPressed(`Digit${i + 1}`) && ids[i] !== carId) {

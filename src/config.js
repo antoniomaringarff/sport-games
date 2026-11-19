@@ -183,6 +183,19 @@ export const MINIMAP = {
   WARN_CLOSE: 70,       // a cuántos metros el cartel empieza a titilar
 };
 
+// ---------- Copiloto (voz que canta las curvas) ----------
+// Tecla V: prender / apagar la voz.
+// Las curvas se numeran como en el rally de verdad: 1 = muy cerrada ... 6 = casi recta.
+export const COPILOT = {
+  RALLY: true,          // copiloto en el rally
+  CIRCUIT: false,       // copiloto en el circuito de Mónaco
+  SECONDS_AHEAD: 3.2,   // cuántos segundos antes de la curva la canta
+  MIN_DISTANCE: 70,     // nunca la canta a menos de esto (m)
+  CHAIN: 45,            // si la siguiente curva empieza a menos de esto, dice "y ..."
+  RATE: 1.15,           // velocidad de la voz
+  VOLUME: 1,
+};
+
 // ---------- Multijugador ----------
 export const MULTI = {
   PORT: 8787,           // puerto del servidor (npm run server)

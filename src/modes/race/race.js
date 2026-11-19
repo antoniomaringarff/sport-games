@@ -1,5 +1,6 @@
 // Modo carrera: semáforo de largada, vueltas, sectores, mejor vuelta y "contramano".
-import { CARS } from '../../config.js';
+import { CARS, COPILOT } from '../../config.js';
+import { createCodriver } from './codriver.js';
 import { createMinimap } from './minimap.js';
 import { beep } from '../../core/audio.js';
 import { rotateVec } from '../driving/vehicle.js';
@@ -24,7 +25,8 @@ export function createRace(track, place) {
   };
   const n = track.n;
   const S = track.sectors;
-  const map = createMinimap(track); // índices donde empieza cada sector
+  const map = createMinimap(track);
+  const codriver = createCodriver(track, { enabled: COPILOT.CIRCUIT }); // índices donde empieza cada sector
 
   let carId = null;
   let phase = 'grid';   // grid → luces → carrera
@@ -113,6 +115,7 @@ export function createRace(track, place) {
      */
     start(id, opts = {}) {
       carId = id;
+      codriver.reset();
       loadBest();
       loadGhost();
       rec = [];
@@ -257,6 +260,7 @@ export function createRace(track, place) {
       }
 
       if (validLap) record(clock - lapStart, vehicle);
+      codriver.update(idx, Math.hypot(vehicle.body.linvel().x, vehicle.body.linvel().z));
 
       // Contramano
       const v = vehicle.body.linvel();

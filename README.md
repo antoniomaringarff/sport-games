@@ -22,6 +22,7 @@ Abrir http://localhost:5173, elegir auto (← →, o 1 a 4) y lugar (↑ ↓): *
 | C | Cambiar cámara: afuera cerca, afuera lejos, conductor, frente |
 | M | Silenciar / activar el sonido |
 | G | Mostrar / ocultar el auto fantasma (tu mejor vuelta) |
+| V | Prender / apagar la voz del copiloto |
 | 1 / 2 / 3 | Cambiar de auto en el lugar |
 | Enter (en Mónaco) | Reiniciar la carrera desde la grilla |
 | Esc | Volver al menú |
@@ -78,6 +79,8 @@ Etapa de 5,2 km por caminos reales (Route de la Turbie → Avenue du Cap d'Ail �
 Largada con semáforo, 3 parciales comparados con tu récord, llegada en el mirador, fantasma de tu mejor bajada.
 R vuelve al camino con **+5 s** de penalización. No se puede cortar camino entre horquillas.
 El **auto de rally** (tecla 4) es 4x4 y agarra mucho más en tierra que los demás.
+
+**Copiloto**: una voz en español canta cada curva unos 3 segundos antes, como en el rally de verdad: "derecha 3", "horquilla izquierda", "izquierda 4 y derecha 2 larga" (1 = muy cerrada … 6 = casi recta). Tecla V para callarlo. En `COPILOT` de `src/config.js` se puede prender también en el circuito de Mónaco.
 
 Se regenera con `node tools/import-rally.mjs` (usa `assets-raw/rally/osm/turbie.json` y el relieve de `assets-raw/monaco/dem`).
 

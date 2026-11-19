@@ -16,6 +16,7 @@ export function createMinimap(track) {
   const ctx = canvas.getContext('2d');
   const n = track.n;
   const step = track.step;
+  const closed = track.closed !== false;
 
   // --- Ajustar la pista al cuadro ---
   let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
@@ -35,7 +36,7 @@ export function createMinimap(track) {
   const mz = (z) => oz + (z - minZ) * scale;
 
   // --- Curvas: dónde empieza cada una, para qué lado y qué tan cerrada ---
-  const corners = findCorners(track);
+  const corners = findCorners(track, closed);
   const kindAt = new Array(n).fill(null);
   for (const c of corners) for (let k = c.from; ; k = (k + 1) % n) { kindAt[k] = c.kind; if (k === c.to) break; }
 
@@ -46,12 +47,13 @@ export function createMinimap(track) {
   const path = (g, from, len) => {
     g.beginPath();
     for (let j = 0; j <= len; j++) {
+      if (!closed && from + j >= n) break;
       const p = track.p[(from + j) % n];
       j ? g.lineTo(mx(p.x), mz(p.z)) : g.moveTo(mx(p.x), mz(p.z));
     }
   };
   b.lineJoin = b.lineCap = 'round';
-  path(b, 0, n);
+  path(b, 0, closed ? n : n - 1);
   b.strokeStyle = 'rgba(0,0,0,0.55)';
   b.lineWidth = 9 * dpr;
   b.stroke();
@@ -65,9 +67,9 @@ export function createMinimap(track) {
     b.lineWidth = 4 * dpr;
     b.stroke();
   }
-  // línea de largada
-  {
-    const p = track.p[0], r = track.r[0];
+  // línea de largada (y de llegada si es un camino abierto)
+  for (const k of closed ? [0] : [0, n - 1]) {
+    const p = track.p[k], r = track.r[k];
     b.beginPath();
     b.moveTo(mx(p.x - r.x * 14), mz(p.z - r.z * 14));
     b.lineTo(mx(p.x + r.x * 14), mz(p.z + r.z * 14));
@@ -99,6 +101,7 @@ export function createMinimap(track) {
       const ahead = Math.round(MINIMAP.LOOK_AHEAD / step);
       ctx.lineWidth = 5 * dpr;
       for (let j = 0; j < ahead; j++) {
+        if (!closed && idx + j + 1 >= n) break;
         const k = (idx + j) % n, k2 = (k + 1) % n;
         const a = track.p[k], c = track.p[k2];
         ctx.globalAlpha = 1 - j / ahead * 0.6;
@@ -132,6 +135,7 @@ export function createMinimap(track) {
       // Cartel de la próxima curva
       let next = null, dist = Infinity;
       for (const c of corners) {
+        if (!closed && c.to < idx) continue; // ya pasó
         const d = ((c.from - idx + n) % n) * step;
         const inside = ((idx - c.from + n) % n) <= ((c.to - c.from + n) % n);
         if (inside) { next = c; dist = 0; break; }
@@ -154,7 +158,7 @@ export function createMinimap(track) {
 }
 
 /** Busca las curvas: tramos con curvatura alta, con su lado y su radio más cerrado. */
-function findCorners(track) {
+function findCorners(track, closed = true) {
   const n = track.n, k = track.curvature;
   const TH = 1 / 150;
   const out = [];
@@ -167,7 +171,7 @@ function findCorners(track) {
     if (Math.abs(k[i]) <= TH) continue;
     const dir = Math.sign(k[i]);
     let j = i, maxC = 0, len = 0;
-    while (len < n && Math.abs(k[j]) > TH * 0.6 && Math.sign(k[j]) === dir) {
+    while (len < n && Math.abs(k[j]) > TH * 0.6 && Math.sign(k[j]) === dir && (closed || j >= i)) {
       maxC = Math.max(maxC, Math.abs(k[j]));
       j = (j + 1) % n;
       len++;

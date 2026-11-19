@@ -8,6 +8,8 @@ import { readDriving, justPressed, clearPressed } from './core/input.js';
 import { createSky } from './world/sky.js';
 import { buildTestTrack, SPAWN } from './world/testTrack.js';
 import { loadMonacoData, buildMonaco } from './world/monaco.js';
+import { loadRallyData, buildRally } from './world/rally.js';
+import { createRally } from './modes/race/rally.js';
 import { Vehicle, yawOf } from './modes/driving/vehicle.js';
 import { createCarModel } from './modes/driving/carModel.js';
 import { ChaseCamera } from './modes/driving/camera.js';
@@ -37,6 +39,7 @@ window.addEventListener('resize', () => {
 const PLACES = {
   monaco: { name: 'Mónaco – circuito', world: 'monaco' },
   multi: { name: 'Mónaco – multijugador', world: 'monaco', multi: true },
+  rally: { name: 'Rally – Tête de Chien', world: 'rally' },
   pista: { name: 'Pista de pruebas', world: 'pista' },
 };
 const worlds = {};
@@ -46,7 +49,13 @@ async function getWorld(name) {
   const physics = await createPhysics();
   const scene = new THREE.Scene();
   let w;
-  if (name === 'pista') {
+  if (name === 'rally') {
+    const sky = createSky(scene, renderer, lightOpts(LIGHT.rally));
+    const data = await loadRallyData();
+    const m = buildRally(physics, scene, data);
+    w = { physics, scene, sky, builder: m.builder, spawn: m.spawn, spawnAt: m.spawnAt, track: m.track, update: m.update };
+    w.race = createRally(m.track, m.finishIdx);
+  } else if (name === 'pista') {
     const sky = createSky(scene, renderer, lightOpts(LIGHT.pista));
     const builder = buildTestTrack(physics, scene);
     w = { physics, scene, sky, builder, spawn: SPAWN, update() {} };
@@ -366,6 +375,7 @@ function handleKeys() {
     if (justPressed('Digit1')) select.pick(0);
     if (justPressed('Digit2')) select.pick(1);
     if (justPressed('Digit3')) select.pick(2);
+    if (justPressed('Digit4')) select.pick(3);
     return;
   }
   if (state !== 'driving') return;

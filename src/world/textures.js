@@ -57,6 +57,21 @@ export const SURFACE_TEXTURES = {
       }
     }),
   tierra: () => canvasTexture('tierra', 256, (g, s, r) => noise(g, s, r, '#8a6a46', 0.3, 7000, 3)),
+  ripio: () =>
+    canvasTexture('ripio', 256, (g, s, r) => {
+      noise(g, s, r, '#a8977a', 0.22, 6000, 2);
+      for (let i = 0; i < 900; i++) {
+        const l = 50 + r() * 35;
+        g.fillStyle = `hsl(${30 + r() * 15}, ${8 + r() * 10}%, ${l}%)`;
+        g.beginPath();
+        g.arc(r() * s, r() * s, 0.8 + r() * 2.2, 0, Math.PI * 2);
+        g.fill();
+      }
+      // huellas de ruedas
+      g.fillStyle = 'rgba(80,65,45,0.18)';
+      g.fillRect(0, s * 0.28, s, s * 0.1);
+      g.fillRect(0, s * 0.62, s, s * 0.1);
+    }),
   arena: () => canvasTexture('arena', 256, (g, s, r) => noise(g, s, r, '#e2cf9c', 0.12, 9000, 2)),
   nieve: () => canvasTexture('nieve', 256, (g, s, r) => noise(g, s, r, '#eef3f8', 0.07, 5000, 3)),
   pasto: () => canvasTexture('pasto', 256, (g, s, r) => noise(g, s, r, '#5c8a3e', 0.25, 12000, 2)),

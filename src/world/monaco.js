@@ -61,12 +61,14 @@ export async function buildMonaco(physics, scene, data) {
 
 // ---------------------------------------------------------------------------
 // Pista: puntos, direcciones y laterales
-function makeTrack(c) {
+/** closed = false para caminos con principio y fin (rally) */
+export function makeTrack(c, closed = true) {
   const n = c.points.length;
   const p = c.points.map(([x, y, z]) => new THREE.Vector3(x, y, z));
   const d = [], r = [];
   for (let i = 0; i < n; i++) {
-    const a = p[(i - 1 + n) % n], bb = p[(i + 1) % n];
+    const a = closed ? p[(i - 1 + n) % n] : p[Math.max(0, i - 1)];
+    const bb = closed ? p[(i + 1) % n] : p[Math.min(n - 1, i + 1)];
     const dir = new THREE.Vector3(bb.x - a.x, 0, bb.z - a.z).normalize();
     d.push(dir);
     r.push(new THREE.Vector3(-dir.z, 0, dir.x)); // derecha
@@ -76,11 +78,11 @@ function makeTrack(c) {
     for (const [a, bb] of list) for (let k = a; ; k = (k + 1) % n) { f[k] = true; if (k === bb) break; }
     return f;
   };
-  return { ...c, n, p, d, r, isTunnel: inRun(c.tunnel), isKerb: inRun(c.kerbs) };
+  return { ...c, closed, n, p, d, r, tunnel: c.tunnel ?? [], kerbs: c.kerbs ?? [], isTunnel: inRun(c.tunnel ?? []), isKerb: inRun(c.kerbs ?? []) };
 }
 
 /** Indices de un tramo [a, b] de la vuelta (puede pasar por el 0). */
-function rangeIdx(n, a, b) {
+export function rangeIdx(n, a, b) {
   const out = [];
   for (let k = a; ; k = (k + 1) % n) { out.push(k); if (k === b) break; }
   return out;
@@ -90,7 +92,7 @@ function rangeIdx(n, a, b) {
  * Cinta a lo largo de la pista.
  * idx: índices de puntos; side(i) => [lateralA, alturaA, lateralB, alturaB]
  */
-function ribbon(track, idx, side, { closed = false, uScale = 10 } = {}) {
+export function ribbon(track, idx, side, { closed = false, uScale = 10 } = {}) {
   const pos = [], uv = [], index = [];
   let u = 0;
   const list = closed ? [...idx, idx[0]] : idx;
@@ -114,7 +116,7 @@ function ribbon(track, idx, side, { closed = false, uScale = 10 } = {}) {
 }
 
 // ---------------------------------------------------------------------------
-function buildTerrain(b, g, heights) {
+export function buildTerrain(b, g, heights, surface = 'pasto') {
   const { n, cell, size, x0, z0 } = g;
   // Malla visible
   const geo = gridGeometry(n, cell, x0, z0, heights, (h, slope) => {
@@ -133,17 +135,19 @@ function buildTerrain(b, g, heights) {
     .setTranslation(x0 + size / 2, 0, z0 + size / 2)
     .setFriction(0.8);
   const col = b.world.createCollider(desc);
-  b.physics.setSurface(col, 'pasto');
+  b.physics.setSurface(col, surface);
 }
 
-function buildFar(scene, g, heights, nearMeta) {
+/** holes: zonas (metas de terreno cercano) donde el fondo se esconde debajo */
+export function buildFar(scene, g, heights, holes) {
+  holes = [holes].flat();
   const { n, cell, x0, z0 } = g;
   const h = heights.slice();
   const m = 60;
   for (let j = 0; j < n; j++) {
     for (let i = 0; i < n; i++) {
       const x = x0 + i * cell, z = z0 + j * cell;
-      if (x > nearMeta.x0 + m && x < nearMeta.x0 + nearMeta.size - m && z > nearMeta.z0 + m && z < nearMeta.z0 + nearMeta.size - m) {
+      if (holes.some((nm) => x > nm.x0 + m && x < nm.x0 + nm.size - m && z > nm.z0 + m && z < nm.z0 + nm.size - m)) {
         h[j * n + i] = -40; // debajo del terreno cercano
       }
     }
@@ -161,7 +165,7 @@ function buildFar(scene, g, heights, nearMeta) {
   scene.add(mesh);
 }
 
-function gridGeometry(n, cell, x0, z0, h, colorOf) {
+export function gridGeometry(n, cell, x0, z0, h, colorOf) {
   const pos = new Float32Array(n * n * 3);
   const col = new Float32Array(n * n * 3);
   for (let j = 0; j < n; j++) {
@@ -192,7 +196,7 @@ function gridGeometry(n, cell, x0, z0, h, colorOf) {
 }
 
 // ---------------------------------------------------------------------------
-function buildSea(scene) {
+export function buildSea(scene) {
   const size = 512;
   const c = document.createElement('canvas');
   c.width = c.height = size;
@@ -284,7 +288,7 @@ function buildKerbs(scene, track) {
   }
 }
 
-function barrierTexture() {
+export function barrierTexture() {
   const c = document.createElement('canvas');
   c.width = 64; c.height = 64;
   const g = c.getContext('2d');
@@ -419,7 +423,7 @@ function windowTexture() {
   return t;
 }
 
-function buildBuildings(scene, list) {
+export function buildBuildings(scene, list) {
   const geos = [];
   const color = new THREE.Color();
   list.forEach((bd, n) => {
@@ -547,7 +551,7 @@ async function buildProps(scene, track) {
 }
 
 /** Centra el modelo en x/z y lo apoya en y=0. */
-function normalizeProp(root) {
+export function normalizeProp(root) {
   const box = new THREE.Box3().setFromObject(root);
   const c = box.getCenter(new THREE.Vector3());
   const g = new THREE.Group();

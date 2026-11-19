@@ -10,7 +10,7 @@ npm install
 npm run dev
 ```
 
-Abrir http://localhost:5173, elegir auto (← →) y lugar (↑ ↓): **Mónaco – circuito** o **Pista de pruebas**. Enter para arrancar.
+Abrir http://localhost:5173, elegir auto (← →, o 1 a 4) y lugar (↑ ↓): **Mónaco – circuito**, **Mónaco – multijugador**, **Rally – Tête de Chien** o **Pista de pruebas**. Enter para arrancar.
 
 | Tecla | Acción |
 |---|---|
@@ -71,6 +71,15 @@ node tools/convert-models.mjs
 Eso genera `public/assets/models/cars/<id>.glb` y `cars.json` (posición y radio de las ruedas, tamaño de la carrocería), que usa la física.
 Las ruedas se detectan por nombre (`wheel`, `tire`, `rueda`) y tienen que ser 4 objetos separados.
 Para `.fbx` hace falta [FBX2glTF](https://github.com/godotengine/FBX2glTF/releases) instalado.
+
+## Rally – Tête de Chien
+
+Etapa de 5,2 km por caminos reales (Route de la Turbie → Avenue du Cap d'Ail → Route de la Tête de Chien), de 216 m a 542 m, en ripio.
+Largada con semáforo, 3 parciales comparados con tu récord, llegada en el mirador, fantasma de tu mejor bajada.
+R vuelve al camino con **+5 s** de penalización. No se puede cortar camino entre horquillas.
+El **auto de rally** (tecla 4) es 4x4 y agarra mucho más en tierra que los demás.
+
+Se regenera con `node tools/import-rally.mjs` (usa `assets-raw/rally/osm/turbie.json` y el relieve de `assets-raw/monaco/dem`).
 
 ## Mónaco
 

@@ -325,6 +325,16 @@ Desnivel real ~40 m: la subida a Casino y la bajada a la horquilla tienen que se
 - [ ] Sonido del motor de los demás autos (hoy solo suena el propio).
 - [ ] Bots más rápidos/variados y que se esquiven entre ellos.
 
+**Rally en la Tête de Chien** ✅ primera versión hecha (pedido del 19/11)
+- [x] Auto de rally (Kenney `hatchback-sports`): 4x4, liviano, suspensión larga, mucho agarre en tierra, freno de mano fuerte.
+- [x] Etapa de 5,2 km por caminos reales de OSM (Route de la Turbie → Avenue du Cap d'Ail → Route de la Tête de Chien), 216 → 542 m, 4 horquillas.
+- [x] Ripio, banquinas, postes, pinos/arbustos/piedras (los cercanos se chocan), arcos de largada/parciales/llegada, Mónaco y el mar de fondo.
+- [x] Modo rally: semáforo, 3 parciales contra el récord, llegada, récord y fantasma por auto, +5 s por reubicar, no se puede cortar entre horquillas.
+- [x] Minimapa y cartel de próxima curva (sirven de "copiloto") para caminos abiertos.
+- [ ] Copiloto con voz ("derecha 3, horquilla izquierda…") usando las curvas del minimapa.
+- [ ] Más etapas (bajada, de noche, con niebla) y polvo detrás del auto.
+- [ ] Rally multijugador (largadas cada 30 s contra el reloj).
+
 **Paso C — La ciudad completa (Fase 4)**
 - [ ] Importar todas las calles de OSM con cruces, rotondas, túneles y calles a distinto nivel (en `import-monaco.mjs`).
 - [ ] **Paseo libre**: el circuito se abre a la ciudad (sin vallas, con cruces); el **modo carrera** vuelve a cerrar todo.
@@ -334,7 +344,8 @@ Desnivel real ~40 m: la subida a Casino y la bajada a la horquilla tienen que se
 - [ ] Rendimiento: chunks, LOD, instancing (medir en la notebook del hijo).
 
 **Paso D — Las dos montañas (Fase 5)**
-- [ ] Ruta de cornisa hacia Tête de Chien (mirador) y serpentina a Mont Agel (ripio + nieve arriba).
+- [x] Tête de Chien: hecha como etapa de rally (ver arriba).
+- [ ] Mont Agel: serpentina con nieve arriba (para el snowboard).
 - [ ] Estacionamiento del centro de ski (futura entrada al snowboard).
 - [ ] Distancias comprimidas para que el viaje dure 2–3 minutos.
 
@@ -350,6 +361,8 @@ Desnivel real ~40 m: la subida a Casino y la bajada a la horquilla tienen que se
 **Después:** snowboard (desde Mont Agel), surf (desde Larvotto), controles táctiles, tránsito, día/noche.
 
 ### 5.3 Deuda técnica conocida
+- En pruebas largas del rally, dos veces el cuerpo físico del auto apareció *deshabilitado* (quedaba flotando). No se encontró la causa; `vehicle.js` lo reactiva y avisa en la consola. Investigar si vuelve a aparecer.
+- `import-rally.mjs` repite funciones de `import-monaco.mjs` (proyección, relieve, curvas): juntarlas en `tools/lib/`.
 - El relieve viene de datos de ~30 m: algunas pendientes del circuito quedan suavizadas.
 - Edificios sin colisión (hoy no importa porque los guardrails contienen el auto).
 - `window.__autopilot` y `__game.advance()` son ganchos de prueba: dejarlos, pero no usarlos en el juego.

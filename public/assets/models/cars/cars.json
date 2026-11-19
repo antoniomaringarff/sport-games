@@ -172,5 +172,63 @@
         2.294
       ]
     }
+  },
+  "rally": {
+    "model": "assets/models/cars/rally.glb",
+    "source": "assets-raw/car-kit/Models/GLB format/hatchback-sports.glb",
+    "author": "Kenney (Car Kit 3.1)",
+    "license": "CC0",
+    "wheels": {
+      "FR": {
+        "node": "wheel_FR",
+        "center": [
+          1.201,
+          0.432,
+          0.611
+        ]
+      },
+      "FL": {
+        "node": "wheel_FL",
+        "center": [
+          1.201,
+          0.432,
+          -0.611
+        ]
+      },
+      "RR": {
+        "node": "wheel_RR",
+        "center": [
+          -1.129,
+          0.432,
+          0.611
+        ]
+      },
+      "RL": {
+        "node": "wheel_RL",
+        "center": [
+          -1.129,
+          0.432,
+          -0.611
+        ]
+      }
+    },
+    "wheelRadius": 0.432,
+    "body": {
+      "min": [
+        -2.05,
+        0.216,
+        -0.935
+      ],
+      "max": [
+        2.05,
+        1.582,
+        0.935
+      ],
+      "size": [
+        4.1,
+        1.367,
+        1.87
+      ]
+    }
   }
 }

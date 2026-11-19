@@ -53,7 +53,7 @@ html, body {
 }
 .card {
   position: relative;
-  width: 230px;
+  width: 205px;
   padding: 16px 18px 14px;
   border: 2px solid rgba(255, 255, 255, 0.15);
   border-top: 6px solid var(--car);
@@ -319,3 +319,31 @@ html, body {
 #positions li.me { color: var(--accent); font-weight: 800; }
 body.multi #info { display: none; }
 body.multi #race .hint { display: none; }
+
+/* ---------- Pantallas angostas (celular, panel chico) ---------- */
+@media (max-width: 600px) {
+  #info, #help { display: none !important; }
+  #race {
+    left: 10px;
+    transform: none;
+    top: 10px;
+    min-width: 0;
+    width: calc(100vw - 150px);
+    padding: 6px 10px;
+  }
+  #race .row b { font-size: 14px; }
+  #race [data-time] { font-size: 16px; }
+  #race .small, #race .sectors { font-size: 11px; }
+  #race .hint { display: none; }
+  #minimap { right: 10px; top: 10px; width: 120px !important; height: 120px !important; }
+  #next-corner { right: 10px; top: calc(10px + 120px + 6px); width: 120px; padding: 4px 8px; gap: 6px; }
+  #next-corner b { font-size: 22px; }
+  #next-corner span { font-size: 11px; }
+  #speedo { right: 10px; bottom: 14px; padding: 6px 12px; }
+  #speed { font-size: 36px; }
+  #positions { top: auto; bottom: 14px; left: 10px; min-width: 0; font-size: 11px; }
+  #positions .big { font-size: 24px; }
+  #lights { top: 30%; gap: 8px; padding: 10px; }
+  #lights i { width: 26px; height: 26px; }
+  #race-msg { font-size: 22px; white-space: normal; text-align: center; width: 90vw; }
+}

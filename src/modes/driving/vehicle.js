@@ -96,6 +96,13 @@ export class Vehicle {
     const ctrl = this.ctrl;
     const body = this.body;
 
+    // Guarda: en pruebas largas del rally el cuerpo apareció deshabilitado (sin causa encontrada
+    // todavía) y el auto quedaba flotando. Si pasa, se reactiva y se avisa en la consola.
+    if (!body.isEnabled()) {
+      console.warn('[vehicle] cuerpo deshabilitado: se reactiva');
+      body.setEnabled(true);
+    }
+
     // Volver a empezar las fuerzas del paso anterior (downforce, ayudas)
     body.resetForces(true);
     body.resetTorques(true);

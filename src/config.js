@@ -122,6 +122,38 @@ export const CARS = {
     SOUND: { IDLE_RPM: 850, MAX_RPM: 7200, GEARS: 7, PULSES: 6, GRIT: 0.25, BRIGHT: 0.6, VOLUME: 0.85 },
     stats: { velocidad: 4, agarre: 4, todoterreno: 2 },
   },
+  rally: {
+    name: 'Auto de rally',
+    color: 0x2e9b5f,
+    MASS: 1250,                // liviano y ágil
+    LENGTH: 4.1, WIDTH: 1.85, HEIGHT: 1.3,
+    WHEEL_RADIUS: 0.42,
+    WHEELBASE: 2.55,
+    TRACK: 1.6,
+    RIDE_HEIGHT: 0.22,         // alto para el ripio y los saltos
+    CENTER_OF_MASS_Y: -0.4,
+    DRIVE: 'all',              // 4x4
+    ENGINE_FORCE: 10500,
+    TOP_SPEED: 205,
+    REVERSE_SPEED: 35,
+    BRAKE: 12,
+    HANDBRAKE: 11,             // freno de mano fuerte: para cruzarlo en las horquillas
+    MAX_STEER: 0.6,
+    STEER_AT_SPEED: 0.15,
+    STEER_SPEED: 4.4,          // volante rápido
+    GRIP: 1.1,
+    SIDE_GRIP: 1.0,
+    REAR_GRIP_HANDBRAKE: 0.28,
+    DOWNFORCE: 0.0004,
+    SUSPENSION_STIFFNESS: 30,
+    SUSPENSION_DAMPING: 3.4,
+    SUSPENSION_TRAVEL: 0.24,   // mucho recorrido: absorbe pozos y saltos
+    ANTI_ROLL: 0.45,
+    // En tierra y ripio agarra mucho más que los otros
+    OFFROAD: { asfalto: 1, adoquin: 1.05, tierra: 1.65, arena: 1.35, nieve: 1.6, pasto: 1.35 },
+    SOUND: { IDLE_RPM: 950, MAX_RPM: 7800, GEARS: 6, PULSES: 2, GRIT: 0.65, BRIGHT: 0.75, VOLUME: 0.95 },
+    stats: { velocidad: 3, agarre: 4, todoterreno: 4 },
+  },
 };
 
 // ---------- Luz de cada lugar ----------
@@ -132,6 +164,10 @@ export const LIGHT = {
   monaco: {
     ELEVATION: 38, AZIMUTH: 228, SUN_COLOR: 0xfff1dc, SUN: 3.2,
     SKY_LIGHT: 1.7, EXPOSURE: 0.88, FOG: [0xcfdce6, 700, 9000],
+  },
+  rally: {
+    ELEVATION: 34, AZIMUTH: 215, SUN_COLOR: 0xfff1dc, SUN: 3.1,
+    SKY_LIGHT: 1.6, EXPOSURE: 0.86, FOG: [0xcfdce6, 900, 11000],
   },
   pista: {
     ELEVATION: 40, AZIMUTH: 210, SUN_COLOR: 0xfff0dc, SUN: 2.8,
@@ -211,4 +247,5 @@ export const DRIVER_EYE = {
   f1:     { x: 0.05,  y: 0.52, z: 0 },
   pickup: { x: 0.25,  y: 0.45, z: -0.4 },
   luxury: { x: -0.2,  y: 0.62, z: -0.38 },
+  rally:  { x: -0.15, y: 0.45, z: -0.35 },
 };

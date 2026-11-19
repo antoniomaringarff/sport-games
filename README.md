@@ -21,6 +21,7 @@ Abrir http://localhost:5173, elegir auto (← →) y lugar (↑ ↓): **Mónaco 
 | R | Reubicar el auto |
 | C | Cambiar cámara: afuera cerca, afuera lejos, conductor, frente |
 | M | Silenciar / activar el sonido |
+| G | Mostrar / ocultar el auto fantasma (tu mejor vuelta) |
 | 1 / 2 / 3 | Cambiar de auto en el lugar |
 | Enter (en Mónaco) | Reiniciar la carrera desde la grilla |
 | Esc | Volver al menú |

@@ -36,6 +36,18 @@ export function createHud() {
   };
 }
 
+function bestLap(place, id) {
+  try {
+    return JSON.parse(localStorage.getItem(`sport-games:${place}:mejor:${id}`) ?? 'null')?.lap ?? null;
+  } catch {
+    return null;
+  }
+}
+function fmtLap(t) {
+  const m = Math.floor(t / 60), s = t - m * 60;
+  return `${m}:${s.toFixed(3).padStart(6, '0')}`;
+}
+
 /** Pantalla de elección de auto y lugar. onHighlight(id) al moverse, onChoose(id, lugar) al elegir. */
 export function createCarSelect({ places, onHighlight, onChoose }) {
   const root = $('select');
@@ -57,7 +69,8 @@ export function createCarSelect({ places, onHighlight, onChoose }) {
       <h2>${c.name}</h2>
       ${Object.entries(c.stats)
         .map(([k, v]) => `<div class="stat"><span>${k}</span><i style="--v:${v}"></i></div>`)
-        .join('')}`;
+        .join('')}
+      <div class="record" data-record></div>`;
     card.addEventListener('mouseenter', () => set(i));
     card.addEventListener('click', () => {
       set(i);
@@ -94,6 +107,11 @@ export function createCarSelect({ places, onHighlight, onChoose }) {
     },
     open(currentId, currentPlace) {
       root.hidden = false;
+      // récord en Mónaco de cada auto
+      [...list.children].forEach((card, k) => {
+        const t = bestLap('monaco', ids[k]);
+        card.querySelector('[data-record]').textContent = t ? `🏁 Récord Mónaco: ${fmtLap(t)}` : '🏁 Sin vueltas en Mónaco';
+      });
       setPlace(places[currentPlace] ? currentPlace : placeIds[0]);
       set(Math.max(0, ids.indexOf(currentId)));
     },

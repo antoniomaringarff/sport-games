@@ -35,6 +35,10 @@ export function createRace(track, place) {
   let best = null, bestSectors = [null, null, null], last = null;
   let validLap = false, passed = new Set();
   let wrongWay = 0, msgT = 0, lastOn = 0;
+  // Fantasma: la mejor vuelta grabada cada 0,1 s → [t, x, y, z, qx, qy, qz, qw]
+  const GHOST_DT = 0.1;
+  let rec = [], recNext = 0;
+  let ghost = null, ghostI = 0;
 
   const key = () => `sport-games:${place}:mejor:${carId}`;
   function loadBest() {
@@ -51,6 +55,29 @@ export function createRace(track, place) {
       localStorage.setItem(key(), JSON.stringify({ lap: best, sectors: bestSectors }));
     } catch {}
   }
+  const ghostKey = () => `sport-games:${place}:fantasma:${carId}`;
+  function loadGhost() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(ghostKey()) ?? 'null');
+      ghost = Array.isArray(raw) && raw.length > 10 ? raw : null;
+    } catch {
+      ghost = null;
+    }
+  }
+  function saveGhost() {
+    try {
+      localStorage.setItem(ghostKey(), JSON.stringify(ghost));
+    } catch {}
+  }
+  function record(t, vehicle) {
+    if (t < recNext) return;
+    recNext = t + GHOST_DT;
+    const p = vehicle.body.translation(), q = vehicle.body.rotation();
+    const r2 = (v) => Math.round(v * 100) / 100;
+    const r4 = (v) => Math.round(v * 10000) / 10000;
+    rec.push([r2(t), r2(p.x), r2(p.y), r2(p.z), r4(q.x), r4(q.y), r4(q.z), r4(q.w)]);
+  }
+
   function say(text, secs = 2) {
     el.msg.textContent = text;
     el.msg.hidden = false;
@@ -80,6 +107,9 @@ export function createRace(track, place) {
     start(id) {
       carId = id;
       loadBest();
+      loadGhost();
+      rec = [];
+      recNext = 0;
       phase = 'grid';
       lightT = 0;
       lastOn = 0;
@@ -145,6 +175,10 @@ export function createRace(track, place) {
             best = lapTime;
             bestSectors = [...sectorTimes];
             saveBest();
+            if (rec.length > 10) {
+              ghost = rec;
+              saveGhost();
+            }
             say(`¡VUELTA RÉCORD! ${fmt(lapTime)}`, 3);
           } else {
             say(`Vuelta ${lap}: ${fmt(lapTime)}`, 2.5);
@@ -152,6 +186,9 @@ export function createRace(track, place) {
           lap++;
         }
         validLap = true;
+        rec = [];
+        recNext = 0;
+        ghostI = 0;
         lapStart = clock;
         sectorStart = clock;
         sector = 0;
@@ -170,6 +207,8 @@ export function createRace(track, place) {
         }
       }
 
+      if (validLap) record(clock - lapStart, vehicle);
+
       // Contramano
       const v = vehicle.body.linvel();
       const d = track.d[idx];
@@ -178,6 +217,27 @@ export function createRace(track, place) {
       if (wrongWay > 1) say('¡CONTRAMANO!', 0.3);
 
       this.render(clock - lapStart);
+    },
+
+    /** Al reubicar con R la vuelta no cuenta como récord. */
+    onReset() {
+      if (phase === 'carrera' && validLap) {
+        validLap = false;
+        say('Vuelta anulada', 1.5);
+      }
+    },
+
+    /**
+     * Dónde está el fantasma ahora: { a, b, f } (dos muestras y cuánto mezclar) o null.
+     */
+    ghostPose() {
+      if (!ghost || phase !== 'carrera' || !validLap) return null;
+      const t = clock - lapStart;
+      if (t > ghost[ghost.length - 1][0]) return null;
+      while (ghostI < ghost.length - 2 && ghost[ghostI + 1][0] < t) ghostI++;
+      while (ghostI > 0 && ghost[ghostI][0] > t) ghostI--;
+      const a = ghost[ghostI], b = ghost[ghostI + 1];
+      return { a, b, f: Math.min(1, Math.max(0, (t - a[0]) / (b[0] - a[0] || 1))) };
     },
 
     /** Lugar para reubicar el auto: sobre la pista, mirando para adelante. */

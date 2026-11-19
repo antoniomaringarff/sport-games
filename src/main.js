@@ -84,6 +84,60 @@ window.addEventListener('keydown', unlockAudio);
 window.addEventListener('pointerdown', unlockAudio);
 let carSound = null;
 
+// ---------- Auto fantasma (la mejor vuelta) ----------
+let ghost = null;      // { id, group, mats }
+let ghostOn = true;
+const _qa = new THREE.Quaternion(), _qb = new THREE.Quaternion();
+
+function makeGhost(id) {
+  if (ghost?.id === id && ghost.scene === world.scene) return;
+  removeGhost();
+  const profile = physicsProfile(id);
+  const m = createCarModel(id, profile, null, carAsset(id));
+  const mats = [];
+  m.group.traverse((o) => {
+    if (!o.isMesh) return;
+    o.castShadow = false;
+    o.receiveShadow = false;
+    o.material = [o.material].flat().map((mt) => {
+      const c = mt.clone();
+      c.transparent = true;
+      c.opacity = 0.35;
+      c.depthWrite = false;
+      c.color?.lerp(new THREE.Color(0x9fd8ff), 0.5);
+      mats.push(c);
+      return c;
+    });
+    if (o.material.length === 1) o.material = o.material[0];
+  });
+  m.group.visible = false;
+  world.scene.add(m.group);
+  ghost = { id, group: m.group, mats, scene: world.scene };
+}
+
+function removeGhost() {
+  if (!ghost) return;
+  ghost.scene.remove(ghost.group);
+  ghost.mats.forEach((m) => m.dispose());
+  ghost = null;
+}
+
+function updateGhost() {
+  if (!ghost) return;
+  const gp = ghostOn ? world.race?.ghostPose() : null;
+  ghost.group.visible = !!gp;
+  if (!gp) return;
+  const { a, b, f } = gp;
+  ghost.group.position.set(a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f, a[3] + (b[3] - a[3]) * f);
+  _qa.set(a[4], a[5], a[6], a[7]);
+  _qb.set(b[4], b[5], b[6], b[7]);
+  ghost.group.quaternion.slerpQuaternions(_qa, _qb, f);
+  // se desvanece cuando lo tenés encima, para que no tape
+  const d = ghost.group.position.distanceTo(model.group.position);
+  const op = 0.38 * Math.min(1, Math.max(0.15, (d - 3) / 10));
+  for (const m of ghost.mats) m.opacity = op;
+}
+
 function removeCar() {
   carSound?.dispose();
   carSound = null;
@@ -154,6 +208,7 @@ const select = createCarSelect({
       loadingEl.hidden = false;
       await new Promise((r) => setTimeout(r, 30)); // dejar que se vea el cartel
       removeCar();
+      removeGhost();
       if (world?.race) world.race.show(false);
       world = await getWorld(place);
       placeId = place;
@@ -164,6 +219,7 @@ const select = createCarSelect({
       spawnCar(id, world.spawn);
       world.race.show(true);
       world.race.start(id);
+      makeGhost(id);
     } else if (!vehicle || changedPlace) {
       spawnCar(id, world.spawn);
     } else if (id !== carId) {
@@ -250,6 +306,7 @@ function tick(dt) {
   world.builder.sync();
   world.update(dt);
   world.race?.update(dt, vehicle);
+  updateGhost();
 
   chase.update(model.group, vehicle, carId, dt);
   hud.update(vehicle, carId, chase.modeName, dt);
@@ -292,6 +349,7 @@ function handleKeys() {
   if (justPressed('Escape', 'Pad9')) return openMenu();
   if (justPressed('KeyR', 'Pad3')) {
     if (world.race) {
+      world.race.onReset();
       vehicle.teleport(world.spawnAt(world.race.resetPoint(), 0));
     } else {
       vehicle.reset();
@@ -303,16 +361,21 @@ function handleKeys() {
     vehicle.teleport(world.spawn);
     syncTransforms();
     world.race.start(carId);
+    makeGhost(carId);
   }
   if (justPressed('KeyC', 'Pad2')) chase.nextMode();
   if (justPressed('KeyM')) toggleMute();
+  if (justPressed('KeyG')) ghostOn = !ghostOn;
   const ids = Object.keys(CARS);
   for (let i = 0; i < ids.length; i++) {
     if (justPressed(`Digit${i + 1}`) && ids[i] !== carId) {
       // cambiar de auto en el mismo lugar (para comparar)
       spawnCar(ids[i], world.race ? world.spawn : currentSpot());
       save(LAST_CAR_KEY, ids[i]);
-      if (world.race) world.race.start(ids[i]);
+      if (world.race) {
+        world.race.start(ids[i]);
+        makeGhost(ids[i]);
+      }
     }
   }
 }

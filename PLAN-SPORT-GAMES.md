@@ -292,8 +292,8 @@ Desnivel real ~40 m: la subida a Casino y la bajada a la horquilla tienen que se
 
 **Paso A — Pulido de la carrera (corto, alto impacto)**
 - [x] **Sonido** (sintetizado con Web Audio, sin archivos): motor por auto con caja de cambios, derrape, piso, viento, golpe y raspón contra guardrail, eco en el túnel, pitidos del semáforo. Tecla M silencia. Perillas en `AUDIO` y `SOUND` de cada auto.
-- [ ] **Auto fantasma** de la mejor vuelta (grabar posición cada 0,1 s y reproducirla semitransparente).
-- [ ] **Tabla de récords** por auto en el menú.
+- [x] **Auto fantasma** de la mejor vuelta (se graba cada 0,1 s, se guarda por auto, tecla G lo oculta). Reubicar con R anula la vuelta.
+- [x] **Récords** por auto en las tarjetas del menú.
 - [ ] Probar vueltas reales con teclado y joystick; ajustar `WALL`, `LIGHT` y `MINIMAP` con el hijo.
 - [ ] Calle de boxes (aunque sea decorativa) y más carteles/tribunas en curvas clave.
 

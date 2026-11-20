@@ -129,6 +129,8 @@ export class Vehicle {
     this.lastInputHandbrake = !!input.handbrake;
     if (throttle > 0 && speed > -1) {
       engine = p.ENGINE_FORCE * throttle * Math.max(0, 1 - Math.pow(speedFrac, 2.2));
+      // el motor también vence la resistencia del aire: así la velocidad máxima no cambia
+      if (speedFrac < 1) engine += (p.AERO_DRAG ?? 0) * absSpeed * absSpeed * p.MASS * throttle;
     } else if (throttle > 0) {
       brake = p.BRAKE * throttle; // venía marcha atrás: primero frena
     }
@@ -140,6 +142,15 @@ export class Vehicle {
       if (speed < -revMax * 1.1) brake = p.BRAKE * 0.5; // va para atrás muy rápido: frena
     }
     if (throttle === 0 && brakeIn === 0) brake = 0.6; // freno motor suave
+
+    // ABS: no pedir más freno del que las gomas pueden dar (agarre × peso + downforce).
+    // Sin ABS las ruedas se bloquean, patinan y el auto no dobla.
+    if (ASSISTS.ABS && brake > 0) {
+      const surfGrip = SURFACES[this.surface]?.grip ?? 1;
+      const off = p.OFFROAD[this.surface] ?? 1;
+      const limit = p.GRIP * surfGrip * off * (9.81 + (p.DOWNFORCE ?? 0) * speed * speed);
+      brake = Math.min(brake, limit);
+    }
 
     const perWheelEngine = engine / this.driven.length;
     // Rapier: el freno es un impulso máximo por rueda en cada paso
@@ -192,6 +203,12 @@ export class Vehicle {
     if (p.DOWNFORCE > 0 && onGround > 0) {
       const f = p.DOWNFORCE * speed * speed * p.MASS;
       body.addForce({ x: -up.x * f, y: -up.y * f, z: -up.z * f }, true);
+    }
+    // Resistencia del aire: crece con la velocidad al cuadrado (al soltar, un F1 frena solo)
+    if (p.AERO_DRAG > 0 && absSpeed > 1) {
+      const a = p.AERO_DRAG * absSpeed * absSpeed * p.MASS;
+      const inv = 1 / Math.hypot(lv.x, lv.y, lv.z);
+      body.addForce({ x: -lv.x * inv * a, y: -lv.y * inv * a, z: -lv.z * inv * a }, true);
     }
     // Arrastre de la superficie (arena, pasto, tierra frenan)
     if (surfaceDrag > 0 && absSpeed > 0.1) {

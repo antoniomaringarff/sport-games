@@ -44,7 +44,8 @@ export class BotDriver {
     const p = vehicle.p;
     // aceleración lateral y frenada que se anima a usar
     this.aLat = 9.81 * p.GRIP * 0.82 * skill * (p.DOWNFORCE > 0.001 ? 1.2 : 1);
-    this.aBrake = p.BRAKE * 0.7 * skill;
+    // frenado real: lo que da la goma (con downforce, más), no lo que pide el pedal
+    this.aBrake = Math.min(p.BRAKE, 9.81 * p.GRIP * (p.DOWNFORCE > 0.001 ? 1.6 : 1.05)) * 0.7 * skill;
   }
 
   input(dt, racing) {

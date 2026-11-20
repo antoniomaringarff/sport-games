@@ -39,7 +39,7 @@ export const CARS = {
     ENGINE_FORCE: 9000,        // más alto = acelera más fuerte
     TOP_SPEED: 320,            // velocidad máxima (km/h)
     REVERSE_SPEED: 30,
-    BRAKE: 16,                 // poder de frenado (m/s²). Más alto = frena más seco
+    BRAKE: 48,                 // poder de frenado (m/s²). Más alto = frena más seco (el ABS lo limita al agarre)
     HANDBRAKE: 9,              // poder del freno de mano (m/s²)
     MAX_STEER: 0.42,           // cuánto doblan las ruedas (radianes) a baja velocidad
     STEER_AT_SPEED: 0.07,      // cuánto doblan a velocidad máxima (más chico = más estable)
@@ -47,7 +47,8 @@ export const CARS = {
     GRIP: 1.6,                 // agarre de las ruedas: bajo = derrapa más
     SIDE_GRIP: 1.2,            // agarre lateral (para curvas)
     REAR_GRIP_HANDBRAKE: 0.35, // agarre trasero con freno de mano (bajo = derrapa más)
-    DOWNFORCE: 0.002,          // aerodinámica: aprieta el auto contra el piso a alta velocidad
+    DOWNFORCE: 0.0045,         // aerodinámica: aprieta el auto contra el piso a alta velocidad
+    AERO_DRAG: 0.0006,         // resistencia del aire: frena al soltar el acelerador (más a más velocidad)
     SUSPENSION_STIFFNESS: 70,  // más alto = suspensión más dura
     SUSPENSION_DAMPING: 6,     // más alto = rebota menos
     SUSPENSION_TRAVEL: 0.08,   // recorrido de la suspensión
@@ -73,7 +74,7 @@ export const CARS = {
     ENGINE_FORCE: 11000,
     TOP_SPEED: 170,
     REVERSE_SPEED: 35,
-    BRAKE: 11,
+    BRAKE: 12,
     HANDBRAKE: 7,
     MAX_STEER: 0.55,
     STEER_AT_SPEED: 0.16,
@@ -82,6 +83,7 @@ export const CARS = {
     SIDE_GRIP: 0.9,
     REAR_GRIP_HANDBRAKE: 0.3,
     DOWNFORCE: 0,
+    AERO_DRAG: 0.00045,
     SUSPENSION_STIFFNESS: 24,
     SUSPENSION_DAMPING: 3,
     SUSPENSION_TRAVEL: 0.28,
@@ -105,7 +107,7 @@ export const CARS = {
     ENGINE_FORCE: 11500,
     TOP_SPEED: 250,
     REVERSE_SPEED: 30,
-    BRAKE: 12,
+    BRAKE: 15,
     HANDBRAKE: 8,
     MAX_STEER: 0.5,
     STEER_AT_SPEED: 0.1,
@@ -114,6 +116,7 @@ export const CARS = {
     SIDE_GRIP: 1.05,
     REAR_GRIP_HANDBRAKE: 0.4,
     DOWNFORCE: 0.0008,
+    AERO_DRAG: 0.0003,
     SUSPENSION_STIFFNESS: 38,
     SUSPENSION_DAMPING: 4,
     SUSPENSION_TRAVEL: 0.16,
@@ -136,7 +139,7 @@ export const CARS = {
     ENGINE_FORCE: 10500,
     TOP_SPEED: 205,
     REVERSE_SPEED: 35,
-    BRAKE: 12,
+    BRAKE: 14,
     HANDBRAKE: 11,             // freno de mano fuerte: para cruzarlo en las horquillas
     MAX_STEER: 0.6,
     STEER_AT_SPEED: 0.15,
@@ -145,6 +148,7 @@ export const CARS = {
     SIDE_GRIP: 1.0,
     REAR_GRIP_HANDBRAKE: 0.28,
     DOWNFORCE: 0.0004,
+    AERO_DRAG: 0.00035,
     SUSPENSION_STIFFNESS: 30,
     SUSPENSION_DAMPING: 3.4,
     SUSPENSION_TRAVEL: 0.24,   // mucho recorrido: absorbe pozos y saltos
@@ -245,6 +249,7 @@ export const ASSISTS = {
   ANTI_FLIP: true,        // ayuda a que el auto no vuelque
   AIR_CONTROL: 0.6,       // cuánto se endereza solo en el aire (0 = nada)
   AUTO_RESET_SECONDS: 3,  // si está dado vuelta tanto tiempo, se reubica solo
+  ABS: true,              // al frenar a fondo las ruedas no se bloquean: frena al límite y se puede doblar
 };
 
 // ---------- Cámara ----------

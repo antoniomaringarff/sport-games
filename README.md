@@ -70,6 +70,16 @@ Para medir los autos sin abrir el navegador (0-100, velocidad máxima, frenado, 
 node tools/sim-test.mjs f1 arena
 ```
 
+Y para medir solo el frenado (metros de 100 y 200 km/h a 0):
+
+```bash
+node tools/brake-test.mjs f1
+```
+
+Frenos: `BRAKE` es lo que pide el pedal; el ABS (`ASSISTS.ABS`) lo limita a lo que agarran las gomas
+(`GRIP` + `DOWNFORCE`), así no se bloquean las ruedas. `AERO_DRAG` es la resistencia del aire: al soltar
+el acelerador el auto frena solo, mucho más a alta velocidad.
+
 ## Modelos de autos
 
 Los originales (obj / fbx / gltf / glb) van en `assets-raw/` (no se sube al repo).

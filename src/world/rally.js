@@ -4,7 +4,9 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { WorldBuilder } from './builder.js';
-import { surfaceMaterial } from './textures.js';
+import { ribbonMaterial, pbrMaps } from './pbr.js';
+import { plantTrees } from './trees.js';
+import { Q } from '../core/graphics.js';
 import { makeTrack, ribbon, rangeIdx, buildTerrain, buildFar, buildSea, buildBuildings, gridGeometry, terrainMaterial } from './monaco.js';
 
 const BASE = import.meta.env.BASE_URL;
@@ -28,7 +30,7 @@ export function buildRally(physics, scene, data) {
   const W = stage.width / 2;
 
   // Relieve de la montaña (con física) + Mónaco y el fondo solo para mirar
-  buildTerrain(b, stage.terrain, data.terrain, 'pasto');
+  buildTerrain(b, stage.terrain, data.terrain, 'pasto', null, { forest: 0.7 });
   buildBackdropTerrain(scene, monaco.terrain, data.monacoNear, stage.terrain);
   buildBuildings(scene, monaco.buildings);
   buildFar(scene, monaco.far, data.far, [monaco.terrain, stage.terrain]);
@@ -37,7 +39,9 @@ export function buildRally(physics, scene, data) {
   // Camino de ripio
   const all = rangeIdx(track.n, 0, track.n - 1);
   const road = ribbon(track, all, () => [-W - 0.8, 0.03, W + 0.8, 0.03], { uScale: 8 });
-  const roadMat = surfaceMaterial('ripio', 1, 1, 1);
+  // ripio real (Poly Haven), una repetición cada 4 m
+  // la foto es marrón rojiza: llevarla al gris beige de la caliza de la zona
+  const roadMat = ribbonMaterial('gravel_road', 8, 2 * W + 1.6, 4, new THREE.Color(0.98, 1.22, 1.5));
   const roadMesh = new THREE.Mesh(road, roadMat);
   roadMesh.receiveShadow = true;
   scene.add(roadMesh);
@@ -50,7 +54,7 @@ export function buildRally(physics, scene, data) {
   );
   physics.setSurface(col, 'tierra');
   // banquinas un poco más oscuras
-  const shoulderMat = new THREE.MeshStandardMaterial({ color: 0x8a7a5c, roughness: 1 });
+  const shoulderMat = ribbonMaterial('forest_ground_04', 10, 1.4, 3, 0xd8d0c4);
   for (const s of [-1, 1]) {
     const g = ribbon(track, all, () => [s * (W + 0.8), 0.025, s * (W + 2.2), -0.1]);
     const m = new THREE.Mesh(g, shoulderMat);
@@ -149,47 +153,60 @@ function buildTreesAndRocks(b, track, g, heights) {
     return heights[j * g.n + i];
   };
 
-  const trunk = new THREE.CylinderGeometry(0.18, 0.25, 2.2, 6).translate(0, 1.1, 0);
-  const crown = new THREE.ConeGeometry(1.6, 4.2, 7).translate(0, 4, 0);
-  const treeGeo = mergeGeometries([trunk, crown], true);
-  const treeMats = [new THREE.MeshStandardMaterial({ color: 0x6b4a2b }), new THREE.MeshStandardMaterial({ color: 0x3e6b34, roughness: 0.9 })];
-  const rockGeo = new THREE.DodecahedronGeometry(1, 0);
-  const rockMat = new THREE.MeshStandardMaterial({ color: 0x9b958a, roughness: 1, flatShading: true });
-  const bushGeo = new THREE.IcosahedronGeometry(1, 0);
-  const bushMat = new THREE.MeshStandardMaterial({ color: 0x5f7a3a, roughness: 1, flatShading: true });
-
-  const trees = [], rocks = [], bushes = [];
-  // a lo largo del camino, a los dos lados
-  for (let k = 0; k < track.n; k += 3) {
+  const trees = [], rocks = [];
+  const plants = [];
+  // a lo largo del camino, a los dos lados (más tupido cerca, ralo lejos)
+  for (let k = 0; k < track.n; k += 2) {
     const p = track.p[k], r = track.r[k];
-    for (let t = 0; t < 2; t++) {
+    for (let t = 0; t < 3; t++) {
       const side = rnd() < 0.5 ? -1 : 1;
-      const off = W + 4 + rnd() * rnd() * 90;
+      const off = W + 3.5 + rnd() * rnd() * 110;
       const x = p.x + r.x * off * side + (rnd() - 0.5) * 6, z = p.z + r.z * off * side + (rnd() - 0.5) * 6;
-      if (distToRoad(x, z) < W + 3.5) continue;
+      if (distToRoad(x, z) < W + 3) continue;
       const y = hAt(x, z);
       if (y < 2) continue;
+      const slope = Math.hypot(hAt(x + 3, z) - hAt(x - 3, z), hAt(x, z + 3) - hAt(x, z - 3)) / 6;
       const roll = rnd();
-      if (roll < 0.45) trees.push([x, y, z, 0.7 + rnd() * 0.7, rnd() * 6]);
-      else if (roll < 0.75) bushes.push([x, y, z, 0.6 + rnd() * 0.9, rnd() * 6]);
-      else rocks.push([x, y, z, 0.4 + rnd() * 1.4, rnd() * 6]);
+      if (slope > 0.75 || roll < 0.2) {
+        // en las laderas empinadas, piedras; si no, alguna suelta
+        rocks.push([x, y, z, 0.4 + rnd() * rnd() * 2.4, rnd() * 6]);
+      } else if (roll < 0.62) {
+        const kr = rnd();
+        const kind = kr < 0.62 ? 'carrasco' : kr < 0.85 ? 'pinon' : kr < 0.93 ? 'olivo' : 'cipres';
+        const s = 0.7 + rnd() * 0.55;
+        plants.push({ kind, x, y, z, s, rot: rnd() * 6.28 });
+        trees.push([x, y, z, s]);
+      } else {
+        plants.push({ kind: 'arbusto', x, y, z, s: 0.6 + rnd() * 0.8, rot: rnd() * 6.28 });
+      }
     }
   }
-  const place = (geo, mat, list, shadow) => {
-    const inst = new THREE.InstancedMesh(geo, mat, list.length);
+  // en calidad media/baja, menos plantas lejos del camino (las cercanas se chocan: quedan todas)
+  plantTrees(b.scene, plants.filter((p) => distToRoad(p.x, p.z) < 30 || rnd() < (Q.trees ?? 1)), { thin: false });
+
+  // piedras: varias formas, roca real, medio enterradas y giradas en todos los ejes
+  const rockMaps = pbrMaps('rock_face_03');
+  const rockMat = new THREE.MeshStandardMaterial({ ...rockMaps, color: 0xd6d2cc, roughness: 1 });
+  const shapes = [0, 1, 2, 3].map((v) => boulderGeometry(mulberry(50 + v)));
+  const perShape = shapes.map(() => []);
+  rocks.forEach((rk, i) => perShape[i % shapes.length].push(rk));
+  shapes.forEach((geo, v) => {
+    const list = perShape[v];
+    if (!list.length) return;
+    const inst = new THREE.InstancedMesh(geo, rockMat, list.length);
     const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
+    const tint = new THREE.Color();
     list.forEach(([x, y, z, s, rot], i) => {
-      q.setFromEuler(e.set(0, rot, 0));
-      m.compose(new THREE.Vector3(x, y - 0.2, z), q, new THREE.Vector3(s, s, s));
+      q.setFromEuler(e.set(rnd() * 0.5, rot, rnd() * 0.5));
+      m.compose(new THREE.Vector3(x, y - s * 0.35, z), q, new THREE.Vector3(s * (0.9 + rnd() * 0.5), s * (0.6 + rnd() * 0.4), s * (0.9 + rnd() * 0.5)));
       inst.setMatrixAt(i, m);
+      const k = 0.8 + rnd() * 0.3;
+      inst.setColorAt(i, tint.setRGB(k, k * 0.98, k * 0.95));
     });
-    inst.castShadow = shadow;
+    inst.castShadow = true;
     inst.receiveShadow = true;
     b.scene.add(inst);
-  };
-  place(treeGeo, treeMats, trees, true);
-  place(rockGeo, rockMat, rocks, true);
-  place(bushGeo, bushMat, bushes, false);
+  });
 
   // Los árboles y piedras cerca del camino se chocan (se raspan como una pared)
   const R = b.R;
@@ -200,9 +217,36 @@ function buildTreesAndRocks(b, track, g, heights) {
   }
   for (const [x, y, z, s] of rocks) {
     if (distToRoad(x, z) > 30 || s < 0.8) continue;
-    const col = b.world.createCollider(R.ColliderDesc.ball(s * 0.85).setTranslation(x, y, z).setFriction(0.3));
+    const col = b.world.createCollider(R.ColliderDesc.ball(s * 0.7).setTranslation(x, y - s * 0.35, z).setFriction(0.3));
     b.physics.markWall(col);
   }
+}
+
+/** Piedra: esfera deformada con ruido, con caras planas como roca partida. UV por proyección. */
+function boulderGeometry(rnd) {
+  const g = new THREE.IcosahedronGeometry(1, 2);
+  const pos = g.attributes.position;
+  const planes = Array.from({ length: 5 }, () => [new THREE.Vector3(rnd() - 0.5, rnd() - 0.5, rnd() - 0.5).normalize(), 0.55 + rnd() * 0.3]);
+  const v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    let r = 1 + 0.12 * Math.sin(v.x * 5 + rnd()) * Math.sin(v.y * 4) + (rnd() - 0.5) * 0.06;
+    v.multiplyScalar(r);
+    // cortar con planos (caras de roca)
+    for (const [n, d] of planes) {
+      const k = v.dot(n);
+      if (k > d) v.addScaledVector(n, d - k);
+    }
+    pos.setXYZ(i, v.x, v.y, v.z);
+  }
+  g.computeVertexNormals();
+  const uv = g.attributes.uv, nrm = g.attributes.normal;
+  for (let i = 0; i < pos.count; i++) {
+    const ax = Math.abs(nrm.getX(i)), ay = Math.abs(nrm.getY(i));
+    const [a, b] = ax > 0.6 ? [pos.getZ(i), pos.getY(i)] : ay > 0.6 ? [pos.getX(i), pos.getZ(i)] : [pos.getX(i), pos.getY(i)];
+    uv.setXY(i, a * 0.5, b * 0.5);
+  }
+  return g;
 }
 
 /** Arco con cartel (largada, parciales, llegada). */

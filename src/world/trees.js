@@ -310,13 +310,13 @@ function variant(kind, v) {
  * list: [{ kind: 'pinon'|'carrasco'|'cipres'|'olivo'|'arbusto'|'palmera', x, y, z, s (escala), rot }]
  * Devuelve los InstancedMesh creados.
  */
-export function plantTrees(scene, list, { shadows = true } = {}) {
+export function plantTrees(scene, list, { shadows = true, thin = true } = {}) {
   const M = materials();
   const groups = new Map();
   const rnd = mulberry(42);
   for (const t of list) {
     // en calidad media/baja, menos árboles (las palmeras de la costanera quedan todas)
-    if (t.kind !== 'palmera' && rnd() > (Q.trees ?? 1)) continue;
+    if (thin && t.kind !== 'palmera' && rnd() > (Q.trees ?? 1)) continue;
     const key = `${t.kind}:${Math.floor(rnd() * VARIANTS)}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(t);

@@ -126,7 +126,7 @@ export function ribbon(track, idx, side, { closed = false, uScale = 10 } = {}) {
 }
 
 // ---------------------------------------------------------------------------
-export function buildTerrain(b, g, heights, surface = 'pasto', urban = null) {
+export function buildTerrain(b, g, heights, surface = 'pasto', urban = null, look = {}) {
   const { n, cell, size, x0, z0 } = g;
   // Malla visible
   const geo = gridGeometry(n, cell, x0, z0, heights, (h, slope) => {
@@ -135,7 +135,7 @@ export function buildTerrain(b, g, heights, surface = 'pasto', urban = null) {
     return [0.34 + Math.random() * 0.05, 0.4 + Math.random() * 0.05, 0.24];
   });
   if (urban) paveCity(geo, g, urban);
-  const mesh = new THREE.Mesh(geo, terrainMaterial());
+  const mesh = new THREE.Mesh(geo, terrainMaterial(9, look));
   mesh.receiveShadow = true;
   b.scene.add(mesh);
 

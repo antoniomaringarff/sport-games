@@ -10,10 +10,10 @@
 | Calles, costa, muelles y edificios de Mónaco | © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors | ODbL 1.0 | `public/assets/monaco/monaco.json` (datos derivados) |
 | Caminos de la etapa de rally (La Turbie, Tête de Chien) | © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors | ODbL 1.0 | `public/assets/rally/stage.json` (datos derivados) |
 | Trazado del circuito de Mónaco | [bacinger/f1-circuits](https://github.com/bacinger/f1-circuits) | MIT | `public/assets/monaco/monaco.json` |
-| Texturas: asphalt_02, aerial_grass_rock, rock_face_03, plastered_wall_04, roof_tiles_14 | [Poly Haven](https://polyhaven.com/textures) | CC0 1.0 | `public/assets/textures/` (asfalto, terreno, veredas, fachadas, techos) |
+| Texturas: asphalt_02, aerial_grass_rock, rock_face_03, plastered_wall_04, roof_tiles_14, gravel_road, forest_ground_04, cliff_side, bark_brown_02 | [Poly Haven](https://polyhaven.com/textures) | CC0 1.0 | `public/assets/textures/` (asfalto, terreno, veredas, fachadas, techos, ripio, piso de bosque, rocas, troncos) |
 | Relieve (Terrarium, Mónaco y Tête de Chien) | [Terrain Tiles en AWS Open Data](https://registry.opendata.aws/terrain-tiles/) (Mapzen; fuentes SRTM y otras) | Ver atribuciones de Terrain Tiles | `terrain.bin`, `far.bin`, `rally/terrain.bin` |
 
-El agua, los pianos, el ripio del rally y las ventanas/postigos de las fachadas se dibujan en código.
+El agua, los pianos, las ventanas/postigos de las fachadas, el público y los carteles de las tribunas, las hojas de los árboles y la forma de las piedras se dibujan en código. Las marcas de los carteles son inventadas.
 El juego muestra la atribución de OpenStreetMap y Kenney abajo a la derecha.
 
 **Ojo con dos modelos:** el Ferrari F40 y el Porsche 911 son CC-BY-NC-SA: **no se pueden usar con fines comerciales** y las versiones modificadas (las nuestras, convertidas) quedan con la misma licencia. Para un juego familiar está bien; si algún día se vende, hay que cambiarlos.

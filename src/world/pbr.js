@@ -41,6 +41,15 @@ export function asphaltMaterial(uScale, width, tile = 4) {
   });
 }
 
+/** Cualquier juego de texturas sobre una cinta de camino (como asphaltMaterial). */
+export function ribbonMaterial(name, uScale, width, tile = 4, color = 0xffffff) {
+  return new THREE.MeshStandardMaterial({
+    ...pbrMaps(name, uScale / tile, width / tile),
+    color: color instanceof THREE.Color ? color : new THREE.Color(color),
+    normalScale: new THREE.Vector2(1, 1),
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Terreno: pasto, roca, arena y nieve mezclados según la pendiente y la altura
 // (el atributo "splat" de cada vértice lo calcula gridGeometry).
@@ -49,11 +58,12 @@ export function asphaltMaterial(uScale, width, tile = 4) {
  * scale: metros que cubre una repetición del pasto.
  * La UV del terreno viene en metros/12 (ver gridGeometry).
  */
-export function terrainMaterial(scale = 9) {
+export function terrainMaterial(scale = 9, { forest = 0.25 } = {}) {
   const k = 12 / scale;
   const grass = pbrMaps('aerial_grass_rock', k);
   const rock = pbrMaps('rock_face_03');
   const paved = load('asphalt_02_color.webp', true);
+  const forestMap = load('forest_ground_04_color.webp', true);
   const mat = new THREE.MeshStandardMaterial({
     map: grass.map,
     normalMap: grass.normalMap,
@@ -64,6 +74,8 @@ export function terrainMaterial(scale = 9) {
     sh.uniforms.rockMap = { value: rock.map };
     sh.uniforms.rockNormal = { value: rock.normalMap };
     sh.uniforms.pavedMap = { value: paved };
+    sh.uniforms.forestMap = { value: forestMap };
+    sh.uniforms.forestAmount = { value: forest };
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nattribute vec4 splat;\nvarying vec4 vSplat;\nvarying float vTerrH;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSplat = splat;\nvTerrH = (modelMatrix * vec4(transformed, 1.0)).y;');
@@ -71,7 +83,8 @@ export function terrainMaterial(scale = 9) {
       .replace(
         '#include <common>',
         `#include <common>
-        uniform sampler2D rockMap, rockNormal, pavedMap;
+        uniform sampler2D rockMap, rockNormal, pavedMap, forestMap;
+        uniform float forestAmount;
         varying vec4 vSplat;
         varying float vTerrH;
         // la misma textura a dos escalas: casi no se nota que se repite
@@ -88,6 +101,10 @@ export function terrainMaterial(scale = 9) {
         // variación grande (manchas más secas / más verdes)
         float big = texture2D(map, vMapUv * 0.031).g;
         cGrass *= vec3(0.78, 1.0, 0.95) * mix(vec3(1.1, 1.04, 0.9), vec3(0.85, 1.0, 0.92), smoothstep(0.25, 0.45, big));
+        // manchones de piso de bosque (agujas de pino, tierra) entre el pasto
+        vec3 cForest = twoScale(forestMap, vMapUv * 1.3).rgb * vec3(1.05, 1.0, 0.95);
+        float forestPatch = smoothstep(0.42, 0.62, texture2D(map, vMapUv * 0.017 + vec2(0.5, 0.2)).r + forestAmount * 0.35 - 0.12);
+        cGrass = mix(cGrass, cForest, forestPatch * min(1.0, forestAmount * 1.6));
         vec3 c = mix(cGrass, cRock * vec3(1.05, 1.0, 0.95), vSplat.x);
         float lum = dot(cRock, vec3(0.33));
         c = mix(c, vec3(0.86, 0.78, 0.6) * (0.75 + lum * 0.6), vSplat.y);   // arena de la costa
@@ -108,7 +125,7 @@ export function terrainMaterial(scale = 9) {
         normal = normalize(tbn * mapN);`,
       );
   };
-  mat.customProgramCacheKey = () => 'terrain-splat';
+  mat.customProgramCacheKey = () => 'terrain-splat-2';
   return mat;
 }
 

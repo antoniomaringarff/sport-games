@@ -15,7 +15,9 @@ import { MULTI, CARS } from '../src/config.js';
 if (process.env.LAPS) MULTI.LAPS = Number(process.env.LAPS);
 if (process.env.LOBBY) MULTI.LOBBY_SECONDS = Number(process.env.LOBBY);
 
-const wss = new WebSocketServer({ port: MULTI.PORT, host: '0.0.0.0' });
+// en la nube (Railway) el puerto lo da la variable PORT; en casa se usa el de siempre
+const PORT = Number(process.env.PORT) || MULTI.PORT;
+const wss = new WebSocketServer({ port: PORT, host: '0.0.0.0' });
 
 const BOT_NAMES = ['Bot Turbo', 'Bot Rayo', 'Bot Pistón', 'Bot Nitro', 'Bot Chispa', 'Bot Trueno', 'Bot Cometa', 'Bot Bólido', 'Bot Zeta'];
 const CAR_IDS = Object.keys(CARS);
@@ -187,6 +189,6 @@ const ips = Object.values(os.networkInterfaces())
   .flat()
   .filter((i) => i && i.family === 'IPv4' && !i.internal)
   .map((i) => i.address);
-console.log(`Servidor multijugador en el puerto ${MULTI.PORT}`);
+console.log(`Servidor multijugador en el puerto ${PORT}`);
 console.log(`En la otra compu abrí:  ${ips.map((ip) => `http://${ip}:5173`).join('  ó  ') || 'http://<IP-de-esta-compu>:5173'}`);
 console.log('(en esta compu corré también:  npm run dev:lan)');

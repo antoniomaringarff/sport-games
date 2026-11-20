@@ -2,9 +2,7 @@
 import { MULTI } from '../config.js';
 
 export function connect() {
-  const host = location.hostname || 'localhost';
-  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  const ws = new WebSocket(`${proto}://${host}:${MULTI.PORT}`);
+  const ws = new WebSocket(serverUrl());
   const handlers = new Map();
   let offset = 0; // hora del servidor - hora local (ms)
   let best = Infinity; // mejor ida y vuelta medida (para ajustar el reloj)
@@ -57,4 +55,16 @@ export function connect() {
     api.send({ t: 'ping', c: Date.now() });
   }
   return api;
+}
+
+/**
+ * Dónde está el servidor. Online se configura con VITE_MULTI_URL (por ejemplo
+ * wss://sport-games.up.railway.app); en casa es la misma compu, en el puerto de siempre.
+ */
+function serverUrl() {
+  const url = import.meta.env.VITE_MULTI_URL;
+  if (url) return url;
+  const host = location.hostname || 'localhost';
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  return `${proto}://${host}:${MULTI.PORT}`;
 }

@@ -70,6 +70,17 @@ export function paceNotes(track, finishIdx = null) {
     }
     notes.push(note);
   }
+  // lomas y pozos del rally: "loma, ¡salto!" (si hay una curva justo antes, se lo suma)
+  for (const [idx, h] of track.bumps ?? []) {
+    if (Math.abs(h) < 0.6 && h > 0) continue;
+    const text = h > 0 ? (h > 1.1 ? 'loma, ¡salto!' : 'loma') : 'pozo';
+    const from = Math.max(0, idx - Math.round(8 / step));
+    const prevNote = notes.filter((nt) => nt.to <= from + 2).pop();
+    if (prevNote && (from - prevNote.to) * step < COPILOT.CHAIN * 0.6 && !prevNote.text.includes('loma') && !prevNote.text.includes('pozo')) {
+      prevNote.text += `, ${text}`;
+    } else notes.push({ from, to: idx, text });
+  }
+  notes.sort((a, b) => a.from - b.from);
   if (finishIdx != null) notes.push({ from: finishIdx, to: finishIdx, text: 'llegada, ¡a fondo!' });
   return { notes, closed, n };
 }

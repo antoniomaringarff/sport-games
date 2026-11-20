@@ -244,6 +244,17 @@ const SPECIES = {
     }
     return [[mergeGroup(leaves), 'leaves']];
   },
+  /** Paja brava (pastizal de altura): matas bajas, amarillentas y achatadas. */
+  paja(rnd) {
+    const leaves = [];
+    const n = 3 + Math.floor(rnd() * 3);
+    for (let i = 0; i < n; i++) {
+      const a = rnd() * 6.28, d = rnd() * 0.5;
+      const tone = [0.62 + rnd() * 0.08, 0.55 + rnd() * 0.06, 0.3];
+      leaves.push(blob(Math.cos(a) * d, 0.25, Math.sin(a) * d, 0.45 + rnd() * 0.25, 0.4 + rnd() * 0.2, 0.45 + rnd() * 0.25, tone, rnd));
+    }
+    return [[mergeGroup(leaves), 'leaves']];
+  },
   /** Palmera: tronco con anillos, penacho de hojas largas que caen en arco. */
   palmera(rnd) {
     const h = 6 + rnd() * 4;

@@ -12,6 +12,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { PNG } from 'pngjs';
+import { roadFeatures } from './rally-features.mjs';
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const RAW = path.join(ROOT, 'assets-raw');
@@ -151,6 +152,9 @@ let curv = heading.map((h, i) => {
   return d / (4 * STEP);
 });
 curv = smooth(curv, 3);
+// lomas, ondulaciones y tramos de tierra / piedra (antes de tallar el terreno)
+const feat = roadFeatures(ys, curv, STEP, 7);
+ys = feat.ys;
 const len = N * STEP;
 const climb = Math.max(...ys) - Math.min(...ys);
 const hairpins = countCorners(curv, 1 / 15);
@@ -188,7 +192,8 @@ for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
     }
   }
   if (!best || best.d > outer) continue;
-  const roadY = ys[best.k] * (1 - best.t) + ys[best.k + 1] * best.t - 0.15;
+  // bien por debajo del camino: las ondulaciones del camino no deben quedar tapadas
+  const roadY = ys[best.k] * (1 - best.t) + ys[best.k + 1] * best.t - 0.5;
   const cur = h[j * n + i];
   if (best.d <= inner) h[j * n + i] = roadY;
   else {
@@ -209,6 +214,8 @@ const stage = {
   points: pts.map(([x, z], i) => [round(x), round(ys[i]), round(z)]),
   curvature: curv.map((c) => Math.round(c * 1e4) / 1e4),
   splits: [0.25, 0.5, 0.75].map((f) => Math.round(N * f)),
+  surfaces: feat.surfaces,
+  bumps: feat.bumps,
   terrain: { file: 'terrain.bin', n, cell: CELL, size, x0, z0 },
 };
 fs.writeFileSync(path.join(OUT, 'stage.json'), JSON.stringify(stage));

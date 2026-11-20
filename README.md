@@ -89,6 +89,17 @@ Se listan en [tools/cars.sources.json](tools/cars.sources.json) con el eje del f
 node tools/convert-models.mjs
 ```
 
+Etapas de rally (camino real de OpenStreetMap + relieve real, con lomas, ondulaciones y tramos
+de tierra/ripio que agrega `tools/rally-features.mjs`):
+
+```bash
+node tools/import-rally.mjs
+```
+
+```bash
+node tools/import-condor.mjs
+```
+
 Texturas del mapa (asfalto, pasto, roca, revoque, tejas): bajadas de Poly Haven (CC0) a
 `assets-raw/textures/<nombre>/` y convertidas a WebP con:
 

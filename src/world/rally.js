@@ -11,59 +11,70 @@ import { makeTrack, ribbon, rangeIdx, buildTerrain, buildFar, buildSea, buildBui
 
 const BASE = import.meta.env.BASE_URL;
 
-export async function loadRallyData() {
+/** id: 'rally' (Tête de Chien, con Mónaco de fondo) o 'condor' (El Cóndor, Córdoba). */
+export async function loadRallyData(id = 'rally') {
   const get = async (u) => (await fetch(BASE + u)).json();
   const bin = async (u) => new Float32Array(await (await fetch(BASE + u)).arrayBuffer());
+  if (id === 'condor') {
+    const dir = 'assets/rally-condor/';
+    const stage = await get(dir + 'stage.json');
+    const [terrain, far] = await Promise.all([bin(dir + stage.terrain.file), bin(dir + stage.far.file)]);
+    return { id, stage, terrain, far };
+  }
   const [stage, monaco] = await Promise.all([get('assets/rally/stage.json'), get('assets/monaco/monaco.json')]);
   const [terrain, monacoNear, far] = await Promise.all([
     bin('assets/rally/terrain.bin'),
     bin(`assets/monaco/${monaco.terrain.file}`),
     bin(`assets/monaco/${monaco.far.file}`),
   ]);
-  return { stage, monaco, terrain, monacoNear, far };
+  return { id, stage, monaco, terrain, monacoNear, far };
 }
+
+// Cómo se ve cada etapa
+const LOOKS = {
+  rally: {
+    terrain: { forest: 0.7, dry: 0 },
+    splat: {},
+    gravel: new THREE.Color(0.98, 1.22, 1.5), // caliza: gris beige
+    dirt: new THREE.Color(1.12, 1.02, 0.92),
+    // probabilidades: árbol, arbusto (el resto, piedra)
+    plants: { tree: 0.42, bush: 0.38, kinds: [['carrasco', 0.62], ['pinon', 0.23], ['olivo', 0.08], ['cipres', 0.07]], bushKind: 'arbusto', bigRocks: 0.1 },
+  },
+  condor: {
+    // pastizal de altura de las Sierras Grandes: seco, mucho granito, casi sin árboles
+    terrain: { forest: 0.05, dry: 0.5 },
+    splat: { snow: 1e9, rock: [0.3, 0.65], sand: false },
+    gravel: new THREE.Color(0.95, 1.25, 1.62), // granito: gris claro
+    dirt: new THREE.Color(1.0, 0.95, 0.9),
+    plants: { tree: 0.06, bush: 0.5, kinds: [['olivo', 1]], bushKind: 'paja', bigRocks: 0.35 },
+  },
+};
 
 export function buildRally(physics, scene, data) {
   const { stage, monaco } = data;
+  const look = LOOKS[data.id] ?? LOOKS.rally;
   const b = new WorldBuilder(physics, scene);
   const track = makeTrack({ ...stage }, false);
   const W = stage.width / 2;
 
-  // Relieve de la montaña (con física) + Mónaco y el fondo solo para mirar
-  buildTerrain(b, stage.terrain, data.terrain, 'pasto', null, { forest: 0.7 });
-  buildBackdropTerrain(scene, monaco.terrain, data.monacoNear, stage.terrain);
-  buildBuildings(scene, monaco.buildings);
-  buildFar(scene, monaco.far, data.far, [monaco.terrain, stage.terrain]);
-  const sea = buildSea(scene, { g: monaco.terrain, heights: data.monacoNear });
-
-  // Camino de ripio
-  const all = rangeIdx(track.n, 0, track.n - 1);
-  const road = ribbon(track, all, () => [-W - 0.8, 0.03, W + 0.8, 0.03], { uScale: 8 });
-  // ripio real (Poly Haven), una repetición cada 4 m
-  // la foto es marrón rojiza: llevarla al gris beige de la caliza de la zona
-  const roadMat = ribbonMaterial('gravel_road', 8, 2 * W + 1.6, 4, new THREE.Color(0.98, 1.22, 1.5));
-  const roadMesh = new THREE.Mesh(road, roadMat);
-  roadMesh.receiveShadow = true;
-  scene.add(roadMesh);
-  const col = physics.world.createCollider(
-    physics.RAPIER.ColliderDesc.trimesh(
-      new Float32Array(road.attributes.position.array),
-      new Uint32Array(road.index.array),
-      physics.RAPIER.TriMeshFlags.FIX_INTERNAL_EDGES_TWO_SIDED,
-    ).setFriction(0.9),
-  );
-  physics.setSurface(col, 'tierra');
-  // banquinas un poco más oscuras
-  const shoulderMat = ribbonMaterial('forest_ground_04', 10, 1.4, 3, 0xd8d0c4);
-  for (const s of [-1, 1]) {
-    const g = ribbon(track, all, () => [s * (W + 0.8), 0.025, s * (W + 2.2), -0.1]);
-    const m = new THREE.Mesh(g, shoulderMat);
-    m.receiveShadow = true;
-    scene.add(m);
+  let sea = null;
+  if (monaco) {
+    // Relieve de la montaña (con física) + Mónaco y el fondo solo para mirar
+    buildTerrain(b, stage.terrain, data.terrain, 'pasto', null, look.terrain);
+    buildBackdropTerrain(scene, monaco.terrain, data.monacoNear, stage.terrain);
+    buildBuildings(scene, monaco.buildings);
+    buildFar(scene, monaco.far, data.far, [monaco.terrain, stage.terrain]);
+    sea = buildSea(scene, { g: monaco.terrain, heights: data.monacoNear });
+  } else {
+    // etapa grande: relieve detallado solo cerca del camino + sierras de fondo
+    buildCorridorTerrain(b, stage.terrain, data.terrain, track, look);
+    buildOwnFar(scene, stage.far, data.far, track, look);
   }
 
+  buildRoad(b, track, stage, look);
   buildPosts(scene, track);
-  buildTreesAndRocks(b, track, stage.terrain, data.terrain);
+  buildTreesAndRocks(b, track, stage.terrain, data.terrain, look);
+  buildRoadRocks(b, track, stage);
 
   // Largada, parciales y llegada
   const finishIdx = track.n - 15;
@@ -84,9 +95,172 @@ export function buildRally(physics, scene, data) {
     spawn: spawnAt(2),
     spawnAt,
     update(dt) {
-      sea.update(dt);
+      sea?.update(dt);
     },
   };
+}
+
+/** Camino por tramos: tierra (más lisa, marrón) y ripio (piedra suelta, gris, patina más). */
+function buildRoad(b, track, stage, look) {
+  const { physics, scene } = b;
+  const W = stage.width / 2;
+  const segs = stage.surfaces ?? [[0, track.n - 1, 'tierra']];
+  const width = 2 * W + 1.6;
+  const mats = {
+    ripio: ribbonMaterial('gravel_road', 8, width, 3.5, look.gravel),
+    tierra: ribbonMaterial('gravel_road', 8, width, 6, look.dirt),
+  };
+  mats.tierra.normalScale.set(0.45, 0.45);
+  mats.ripio.normalScale.set(1.4, 1.4);
+  for (const [a, bb, kind] of segs) {
+    const idx = [];
+    for (let k = a; k <= Math.min(bb, track.n - 1); k++) idx.push(k);
+    if (idx.length < 2) continue;
+    const road = ribbon(track, idx, () => [-W - 0.8, 0.03, W + 0.8, 0.03], { uScale: 8 });
+    const mesh = new THREE.Mesh(road, mats[kind] ?? mats.tierra);
+    mesh.receiveShadow = true;
+    scene.add(mesh);
+    const col = physics.world.createCollider(
+      physics.RAPIER.ColliderDesc.trimesh(
+        new Float32Array(road.attributes.position.array),
+        new Uint32Array(road.index.array),
+        physics.RAPIER.TriMeshFlags.FIX_INTERNAL_EDGES_TWO_SIDED,
+      ).setFriction(0.9),
+    );
+    physics.setSurface(col, kind === 'ripio' ? 'ripio' : 'tierra');
+  }
+  // banquinas
+  const all = rangeIdx(track.n, 0, track.n - 1);
+  const shoulderMat = ribbonMaterial('forest_ground_04', 10, 1.4, 3, 0xd8d0c4);
+  for (const s of [-1, 1]) {
+    // baja hasta el terreno (que queda medio metro por debajo del camino)
+    const g = ribbon(track, all, () => [s * (W + 0.8), 0.025, s * (W + 2.6), -0.65]);
+    const m = new THREE.Mesh(g, shoulderMat);
+    m.receiveShadow = true;
+    scene.add(m);
+  }
+}
+
+/**
+ * Piedras en el camino: chicas y sueltas en los tramos de ripio (te sacuden), y rocas que se
+ * meten en la cuerda de las curvas cerradas (si cortás la curva, las pegás).
+ */
+function buildRoadRocks(b, track, stage) {
+  const rnd = mulberry(99);
+  const W = stage.width / 2;
+  const small = [], apex = [];
+  const segs = stage.surfaces ?? [];
+  const isRipio = new Uint8Array(track.n);
+  for (const [a, bb, kind] of segs) if (kind === 'ripio') for (let k = a; k <= bb && k < track.n; k++) isRipio[k] = 1;
+  const at = (k, lat) => {
+    const p = track.p[k], r = track.r[k];
+    return [p.x + r.x * lat, p.y, p.z + r.z * lat];
+  };
+  for (let k = 10; k < track.n - 10; k += 1 + Math.floor(rnd() * 3)) {
+    if (!isRipio[k] || rnd() < 0.35) continue;
+    const s = 0.1 + rnd() * rnd() * 0.22;
+    small.push([...at(k, (rnd() * 2 - 1) * (W - 0.2)), s]);
+  }
+  // curvas cerradas: rocas en la parte de adentro, un poco metidas en el camino
+  const curv = stage.curvature ?? [];
+  for (let k = 5; k < track.n - 5; k++) {
+    const c = curv[k] ?? 0;
+    if (Math.abs(c) < 1 / 28 || Math.abs(c) < Math.abs(curv[k - 1]) || Math.abs(c) < Math.abs(curv[k + 1])) continue;
+    if (rnd() < 0.5) continue; // no en todas
+    const n = 1 + Math.floor(rnd() * 2);
+    for (let i = 0; i < n; i++) {
+      const kk = Math.min(track.n - 1, Math.max(0, k + Math.round((rnd() - 0.5) * 8)));
+      const s = 0.3 + rnd() * 0.35;
+      // al borde de adentro: se meten un poco en el camino (más cuanto más grandes)
+      apex.push([...at(kk, Math.sign(c) * (W + 0.45 + rnd() * 0.5)), s]);
+    }
+  }
+  const mat = new THREE.MeshStandardMaterial({ ...pbrMaps('rock_face_03'), color: 0xcfcac2, roughness: 1 });
+  const geo = boulderGeometry(mulberry(5));
+  const put = (list, sink) => {
+    if (!list.length) return;
+    const inst = new THREE.InstancedMesh(geo, mat, list.length);
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
+    list.forEach(([x, y, z, s], i) => {
+      q.setFromEuler(e.set(rnd() * 3, rnd() * 6, rnd() * 3));
+      m.compose(new THREE.Vector3(x, y - s * sink, z), q, new THREE.Vector3(s * (0.9 + rnd() * 0.4), s * 0.75, s * (0.9 + rnd() * 0.4)));
+      inst.setMatrixAt(i, m);
+    });
+    inst.castShadow = true;
+    inst.receiveShadow = true;
+    b.scene.add(inst);
+  };
+  put(small, 0.5);
+  put(apex, 0.3);
+  const R = b.R;
+  // las chicas: bultos que hacen saltar las ruedas (no son "pared")
+  for (const [x, y, z, s] of small) b.world.createCollider(R.ColliderDesc.ball(s * 0.8).setTranslation(x, y - s * 0.5, z).setFriction(0.8));
+  // las de las curvas: se raspan como una pared
+  for (const [x, y, z, s] of apex) {
+    const col = b.world.createCollider(R.ColliderDesc.ball(s * 0.75).setTranslation(x, y - s * 0.3, z).setFriction(0.3));
+    b.physics.markWall(col);
+  }
+}
+
+/**
+ * Relieve de una etapa grande: la física usa toda la grilla, pero se dibuja solo cerca del
+ * camino, en pedazos (los que no se ven no se dibujan) con 3 niveles de detalle.
+ */
+function buildCorridorTerrain(b, g, heights, track, look) {
+  const { n, cell, size, x0, z0 } = g;
+  const hf = new Float32Array(n * n);
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) hf[i * n + j] = heights[j * n + i];
+  const desc = b.R.ColliderDesc.heightfield(n - 1, n - 1, hf, { x: size, y: 1, z: size })
+    .setTranslation(x0 + size / 2, 0, z0 + size / 2)
+    .setFriction(0.8);
+  b.physics.setSurface(b.world.createCollider(desc), 'pasto');
+
+  const mat = terrainMaterial(9, look.terrain);
+  const C = 64;
+  const reach = (g.corridor ?? 450) + C * cell * 0.75;
+  const pts = track.p.filter((_, i) => i % 10 === 0);
+  const white = () => [1, 1, 1];
+  for (let j0 = 0; j0 < n - 1; j0 += C) {
+    for (let i0 = 0; i0 < n - 1; i0 += C) {
+      const cx = x0 + (i0 + C / 2) * cell, cz = z0 + (j0 + C / 2) * cell;
+      if (!pts.some((p) => Math.hypot(p.x - cx, p.z - cz) < reach)) continue;
+      const cells = Math.min(C, n - 1 - i0, n - 1 - j0);
+      const lod = new THREE.LOD();
+      [1, 2, 4].forEach((step, level) => {
+        const m = Math.floor(cells / step) + 1;
+        const hs = new Float32Array(m * m);
+        for (let jj = 0; jj < m; jj++) for (let ii = 0; ii < m; ii++) {
+          hs[jj * m + ii] = heights[Math.min(n - 1, j0 + jj * step) * n + Math.min(n - 1, i0 + ii * step)];
+        }
+        const geo = gridGeometry(m, cell * step, x0 + i0 * cell, z0 + j0 * cell, hs, white, look.splat);
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.receiveShadow = true;
+        lod.addLevel(mesh, [0, 420, 1000][level]);
+      });
+      b.scene.add(lod);
+    }
+  }
+}
+
+/** Sierras de fondo: escondidas (más abajo) cerca del camino, donde está el relieve detallado. */
+function buildOwnFar(scene, g, heights, track, look) {
+  const { n, cell, x0, z0 } = g;
+  const h = heights.slice();
+  const r = Math.ceil(380 / cell);
+  for (let k = 0; k < track.n; k += 5) {
+    const p = track.p[k];
+    const ci = Math.round((p.x - x0) / cell), cj = Math.round((p.z - z0) / cell);
+    for (let dj = -r; dj <= r; dj++) for (let di = -r; di <= r; di++) {
+      const i = ci + di, j = cj + dj;
+      if (i < 0 || j < 0 || i >= n || j >= n) continue;
+      if (Math.hypot(di, dj) * cell < 380) h[j * n + i] -= 60;
+    }
+  }
+  const geo = gridGeometry(n, cell, x0, z0, h, () => [1, 1, 1], look.splat);
+  const mesh = new THREE.Mesh(geo, terrainMaterial(14, look.terrain));
+  mesh.position.y = -3;
+  mesh.receiveShadow = true;
+  scene.add(mesh);
 }
 
 /** Terreno de Mónaco para mirar de lejos, escondido donde está la montaña del rally. */
@@ -130,7 +304,8 @@ function buildPosts(scene, track) {
 }
 
 /** Pinos, arbustos y piedras al costado del camino; los cercanos se pueden chocar. */
-function buildTreesAndRocks(b, track, g, heights) {
+function buildTreesAndRocks(b, track, g, heights, look) {
+  const P = look.plants;
   const rnd = mulberry(7);
   const W = track.width / 2;
   const hash = new Map();
@@ -167,17 +342,18 @@ function buildTreesAndRocks(b, track, g, heights) {
       if (y < 2) continue;
       const slope = Math.hypot(hAt(x + 3, z) - hAt(x - 3, z), hAt(x, z + 3) - hAt(x, z - 3)) / 6;
       const roll = rnd();
-      if (slope > 0.75 || roll < 0.2) {
-        // en las laderas empinadas, piedras; si no, alguna suelta
-        rocks.push([x, y, z, 0.4 + rnd() * rnd() * 2.4, rnd() * 6]);
-      } else if (roll < 0.62) {
-        const kr = rnd();
-        const kind = kr < 0.62 ? 'carrasco' : kr < 0.85 ? 'pinon' : kr < 0.93 ? 'olivo' : 'cipres';
+      if (slope > 0.75 || roll >= P.tree + P.bush) {
+        // en las laderas empinadas, piedras; si no, alguna suelta (y algunas grandes, lejos del camino)
+        const big = rnd() < P.bigRocks && distToRoad(x, z) > W + 10;
+        rocks.push([x, y, z, big ? 1.8 + rnd() * 2.6 : 0.4 + rnd() * rnd() * 2.4, rnd() * 6]);
+      } else if (roll < P.tree) {
+        let kr = rnd(), kind = P.kinds[0][0];
+        for (const [k, w] of P.kinds) { if (kr < w) { kind = k; break; } kr -= w; }
         const s = 0.7 + rnd() * 0.55;
         plants.push({ kind, x, y, z, s, rot: rnd() * 6.28 });
         trees.push([x, y, z, s]);
       } else {
-        plants.push({ kind: 'arbusto', x, y, z, s: 0.6 + rnd() * 0.8, rot: rnd() * 6.28 });
+        plants.push({ kind: P.bushKind, x, y, z, s: 0.6 + rnd() * 0.8, rot: rnd() * 6.28 });
       }
     }
   }

@@ -17,6 +17,7 @@ export const SURFACES = {
   asfalto:  { label: 'Asfalto',  grip: 1.0,  drag: 0.0 },
   adoquin:  { label: 'Adoquín',  grip: 0.82, drag: 0.0, bumpy: 0.6 },
   tierra:   { label: 'Tierra',   grip: 0.62, drag: 0.6 },
+  ripio:    { label: 'Ripio',    grip: 0.55, drag: 0.45, bumpy: 0.5 }, // piedras sueltas: patina más
   arena:    { label: 'Arena',    grip: 0.5,  drag: 2.2 },
   nieve:    { label: 'Nieve',    grip: 0.35, drag: 0.8 },
   pasto:    { label: 'Pasto',    grip: 0.6,  drag: 0.9 },
@@ -54,7 +55,7 @@ export const CARS = {
     SUSPENSION_TRAVEL: 0.08,   // recorrido de la suspensión
     ANTI_ROLL: 0.6,            // resistencia a inclinarse en curvas (0 a 1)
     // Agarre extra (o menos) según superficie. 1 = como dice SURFACES.
-    OFFROAD: { asfalto: 1, adoquin: 0.95, tierra: 0.6, arena: 0.5, nieve: 0.55, pasto: 0.6 },
+    OFFROAD: { asfalto: 1, adoquin: 0.95, tierra: 0.6, ripio: 0.57, arena: 0.5, nieve: 0.55, pasto: 0.6 },
     // Sonido del motor
     SOUND: { IDLE_RPM: 4500, MAX_RPM: 15000, GEARS: 8, PULSES: 3, GRIT: 0.35, BRIGHT: 1.0, VOLUME: 0.9 },
     stats: { velocidad: 5, agarre: 5, todoterreno: 1 },
@@ -88,7 +89,7 @@ export const CARS = {
     SUSPENSION_DAMPING: 3,
     SUSPENSION_TRAVEL: 0.28,
     ANTI_ROLL: 0.35,
-    OFFROAD: { asfalto: 1, adoquin: 1.1, tierra: 1.45, arena: 1.6, nieve: 1.9, pasto: 1.4 },
+    OFFROAD: { asfalto: 1, adoquin: 1.1, tierra: 1.45, ripio: 1.38, arena: 1.6, nieve: 1.9, pasto: 1.4 },
     SOUND: { IDLE_RPM: 750, MAX_RPM: 5200, GEARS: 6, PULSES: 4, GRIT: 0.8, BRIGHT: 0.35, VOLUME: 1.0 },
     stats: { velocidad: 2, agarre: 3, todoterreno: 5 },
   },
@@ -121,7 +122,7 @@ export const CARS = {
     SUSPENSION_DAMPING: 4,
     SUSPENSION_TRAVEL: 0.16,
     ANTI_ROLL: 0.5,
-    OFFROAD: { asfalto: 1, adoquin: 1, tierra: 0.85, arena: 0.7, nieve: 0.75, pasto: 0.85 },
+    OFFROAD: { asfalto: 1, adoquin: 1, tierra: 0.85, ripio: 0.81, arena: 0.7, nieve: 0.75, pasto: 0.85 },
     SOUND: { IDLE_RPM: 850, MAX_RPM: 7200, GEARS: 7, PULSES: 6, GRIT: 0.25, BRIGHT: 0.6, VOLUME: 0.85 },
     stats: { velocidad: 4, agarre: 4, todoterreno: 2 },
   },
@@ -154,7 +155,7 @@ export const CARS = {
     SUSPENSION_TRAVEL: 0.24,   // mucho recorrido: absorbe pozos y saltos
     ANTI_ROLL: 0.45,
     // En tierra y ripio agarra mucho más que los otros
-    OFFROAD: { asfalto: 1, adoquin: 1.05, tierra: 1.65, arena: 1.35, nieve: 1.6, pasto: 1.35 },
+    OFFROAD: { asfalto: 1, adoquin: 1.05, tierra: 1.65, ripio: 1.57, arena: 1.35, nieve: 1.6, pasto: 1.35 },
     SOUND: { IDLE_RPM: 950, MAX_RPM: 7800, GEARS: 6, PULSES: 2, GRIT: 0.65, BRIGHT: 0.75, VOLUME: 0.95 },
     stats: { velocidad: 3, agarre: 4, todoterreno: 4 },
   },
@@ -172,6 +173,11 @@ export const LIGHT = {
   rally: {
     ELEVATION: 34, AZIMUTH: 215, SUN_COLOR: 0xffeed6, SUN: 3.6,
     SKY_LIGHT: 1.5, EXPOSURE: 0.68, FOG: [0xa9bfd6, 1600, 15000],
+  },
+  condor: {
+    // mediodía en las Altas Cumbres: aire limpio, sol fuerte, se ve lejísimos
+    ELEVATION: 48, AZIMUTH: 20, SUN_COLOR: 0xfff2e2, SUN: 3.8,
+    SKY_LIGHT: 1.6, EXPOSURE: 0.66, FOG: [0xb5c8dc, 2500, 26000],
   },
   pista: {
     ELEVATION: 40, AZIMUTH: 210, SUN_COLOR: 0xffeed6, SUN: 3.3,

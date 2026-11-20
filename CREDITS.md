@@ -9,9 +9,10 @@
 | Racing Kit 2.0 (tribunas, pórtico de largada, banderas, carteles, faroles) | [Kenney](https://kenney.nl/assets/racing-kit) | CC0 1.0 | `public/assets/models/racing/` |
 | Calles, costa, muelles y edificios de Mónaco | © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors | ODbL 1.0 | `public/assets/monaco/monaco.json` (datos derivados) |
 | Caminos de la etapa de rally (La Turbie, Tête de Chien) | © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors | ODbL 1.0 | `public/assets/rally/stage.json` (datos derivados) |
+| Camino de la etapa El Cóndor (Ruta Provincial 14, Copina – El Cóndor, Córdoba) | © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors | ODbL 1.0 | `public/assets/rally-condor/stage.json` (datos derivados) |
 | Trazado del circuito de Mónaco | [bacinger/f1-circuits](https://github.com/bacinger/f1-circuits) | MIT | `public/assets/monaco/monaco.json` |
 | Texturas: asphalt_02, aerial_grass_rock, rock_face_03, plastered_wall_04, roof_tiles_14, gravel_road, forest_ground_04, cliff_side, bark_brown_02 | [Poly Haven](https://polyhaven.com/textures) | CC0 1.0 | `public/assets/textures/` (asfalto, terreno, veredas, fachadas, techos, ripio, piso de bosque, rocas, troncos) |
-| Relieve (Terrarium, Mónaco y Tête de Chien) | [Terrain Tiles en AWS Open Data](https://registry.opendata.aws/terrain-tiles/) (Mapzen; fuentes SRTM y otras) | Ver atribuciones de Terrain Tiles | `terrain.bin`, `far.bin`, `rally/terrain.bin` |
+| Relieve (Terrarium: Mónaco, Tête de Chien y Altas Cumbres) | [Terrain Tiles en AWS Open Data](https://registry.opendata.aws/terrain-tiles/) (Mapzen; fuentes SRTM y otras) | Ver atribuciones de Terrain Tiles | `terrain.bin`, `far.bin`, `rally/terrain.bin`, `rally-condor/*.bin` |
 
 El agua, los pianos, las ventanas/postigos de las fachadas, el público y los carteles de las tribunas, las hojas de los árboles y la forma de las piedras se dibujan en código. Las marcas de los carteles son inventadas.
 El juego muestra la atribución de OpenStreetMap y Kenney abajo a la derecha.

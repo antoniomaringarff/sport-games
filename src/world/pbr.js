@@ -58,7 +58,7 @@ export function ribbonMaterial(name, uScale, width, tile = 4, color = 0xffffff) 
  * scale: metros que cubre una repetición del pasto.
  * La UV del terreno viene en metros/12 (ver gridGeometry).
  */
-export function terrainMaterial(scale = 9, { forest = 0.25 } = {}) {
+export function terrainMaterial(scale = 9, { forest = 0.25, dry = 0 } = {}) {
   const k = 12 / scale;
   const grass = pbrMaps('aerial_grass_rock', k);
   const rock = pbrMaps('rock_face_03');
@@ -76,6 +76,7 @@ export function terrainMaterial(scale = 9, { forest = 0.25 } = {}) {
     sh.uniforms.pavedMap = { value: paved };
     sh.uniforms.forestMap = { value: forestMap };
     sh.uniforms.forestAmount = { value: forest };
+    sh.uniforms.dryAmount = { value: dry };
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nattribute vec4 splat;\nvarying vec4 vSplat;\nvarying float vTerrH;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSplat = splat;\nvTerrH = (modelMatrix * vec4(transformed, 1.0)).y;');
@@ -84,7 +85,7 @@ export function terrainMaterial(scale = 9, { forest = 0.25 } = {}) {
         '#include <common>',
         `#include <common>
         uniform sampler2D rockMap, rockNormal, pavedMap, forestMap;
-        uniform float forestAmount;
+        uniform float forestAmount, dryAmount;
         varying vec4 vSplat;
         varying float vTerrH;
         // la misma textura a dos escalas: casi no se nota que se repite
@@ -101,6 +102,8 @@ export function terrainMaterial(scale = 9, { forest = 0.25 } = {}) {
         // variación grande (manchas más secas / más verdes)
         float big = texture2D(map, vMapUv * 0.031).g;
         cGrass *= vec3(0.78, 1.0, 0.95) * mix(vec3(1.1, 1.04, 0.9), vec3(0.85, 1.0, 0.92), smoothstep(0.25, 0.45, big));
+        // pastizal de altura: más amarillo y seco
+        cGrass = mix(cGrass, vec3(dot(cGrass, vec3(0.4, 0.45, 0.15))) * vec3(1.25, 1.08, 0.72), dryAmount);
         // manchones de piso de bosque (agujas de pino, tierra) entre el pasto
         vec3 cForest = twoScale(forestMap, vMapUv * 1.3).rgb * vec3(1.05, 1.0, 0.95);
         float forestPatch = smoothstep(0.42, 0.62, texture2D(map, vMapUv * 0.017 + vec2(0.5, 0.2)).r + forestAmount * 0.35 - 0.12);
@@ -125,18 +128,18 @@ export function terrainMaterial(scale = 9, { forest = 0.25 } = {}) {
         normal = normalize(tbn * mapN);`,
       );
   };
-  mat.customProgramCacheKey = () => 'terrain-splat-2';
+  mat.customProgramCacheKey = () => 'terrain-splat-3';
   return mat;
 }
 
 /** Pesos de mezcla del terreno: [roca, arena, nieve, vereda] según altura (m) y pendiente. */
-export function splatOf(y, slope) {
+export function splatOf(y, slope, { snow = 790, rock = [0.5, 0.95], sand = true } = {}) {
   const ss = (a, b, x) => {
     const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
     return t * t * (3 - 2 * t);
   };
-  const sand = 1 - ss(0.6, 2.2, y);
-  const rock = ss(0.5, 0.95, slope) * (1 - sand);
-  const snow = ss(790, 860, y);
-  return [rock, sand, snow, 0];
+  const sd = sand ? 1 - ss(0.6, 2.2, y) : 0;
+  const rk = ss(rock[0], rock[1], slope) * (1 - sd);
+  const sn = ss(snow, snow + 70, y);
+  return [rk, sd, sn, 0];
 }

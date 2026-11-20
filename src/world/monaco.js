@@ -215,7 +215,7 @@ export function buildFar(scene, g, heights, holes) {
   scene.add(mesh);
 }
 
-export function gridGeometry(n, cell, x0, z0, h, colorOf) {
+export function gridGeometry(n, cell, x0, z0, h, colorOf, splatOpts) {
   const pos = new Float32Array(n * n * 3);
   const col = new Float32Array(n * n * 3);
   const splat = new Float32Array(n * n * 4); // roca, arena, nieve, vereda (ver pbr.js)
@@ -228,7 +228,7 @@ export function gridGeometry(n, cell, x0, z0, h, colorOf) {
       const dz = (h[Math.min(j + 1, n - 1) * n + i] - h[Math.max(j - 1, 0) * n + i]) / (2 * cell);
       const slope = Math.hypot(dx, dz);
       col.set(colorOf(y, slope), k * 3);
-      splat.set(splatOf(y, slope), k * 4);
+      splat.set(splatOf(y, slope, splatOpts), k * 4);
     }
   }
   const idx = new Uint32Array((n - 1) * (n - 1) * 6);
@@ -246,7 +246,7 @@ export function gridGeometry(n, cell, x0, z0, h, colorOf) {
   g.setAttribute('splat', new THREE.BufferAttribute(splat, 4));
   // UV en metros: la textura de detalle se repite cada 12 m
   const uv = new Float32Array(n * n * 2);
-  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) uv.set([(i * cell) / 12, (j * cell) / 12], (j * n + i) * 2);
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) uv.set([(x0 + i * cell) / 12, (z0 + j * cell) / 12], (j * n + i) * 2);
   g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
   g.setIndex(new THREE.BufferAttribute(idx, 1));
   g.computeVertexNormals();

@@ -47,6 +47,7 @@ const PLACES = {
   monaco: { name: 'Mónaco – circuito', world: 'monaco' },
   multi: { name: 'Mónaco – multijugador', world: 'monaco', multi: true },
   rally: { name: 'Rally – Tête de Chien', world: 'rally' },
+  condor: { name: 'Rally – El Cóndor', world: 'condor' },
   pista: { name: 'Pista de pruebas', world: 'pista' },
 };
 const worlds = {};
@@ -56,12 +57,12 @@ async function getWorld(name) {
   const physics = await createPhysics();
   const scene = new THREE.Scene();
   let w;
-  if (name === 'rally') {
-    const sky = createSky(scene, renderer, lightOpts(LIGHT.rally), camera);
-    const data = await loadRallyData();
+  if (name === 'rally' || name === 'condor') {
+    const sky = createSky(scene, renderer, lightOpts(LIGHT[name]), camera);
+    const data = await loadRallyData(name);
     const m = buildRally(physics, scene, data);
     w = { physics, scene, sky, builder: m.builder, spawn: m.spawn, spawnAt: m.spawnAt, track: m.track, update: m.update };
-    w.race = createRally(m.track, m.finishIdx);
+    w.race = createRally(m.track, m.finishIdx, name);
   } else if (name === 'pista') {
     const sky = createSky(scene, renderer, lightOpts(LIGHT.pista), camera);
     const builder = buildTestTrack(physics, scene);

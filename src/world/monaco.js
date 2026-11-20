@@ -3,8 +3,11 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { surfaceMaterial, stripesTexture } from './textures.js';
+import { stripesTexture } from './textures.js';
 import { WorldBuilder } from './builder.js';
+import { terrainMaterial, splatOf, asphaltMaterial, facadeMaterial, roofMaterial, FACADE_TILE } from './pbr.js';
+
+export { terrainMaterial };
 
 const BASE = import.meta.env.BASE_URL;
 const DATA = `${BASE}assets/monaco/`;
@@ -22,7 +25,7 @@ export async function buildMonaco(physics, scene, data) {
   const b = new WorldBuilder(physics, scene);
   const track = makeTrack(meta.circuit);
 
-  buildTerrain(b, meta.terrain, data.near);
+  buildTerrain(b, meta.terrain, data.near, 'pasto', { buildings: meta.buildings, track });
   buildFar(scene, meta.far, data.far, meta.terrain);
   const sea = buildSea(scene);
   buildRoad(b, track);
@@ -117,7 +120,7 @@ export function ribbon(track, idx, side, { closed = false, uScale = 10 } = {}) {
 }
 
 // ---------------------------------------------------------------------------
-export function buildTerrain(b, g, heights, surface = 'pasto') {
+export function buildTerrain(b, g, heights, surface = 'pasto', urban = null) {
   const { n, cell, size, x0, z0 } = g;
   // Malla visible
   const geo = gridGeometry(n, cell, x0, z0, heights, (h, slope) => {
@@ -125,6 +128,7 @@ export function buildTerrain(b, g, heights, surface = 'pasto') {
     if (slope > 0.9) return [0.55, 0.52, 0.48];      // roca
     return [0.34 + Math.random() * 0.05, 0.4 + Math.random() * 0.05, 0.24];
   });
+  if (urban) paveCity(geo, g, urban);
   const mesh = new THREE.Mesh(geo, terrainMaterial());
   mesh.receiveShadow = true;
   b.scene.add(mesh);
@@ -137,6 +141,45 @@ export function buildTerrain(b, g, heights, surface = 'pasto') {
     .setFriction(0.8);
   const col = b.world.createCollider(desc);
   b.physics.setSurface(col, surface);
+}
+
+/**
+ * En la ciudad no hay pasto: alrededor de los edificios y de la pista el piso es vereda / plaza.
+ * Marca esas celdas en el 4.º canal del "splat" (y le saca pasto, roca y arena).
+ */
+function paveCity(geo, g, { buildings, track }) {
+  const { n, cell, x0, z0 } = g;
+  const mask = new Float32Array(n * n);
+  const mark = (minX, minZ, maxX, maxZ) => {
+    const i0 = Math.max(0, Math.floor((minX - x0) / cell)), i1 = Math.min(n - 1, Math.ceil((maxX - x0) / cell));
+    const j0 = Math.max(0, Math.floor((minZ - z0) / cell)), j1 = Math.min(n - 1, Math.ceil((maxZ - z0) / cell));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) mask[j * n + i] = 1;
+  };
+  for (const bd of buildings) {
+    let a = Infinity, bb = Infinity, c = -Infinity, d = -Infinity;
+    for (let i = 0; i < bd.p.length; i += 2) {
+      a = Math.min(a, bd.p[i]); c = Math.max(c, bd.p[i]);
+      bb = Math.min(bb, bd.p[i + 1]); d = Math.max(d, bd.p[i + 1]);
+    }
+    const m = 9; // calle / vereda alrededor
+    mark(a - m, bb - m, c + m, d + m);
+  }
+  const m = track.width / 2 + 7;
+  for (const P of track.p) mark(P.x - m, P.z - m, P.x + m, P.z + m);
+  // bordes suaves
+  const soft = new Float32Array(n * n);
+  for (let j = 1; j < n - 1; j++) for (let i = 1; i < n - 1; i++) {
+    let sum = 0;
+    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) sum += mask[(j + dj) * n + i + di];
+    soft[j * n + i] = sum / 9;
+  }
+  const sp = geo.attributes.splat, pos = geo.attributes.position;
+  for (let k = 0; k < n * n; k++) {
+    const y = pos.getY(k);
+    let v = soft[k] * (y > 0.8 ? 1 : 0) * (1 - sp.getX(k) * 0.7); // no en el agua ni en acantilados
+    if (v <= 0) continue;
+    sp.setXYZW(k, sp.getX(k) * (1 - v), sp.getY(k) * (1 - v), sp.getZ(k), v);
+  }
 }
 
 /** holes: zonas (metas de terreno cercano) donde el fondo se esconde debajo */
@@ -160,52 +203,16 @@ export function buildFar(scene, g, heights, holes) {
     if (slope > 0.8) return [0.56, 0.53, 0.5];
     return [0.33, 0.39, 0.25];
   });
-  const mesh = new THREE.Mesh(geo, terrainMaterial(0.1));
+  const mesh = new THREE.Mesh(geo, terrainMaterial(14));
   mesh.position.y = -0.3;
   mesh.receiveShadow = true;
   scene.add(mesh);
 }
 
-/** Terreno con color por vértice × una textura de detalle (pasto, tierra, piedritas). */
-let detailTex = null;
-export function terrainMaterial(repeat = 1) {
-  if (!detailTex) {
-    const size = 256;
-    const c = document.createElement('canvas');
-    c.width = c.height = size;
-    const g = c.getContext('2d');
-    g.fillStyle = '#e6e6e6';
-    g.fillRect(0, 0, size, size);
-    let seed = 11;
-    const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    for (let i = 0; i < 2600; i++) {
-      const v = 170 + r() * 85;
-      g.fillStyle = `rgba(${v},${v},${v * 0.97},${0.25 + r() * 0.5})`;
-      const s = 1 + r() * 5;
-      g.beginPath();
-      g.ellipse(r() * size, r() * size, s, s * (0.4 + r()), r() * 3, 0, Math.PI * 2);
-      g.fill();
-    }
-    for (let i = 0; i < 400; i++) {
-      g.fillStyle = `rgba(90,85,70,${0.15 + r() * 0.25})`;
-      g.fillRect(r() * size, r() * size, 1 + r() * 2, 1 + r() * 2);
-    }
-    detailTex = new THREE.CanvasTexture(c);
-    detailTex.wrapS = detailTex.wrapT = THREE.RepeatWrapping;
-    detailTex.colorSpace = THREE.SRGBColorSpace;
-    detailTex.anisotropy = 8;
-  }
-  const t = repeat === 1 ? detailTex : detailTex.clone();
-  if (repeat !== 1) {
-    t.needsUpdate = true;
-    t.repeat.set(repeat, repeat);
-  }
-  return new THREE.MeshStandardMaterial({ vertexColors: true, map: t, roughness: 0.95 });
-}
-
 export function gridGeometry(n, cell, x0, z0, h, colorOf) {
   const pos = new Float32Array(n * n * 3);
   const col = new Float32Array(n * n * 3);
+  const splat = new Float32Array(n * n * 4); // roca, arena, nieve, vereda (ver pbr.js)
   for (let j = 0; j < n; j++) {
     for (let i = 0; i < n; i++) {
       const k = j * n + i;
@@ -213,7 +220,9 @@ export function gridGeometry(n, cell, x0, z0, h, colorOf) {
       pos.set([x0 + i * cell, y, z0 + j * cell], k * 3);
       const dx = (h[j * n + Math.min(i + 1, n - 1)] - h[j * n + Math.max(i - 1, 0)]) / (2 * cell);
       const dz = (h[Math.min(j + 1, n - 1) * n + i] - h[Math.max(j - 1, 0) * n + i]) / (2 * cell);
-      col.set(colorOf(y, Math.hypot(dx, dz)), k * 3);
+      const slope = Math.hypot(dx, dz);
+      col.set(colorOf(y, slope), k * 3);
+      splat.set(splatOf(y, slope), k * 4);
     }
   }
   const idx = new Uint32Array((n - 1) * (n - 1) * 6);
@@ -228,6 +237,7 @@ export function gridGeometry(n, cell, x0, z0, h, colorOf) {
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  g.setAttribute('splat', new THREE.BufferAttribute(splat, 4));
   // UV en metros: la textura de detalle se repite cada 12 m
   const uv = new Float32Array(n * n * 2);
   for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) uv.set([(i * cell) / 12, (j * cell) / 12], (j * n + i) * 2);
@@ -291,9 +301,8 @@ function buildRoad(b, track) {
   const all = rangeIdx(track.n, 0, track.n - 1);
   const W = track.width / 2;
   const geo = ribbon(track, all, () => [-W - 0.8, 0.02, W + 0.8, 0.02], { closed: true, uScale: 10 });
-  const mat = surfaceMaterial('asfalto', 1, 1, 1);
-  mat.map.repeat.set(1, 1);
-  // las UV ya están en "metros/10": rotar para que la textura no se estire
+  // asfalto real, una repetición cada 4 m (las UV vienen en metros/10 a lo largo y 0..1 de lado)
+  const mat = asphaltMaterial(10, 2 * W + 1.6);
   const mesh = new THREE.Mesh(geo, mat);
   mesh.receiveShadow = true;
   b.scene.add(mesh);
@@ -446,30 +455,13 @@ function buildStartLine(scene, track) {
 // ---------------------------------------------------------------------------
 // tonos de fachadas reales de la Riviera: crema, ocre, salmón, piedra, blanco gastado
 const PALETTE = [0xdcd0b8, 0xcfae84, 0xd8bfa0, 0xc79a78, 0xe2ddd2, 0xcdb88c, 0xb98a6c, 0xd6cdbb, 0xb2b0a8];
-const ROOF = new THREE.Color(0x8e877b);
-
-function windowTexture() {
-  const c = document.createElement('canvas');
-  c.width = c.height = 64;
-  const g = c.getContext('2d');
-  g.fillStyle = '#ffffff';
-  g.fillRect(0, 0, 64, 64);
-  g.fillStyle = '#39434c';
-  g.fillRect(18, 16, 28, 30);
-  g.fillStyle = '#56636d';
-  g.fillRect(18, 16, 28, 6);
-  g.fillStyle = '#b9b1a3';
-  g.fillRect(14, 46, 36, 4); // balcón
-  const t = new THREE.CanvasTexture(c);
-  t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 8;
-  return t;
-}
+// tejas: terracota más o menos gastada
+const ROOF_TILE = [0xffffff, 0xf0e2d6, 0xe6d8cc, 0xfff2e8];
 
 export function buildBuildings(scene, list) {
-  const geos = [];
+  const walls = [], roofs = [];
   const color = new THREE.Color();
+  const roofColor = new THREE.Color();
   list.forEach((bd, n) => {
     const pts = [];
     for (let i = 0; i < bd.p.length; i += 2) pts.push(new THREE.Vector2(bd.p[i], -bd.p[i + 1]));
@@ -485,28 +477,46 @@ export function buildBuildings(scene, list) {
     geo = geo.index ? geo.toNonIndexed() : geo;
     geo.computeVertexNormals();
     const nrm = geo.attributes.normal, uv = geo.attributes.uv, pos = geo.attributes.position;
-    const cols = new Float32Array(pos.count * 3);
     color.setHex(PALETTE[(n * 7) % PALETTE.length]);
-    for (let i = 0; i < pos.count; i++) {
-      if (Math.abs(nrm.getY(i)) > 0.5) {
-        uv.setXY(i, 0.02, 0.02); // techo: parte lisa de la textura
-        cols.set([ROOF.r, ROOF.g, ROOF.b], i * 3);
-      } else {
-        // paredes: una ventana cada 3.4 m de ancho y 3.2 m de alto
-        uv.setXY(i, uv.getX(i) / 3.4, (pos.getY(i) - bd.y) / 3.2);
-        cols.set([color.r, color.g, color.b], i * 3);
-      }
+    // techos: tejas de terracota en las casas bajas, gris gastado en las torres (azoteas)
+    roofColor.setHex(bd.h < 16 ? ROOF_TILE[n % ROOF_TILE.length] : 0x9a948a);
+    const w = [], r = [];
+    for (let i = 0; i < pos.count; i += 3) {
+      const isRoof = Math.abs(nrm.getY(i)) > 0.5;
+      (isRoof ? r : w).push(i);
     }
-    geo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
-    geos.push(geo);
+    const pick = (ids, roof) => {
+      const P = [], N = [], U = [], C = [];
+      const c = roof ? roofColor : color;
+      for (const t of ids) {
+        for (let v = t; v < t + 3; v++) {
+          P.push(pos.getX(v), pos.getY(v), pos.getZ(v));
+          N.push(nrm.getX(v), nrm.getY(v), nrm.getZ(v));
+          if (roof) U.push(pos.getX(v) / 3, pos.getZ(v) / 3);
+          // paredes: el módulo de fachada (2 ventanas × 2 pisos), empezando en la vereda
+          else U.push(uv.getX(v) / FACADE_TILE.w, (pos.getY(v) - bd.y) / FACADE_TILE.h);
+          C.push(c.r, c.g, c.b);
+        }
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
+      g.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3));
+      g.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2));
+      g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3));
+      return g;
+    };
+    if (w.length) walls.push(pick(w, false));
+    if (r.length) roofs.push(pick(r, true));
+    geo.dispose();
   });
-  if (!geos.length) return;
-  const merged = mergeGeometries(geos, false);
-  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, map: windowTexture(), roughness: 0.85 });
-  const mesh = new THREE.Mesh(merged, mat);
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  scene.add(mesh);
+  for (const [geos, mat] of [[walls, facadeMaterial()], [roofs, roofMaterial()]]) {
+    if (!geos.length) continue;
+    const merged = mergeGeometries(geos, false);
+    const mesh = new THREE.Mesh(merged, mat);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    scene.add(mesh);
+  }
 }
 
 function buildPiers(scene, piers) {

@@ -107,7 +107,17 @@ export function prepareMaterials(scene, csm) {
     if (!o.isMesh || !o.material) return;
     for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
       if (prepared.has(m) || !(m.isMeshStandardMaterial || m.isMeshLambertMaterial || m.isMeshPhongMaterial)) continue;
+      // setupMaterial reemplaza onBeforeCompile: si el material ya tenía uno propio
+      // (por ejemplo el terreno mezclado), hay que correr los dos
+      const own = m.onBeforeCompile !== THREE.Material.prototype.onBeforeCompile ? m.onBeforeCompile : null;
       csm.setupMaterial(m);
+      if (own) {
+        const csmHook = m.onBeforeCompile;
+        m.onBeforeCompile = (shader, renderer) => {
+          own(shader, renderer);
+          csmHook(shader, renderer);
+        };
+      }
       m.needsUpdate = true;
       prepared.add(m);
     }

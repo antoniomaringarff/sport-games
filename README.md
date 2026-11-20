@@ -89,6 +89,13 @@ Se listan en [tools/cars.sources.json](tools/cars.sources.json) con el eje del f
 node tools/convert-models.mjs
 ```
 
+Texturas del mapa (asfalto, pasto, roca, revoque, tejas): bajadas de Poly Haven (CC0) a
+`assets-raw/textures/<nombre>/` y convertidas a WebP con:
+
+```bash
+node tools/convert-textures.mjs
+```
+
 Eso genera `public/assets/models/cars/<id>.glb` y `cars.json` (posición y radio de las ruedas, tamaño de la carrocería), que usa la física.
 Las ruedas se detectan **por forma**, no por nombre: las piezas redondas que tocan el piso en cada esquina (las cubiertas) más todo lo que está adentro (llanta, maza, disco), aunque en el original estén pegadas a la carrocería.
 El script también aplana el modelo, simplifica (`simplify` en `cars.sources.json`), junta piezas del mismo material, pasa las texturas a WebP de 1024 px y cuantiza la geometría.

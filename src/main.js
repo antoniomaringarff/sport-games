@@ -270,6 +270,7 @@ const select = createCarSelect({
     save(LAST_CAR_KEY, id);
     save(LAST_PLACE_KEY, place);
     hud.show(true);
+    dynRes.reset();
     carSound?.setActive(true);
     state = 'driving';
     chase.snap();

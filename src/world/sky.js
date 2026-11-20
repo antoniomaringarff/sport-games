@@ -34,7 +34,8 @@ export function createSky(scene, renderer, opts = {}, camera = null) {
   scene.environmentIntensity = GRAPHICS.ENV_LIGHT;
   pmrem.dispose();
 
-  const hemi = new THREE.HemisphereLight(0xcfe3ff, 0x7d7a6a, (opts.skyLight ?? 1.1) * 0.45);
+  // relleno suave: lo justo para que las sombras no queden negras (más relleno = todo lavado)
+  const hemi = new THREE.HemisphereLight(0xb9cde6, 0x5e5848, (opts.skyLight ?? 1.1) * 0.3);
   scene.add(hemi);
 
   // --- Sol: sombras en cascada (cerca nítidas, lejos también hay) o un sol simple ---
@@ -99,9 +100,9 @@ function gradientSphere(sunDir) {
   const mat = new THREE.ShaderMaterial({
     side: THREE.BackSide,
     uniforms: {
-      top: { value: new THREE.Color(0x4f86c6) },
-      horizon: { value: new THREE.Color(0xdfe7ee) },
-      bottom: { value: new THREE.Color(0x6f6a5c) },
+      top: { value: new THREE.Color(0x3f74b4) },
+      horizon: { value: new THREE.Color(0xb9c8d6) },
+      bottom: { value: new THREE.Color(0x4f4b42) },
       sun: { value: sunDir.clone() },
       warm: { value: new THREE.Color(0xffe2b8) },
     },
@@ -123,8 +124,8 @@ function makeSkyMesh(scale) {
   const sky = new Sky();
   sky.scale.setScalar(scale);
   const u = sky.material.uniforms;
-  u.turbidity.value = 5;
-  u.rayleigh.value = 1.4;
+  u.turbidity.value = 2.2;  // aire limpio: poca bruma blanca
+  u.rayleigh.value = 2.6;   // cielo bien azul (día despejado en el Mediterráneo)
   u.mieCoefficient.value = 0.004;
   u.mieDirectionalG.value = 0.85;
   return sky;
@@ -178,7 +179,7 @@ function makeClouds(scene, sunColor) {
     depthWrite: false,
     fog: false,
     side: THREE.DoubleSide,
-    color: new THREE.Color(1, 1, 1).lerp(sunColor, 0.25),
+    color: new THREE.Color(1.35, 1.35, 1.38).lerp(sunColor.clone().multiplyScalar(1.35), 0.2), // blancas al sol
   });
   const plane = new THREE.Mesh(new THREE.PlaneGeometry(SPAN, SPAN), mat);
   plane.rotation.x = Math.PI / 2; // mirando para abajo

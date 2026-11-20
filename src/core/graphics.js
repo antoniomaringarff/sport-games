@@ -69,9 +69,17 @@ export function createDynamicResolution(renderer, pipeline) {
     get pixelRatio() {
       return pr;
     },
+    /** Al entrar a un lugar: no medir los primeros segundos (cargar y compilar da tirones). */
+    reset() {
+      t = -3;
+      frames = 0;
+      goodWindows = 0;
+    },
     update(dt) {
       if (!GRAPHICS.DYNAMIC_RESOLUTION) return;
+      if (dt > 0.1) return; // un tirón suelto (carga, cambio de pestaña) no cuenta como "va lento"
       t += dt;
+      if (t < 0) return;
       sinceChange += dt;
       frames++;
       if (t < 3) return; // mirar ventanas de 3 segundos, no cuadros sueltos

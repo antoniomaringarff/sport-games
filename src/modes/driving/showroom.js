@@ -12,7 +12,7 @@ export function createShowroom(renderer) {
   if (renderer) {
     const pmrem = new THREE.PMREMGenerator(renderer);
     scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-    scene.environmentIntensity = 0.55;
+    scene.environmentIntensity = 0.35;
     pmrem.dispose();
   }
   scene.background = new THREE.Color(0x0e1622);
@@ -22,13 +22,13 @@ export function createShowroom(renderer) {
 
   // Luces de estudio
   scene.add(new THREE.HemisphereLight(0xbcd2ff, 0x1a1410, 0.9));
-  const key = new THREE.SpotLight(0xfff2e0, 260, 30, 0.55, 0.5, 1.6);
+  const key = new THREE.SpotLight(0xfff2e0, 150, 30, 0.55, 0.6, 1.6);
   key.position.set(5, 9, 6);
   key.castShadow = true;
   key.shadow.mapSize.set(1024, 1024);
   key.shadow.bias = -0.0005;
   scene.add(key, key.target);
-  const rim = new THREE.DirectionalLight(0x7fb4ff, 1.6);
+  const rim = new THREE.DirectionalLight(0x7fb4ff, 0.9);
   rim.position.set(-6, 4, -7);
   scene.add(rim);
   const fill = new THREE.PointLight(0xffc27a, 20, 20);

@@ -36,7 +36,23 @@ function noise(g, size, r, base, spread, count, maxR = 2) {
 }
 
 export const SURFACE_TEXTURES = {
-  asfalto: () => canvasTexture('asfalto', 256, (g, s, r) => noise(g, s, r, '#7a7c80', 0.16, 9000, 2)),
+  asfalto: () =>
+    canvasTexture('asfalto', 256, (g, s, r) => {
+      noise(g, s, r, '#5f6165', 0.12, 12000, 1.4);
+      // piedritas claras del agregado
+      for (let i = 0; i < 1400; i++) {
+        const l = 55 + r() * 25;
+        g.fillStyle = `hsla(30, 4%, ${l}%, ${0.12 + r() * 0.18})`;
+        g.fillRect(r() * s, r() * s, 1 + r() * 1.5, 1 + r() * 1.5);
+      }
+      // manchas más oscuras (aceite, parches)
+      for (let i = 0; i < 18; i++) {
+        g.fillStyle = `rgba(30,30,32,${0.05 + r() * 0.08})`;
+        g.beginPath();
+        g.ellipse(r() * s, r() * s, 6 + r() * 26, 4 + r() * 14, r() * 3, 0, Math.PI * 2);
+        g.fill();
+      }
+    }),
   adoquin: () =>
     canvasTexture('adoquin', 256, (g, s, r) => {
       g.fillStyle = '#5b5148';

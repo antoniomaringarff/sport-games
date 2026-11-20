@@ -123,7 +123,7 @@ export function buildTerrain(b, g, heights, surface = 'pasto') {
   const geo = gridGeometry(n, cell, x0, z0, heights, (h, slope) => {
     if (h < 1.2) return [0.82, 0.76, 0.6];          // arena / costa
     if (slope > 0.9) return [0.55, 0.52, 0.48];      // roca
-    return [0.42 + Math.random() * 0.04, 0.5 + Math.random() * 0.05, 0.3];
+    return [0.34 + Math.random() * 0.05, 0.4 + Math.random() * 0.05, 0.24];
   });
   const mesh = new THREE.Mesh(geo, terrainMaterial());
   mesh.receiveShadow = true;
@@ -158,7 +158,7 @@ export function buildFar(scene, g, heights, holes) {
     if (y > 820) return [0.95, 0.96, 0.98];               // nieve (Mont Agel, licencia del juego)
     if (y > 650) return [0.75, 0.74, 0.72];
     if (slope > 0.8) return [0.56, 0.53, 0.5];
-    return [0.38, 0.47, 0.3];
+    return [0.33, 0.39, 0.25];
   });
   const mesh = new THREE.Mesh(geo, terrainMaterial(0.1));
   mesh.position.y = -0.3;
@@ -266,10 +266,10 @@ export function buildSea(scene) {
   normal.wrapS = normal.wrapT = THREE.RepeatWrapping;
   normal.repeat.set(400, 400);
   const mat = new THREE.MeshStandardMaterial({
-    color: 0x1b5e86,
-    roughness: 0.06,
-    metalness: 0.05,
-    envMapIntensity: 1.6,
+    color: 0x174f6e,
+    roughness: 0.22,
+    metalness: 0,
+    envMapIntensity: 0.9,
     normalMap: normal,
     normalScale: new THREE.Vector2(0.35, 0.35),
   });
@@ -335,11 +335,11 @@ export function barrierTexture() {
   const c = document.createElement('canvas');
   c.width = 64; c.height = 64;
   const g = c.getContext('2d');
-  g.fillStyle = '#c9ced4'; g.fillRect(0, 0, 64, 64);
-  g.fillStyle = '#9aa1a8';
+  g.fillStyle = '#9da3a7'; g.fillRect(0, 0, 64, 64);
+  g.fillStyle = '#7d8388';
   g.fillRect(0, 18, 64, 6);
   g.fillRect(0, 40, 64, 6);
-  g.fillStyle = '#e4e8ec';
+  g.fillStyle = '#b4babe';
   g.fillRect(0, 12, 64, 4);
   g.fillRect(0, 34, 64, 4);
   const t = new THREE.CanvasTexture(c);
@@ -350,7 +350,7 @@ export function barrierTexture() {
 
 function buildBarriers(b, track) {
   const W = track.width / 2 + 0.9;
-  const mat = new THREE.MeshStandardMaterial({ map: barrierTexture(), roughness: 0.45, metalness: 0.6, side: THREE.DoubleSide });
+  const mat = new THREE.MeshStandardMaterial({ map: barrierTexture(), roughness: 0.7, metalness: 0.25, side: THREE.DoubleSide });
   // tramos fuera del túnel
   const open = [];
   let cur = [];
@@ -444,8 +444,9 @@ function buildStartLine(scene, track) {
 }
 
 // ---------------------------------------------------------------------------
-const PALETTE = [0xf1e3c8, 0xe9c9a3, 0xf3d8b8, 0xe3b48f, 0xf6efe3, 0xead7a7, 0xd9a07f, 0xf2e8d2, 0xcfd6d9];
-const ROOF = new THREE.Color(0xb9b2a6);
+// tonos de fachadas reales de la Riviera: crema, ocre, salmón, piedra, blanco gastado
+const PALETTE = [0xdcd0b8, 0xcfae84, 0xd8bfa0, 0xc79a78, 0xe2ddd2, 0xcdb88c, 0xb98a6c, 0xd6cdbb, 0xb2b0a8];
+const ROOF = new THREE.Color(0x8e877b);
 
 function windowTexture() {
   const c = document.createElement('canvas');
@@ -453,11 +454,11 @@ function windowTexture() {
   const g = c.getContext('2d');
   g.fillStyle = '#ffffff';
   g.fillRect(0, 0, 64, 64);
-  g.fillStyle = '#5d6e7c';
+  g.fillStyle = '#39434c';
   g.fillRect(18, 16, 28, 30);
-  g.fillStyle = '#7f909c';
+  g.fillStyle = '#56636d';
   g.fillRect(18, 16, 28, 6);
-  g.fillStyle = '#d9d2c5';
+  g.fillStyle = '#b9b1a3';
   g.fillRect(14, 46, 36, 4); // balcón
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;

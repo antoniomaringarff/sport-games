@@ -162,16 +162,16 @@ export const CARS = {
 // EXPOSURE: brillo general de la imagen · SKY_LIGHT: luz del cielo que rellena las sombras
 export const LIGHT = {
   monaco: {
-    ELEVATION: 38, AZIMUTH: 228, SUN_COLOR: 0xfff1dc, SUN: 3.2,
-    SKY_LIGHT: 1.7, EXPOSURE: 0.74, FOG: [0xc7d6e2, 900, 9000],
+    ELEVATION: 38, AZIMUTH: 228, SUN_COLOR: 0xffeed6, SUN: 3.6,
+    SKY_LIGHT: 1.5, EXPOSURE: 0.68, FOG: [0xa9bfd6, 1400, 13000],
   },
   rally: {
-    ELEVATION: 34, AZIMUTH: 215, SUN_COLOR: 0xfff1dc, SUN: 3.1,
-    SKY_LIGHT: 1.6, EXPOSURE: 0.74, FOG: [0xc7d6e2, 1100, 11000],
+    ELEVATION: 34, AZIMUTH: 215, SUN_COLOR: 0xffeed6, SUN: 3.6,
+    SKY_LIGHT: 1.5, EXPOSURE: 0.68, FOG: [0xa9bfd6, 1600, 15000],
   },
   pista: {
-    ELEVATION: 40, AZIMUTH: 210, SUN_COLOR: 0xfff0dc, SUN: 2.8,
-    SKY_LIGHT: 1.3, EXPOSURE: 0.72, FOG: [0xbfd4e6, 180, 900],
+    ELEVATION: 40, AZIMUTH: 210, SUN_COLOR: 0xffeed6, SUN: 3.3,
+    SKY_LIGHT: 1.3, EXPOSURE: 0.64, FOG: [0xbfd4e6, 180, 900],
   },
 };
 
@@ -188,7 +188,7 @@ export const MINIMAP = {
 export const GRAPHICS = {
   QUALITY: 'alta',      // 'alta', 'media' o 'baja' (si el juego va lento, bajala)
   VIGNETTE: 0.55,       // bordes un poco más oscuros (0 = nada, 1 = mucho)
-  ENV_LIGHT: 0.6,      // cuánto ilumina y se refleja el cielo
+  ENV_LIGHT: 0.32,     // cuánto ilumina y se refleja el cielo (más alto = todo brilla más)
   CLOUDS: 0.7,          // cantidad de nubes (0 = cielo limpio)
   DYNAMIC_RESOLUTION: true, // si va lento, baja un poco la resolución sola para mantener 60 fps
 };

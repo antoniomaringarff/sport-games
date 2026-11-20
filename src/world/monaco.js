@@ -6,9 +6,12 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { stripesTexture } from './textures.js';
 import { WorldBuilder } from './builder.js';
 import { buildSea } from './sea.js';
-import { terrainMaterial, splatOf, asphaltMaterial, facadeMaterial, roofMaterial, FACADE_TILE } from './pbr.js';
+import { buildBuildings, trackDistance, mulberry } from './city.js';
+import { buildStands } from './stands.js';
+import { plantTrees } from './trees.js';
+import { terrainMaterial, splatOf, asphaltMaterial } from './pbr.js';
 
-export { terrainMaterial, buildSea };
+export { terrainMaterial, buildSea, buildBuildings };
 
 const BASE = import.meta.env.BASE_URL;
 const DATA = `${BASE}assets/monaco/`;
@@ -26,7 +29,8 @@ export async function buildMonaco(physics, scene, data) {
   const b = new WorldBuilder(physics, scene);
   const track = makeTrack(meta.circuit);
 
-  buildTerrain(b, meta.terrain, data.near, 'pasto', { buildings: meta.buildings, track });
+  const buildings = buildBuildings(scene, meta.buildings, track); // los que quedan (lejos de la pista)
+  buildTerrain(b, meta.terrain, data.near, 'pasto', { buildings, track });
   buildFar(scene, meta.far, data.far, meta.terrain);
   const sea = buildSea(scene, { g: meta.terrain, heights: data.near });
   buildRoad(b, track);
@@ -34,9 +38,10 @@ export async function buildMonaco(physics, scene, data) {
   buildBarriers(b, track);
   buildTunnel(b, track);
   buildStartLine(scene, track);
-  buildBuildings(scene, meta.buildings);
   buildPiers(scene, meta.piers);
-  buildPalms(scene, track);
+  const heightAt = heightSampler(meta.terrain, data.near);
+  const stands = buildStands(scene, track, heightAt);
+  buildVegetation(scene, track, heightAt, meta.terrain, buildings, stands);
   await buildProps(scene, track);
 
   // Lugar de largada: unos metros detrás de la línea, en el medio de la pista
@@ -406,72 +411,6 @@ function buildStartLine(scene, track) {
 }
 
 // ---------------------------------------------------------------------------
-// tonos de fachadas reales de la Riviera: crema, ocre, salmón, piedra, blanco gastado
-const PALETTE = [0xdcd0b8, 0xcfae84, 0xd8bfa0, 0xc79a78, 0xe2ddd2, 0xcdb88c, 0xb98a6c, 0xd6cdbb, 0xb2b0a8];
-// tejas: terracota más o menos gastada
-const ROOF_TILE = [0xffffff, 0xf0e2d6, 0xe6d8cc, 0xfff2e8];
-
-export function buildBuildings(scene, list) {
-  const walls = [], roofs = [];
-  const color = new THREE.Color();
-  const roofColor = new THREE.Color();
-  list.forEach((bd, n) => {
-    const pts = [];
-    for (let i = 0; i < bd.p.length; i += 2) pts.push(new THREE.Vector2(bd.p[i], -bd.p[i + 1]));
-    let geo;
-    try {
-      geo = new THREE.ExtrudeGeometry(new THREE.Shape(pts), { depth: bd.h, bevelEnabled: false });
-    } catch {
-      return;
-    }
-    geo.rotateX(-Math.PI / 2);
-    geo.translate(0, bd.y, 0);
-    geo.clearGroups();
-    geo = geo.index ? geo.toNonIndexed() : geo;
-    geo.computeVertexNormals();
-    const nrm = geo.attributes.normal, uv = geo.attributes.uv, pos = geo.attributes.position;
-    color.setHex(PALETTE[(n * 7) % PALETTE.length]);
-    // techos: tejas de terracota en las casas bajas, gris gastado en las torres (azoteas)
-    roofColor.setHex(bd.h < 16 ? ROOF_TILE[n % ROOF_TILE.length] : 0x9a948a);
-    const w = [], r = [];
-    for (let i = 0; i < pos.count; i += 3) {
-      const isRoof = Math.abs(nrm.getY(i)) > 0.5;
-      (isRoof ? r : w).push(i);
-    }
-    const pick = (ids, roof) => {
-      const P = [], N = [], U = [], C = [];
-      const c = roof ? roofColor : color;
-      for (const t of ids) {
-        for (let v = t; v < t + 3; v++) {
-          P.push(pos.getX(v), pos.getY(v), pos.getZ(v));
-          N.push(nrm.getX(v), nrm.getY(v), nrm.getZ(v));
-          if (roof) U.push(pos.getX(v) / 3, pos.getZ(v) / 3);
-          // paredes: el módulo de fachada (2 ventanas × 2 pisos), empezando en la vereda
-          else U.push(uv.getX(v) / FACADE_TILE.w, (pos.getY(v) - bd.y) / FACADE_TILE.h);
-          C.push(c.r, c.g, c.b);
-        }
-      }
-      const g = new THREE.BufferGeometry();
-      g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
-      g.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3));
-      g.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2));
-      g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3));
-      return g;
-    };
-    if (w.length) walls.push(pick(w, false));
-    if (r.length) roofs.push(pick(r, true));
-    geo.dispose();
-  });
-  for (const [geos, mat] of [[walls, facadeMaterial()], [roofs, roofMaterial()]]) {
-    if (!geos.length) continue;
-    const merged = mergeGeometries(geos, false);
-    const mesh = new THREE.Mesh(merged, mat);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    scene.add(mesh);
-  }
-}
-
 function buildPiers(scene, piers) {
   const mat = new THREE.MeshStandardMaterial({ color: 0xc8c2b5, roughness: 0.9 });
   const geos = [];
@@ -509,72 +448,102 @@ function buildPiers(scene, piers) {
 }
 
 // ---------------------------------------------------------------------------
-/** Palmeras low-poly en la parte baja del circuito (puerto, costanera). */
-function palmGeometry() {
-  const parts = [];
-  // tronco curvo: tramos de cilindro que se van inclinando
-  let x = 0, y = 0, ang = 0;
-  for (let i = 0; i < 6; i++) {
-    const h = 1.3, r = 0.22 - i * 0.02;
-    const seg = new THREE.CylinderGeometry(r * 0.9, r, h, 6);
-    seg.translate(0, h / 2, 0);
-    seg.rotateZ(-ang);
-    seg.translate(x, y, 0);
-    parts.push({ geo: seg, mat: 0 });
-    x += Math.sin(ang) * h;
-    y += Math.cos(ang) * h;
-    ang += 0.06;
-  }
-  // hojas: conos aplastados que salen de la punta y caen
-  for (let i = 0; i < 8; i++) {
-    const leaf = new THREE.ConeGeometry(0.45, 3.4, 4, 1);
-    leaf.scale(1, 1, 0.18);
-    leaf.translate(0, 1.7, 0);
-    leaf.rotateZ(-1.15 - (i % 2) * 0.25);
-    leaf.rotateY((i / 8) * Math.PI * 2);
-    leaf.translate(x, y, 0);
-    parts.push({ geo: leaf, mat: 1 });
-  }
-  const trunk = mergeGeometries(parts.filter((p) => p.mat === 0).map((p) => p.geo.toNonIndexed()));
-  const leaves = mergeGeometries(parts.filter((p) => p.mat === 1).map((p) => p.geo.toNonIndexed()));
-  return mergeGeometries([trunk, leaves], true);
+/** Altura del terreno en (x, z), interpolada. */
+export function heightSampler(g, heights) {
+  const { n, cell, x0, z0 } = g;
+  return (x, z) => {
+    const fx = (x - x0) / cell, fz = (z - z0) / cell;
+    const i = Math.max(0, Math.min(n - 2, Math.floor(fx))), j = Math.max(0, Math.min(n - 2, Math.floor(fz)));
+    const tx = Math.min(1, Math.max(0, fx - i)), tz = Math.min(1, Math.max(0, fz - j));
+    const h = (a, b) => heights[b * n + a];
+    return (h(i, j) * (1 - tx) + h(i + 1, j) * tx) * (1 - tz) + (h(i, j + 1) * (1 - tx) + h(i + 1, j + 1) * tx) * tz;
+  };
 }
 
-function buildPalms(scene, track) {
+/**
+ * Árboles: palmeras en la costanera, y en los pastos pinos piñoneros, pinos carrascos,
+ * cipreses, olivos y arbustos (nunca sobre la pista, edificios ni tribunas).
+ */
+function buildVegetation(scene, track, heightAt, g, buildings, stands) {
+  const rnd = mulberry(21);
   const W = track.width / 2;
-  const spots = [];
-  let seed = 3;
-  const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  for (let k = 0; k < track.n; k += 9) {
-    if (track.isTunnel[k] || track.p[k].y > 14) continue; // solo abajo, cerca del mar
+  const dist = trackDistance(track);
+  const list = [];
+
+  // palmeras a los costados en la parte baja (puerto, costanera)
+  for (let k = 0; k < track.n; k += 8) {
+    if (track.isTunnel[k] || track.p[k].y > 14) continue;
     for (const s of [-1, 1]) {
-      if (r() < 0.35) continue;
+      if (rnd() < 0.4) continue;
       const P = track.p[k], R = track.r[k];
-      const off = s * (W + 3.5 + r() * 2.5);
-      spots.push([P.x + R.x * off, P.y - 0.2, P.z + R.z * off, 0.85 + r() * 0.4, r() * Math.PI * 2]);
+      const off = s * (W + 2.6 + rnd() * 2);
+      const x = P.x + R.x * off, z = P.z + R.z * off;
+      if (dist(x, z) < W + 2) continue;
+      if (inRects(stands, x, z, 1)) continue;
+      list.push({ kind: 'palmera', x, y: P.y, z, s: 0.85 + rnd() * 0.4, rot: rnd() * 6.28 });
     }
   }
-  const mats = [
-    new THREE.MeshStandardMaterial({ color: 0x8a6b4a, roughness: 0.9 }),
-    new THREE.MeshStandardMaterial({ color: 0x4f8a3a, roughness: 0.8, side: THREE.DoubleSide }),
-  ];
-  const inst = new THREE.InstancedMesh(palmGeometry(), mats, spots.length);
-  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
-  spots.forEach(([x, y, z, s, rot], i) => {
-    q.setFromEuler(e.set(0, rot, 0));
-    m.compose(new THREE.Vector3(x, y, z), q, new THREE.Vector3(s, s, s));
-    inst.setMatrixAt(i, m);
+
+  // edificios: grilla de rectángulos para chequear rápido
+  const C = 40, grid = new Map();
+  for (const bd of buildings) {
+    let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity;
+    for (let i = 0; i < bd.p.length; i += 2) {
+      a = Math.min(a, bd.p[i]); c = Math.max(c, bd.p[i]);
+      b = Math.min(b, bd.p[i + 1]); d = Math.max(d, bd.p[i + 1]);
+    }
+    const box = [a - 2.5, b - 2.5, c + 2.5, d + 2.5];
+    for (let i = Math.floor(box[0] / C); i <= Math.floor(box[2] / C); i++) {
+      for (let j = Math.floor(box[1] / C); j <= Math.floor(box[3] / C); j++) {
+        const key = `${i},${j}`;
+        if (!grid.has(key)) grid.set(key, []);
+        grid.get(key).push(box);
+      }
+    }
+  }
+  const nearBuilding = (x, z, m) => (grid.get(`${Math.floor(x / C)},${Math.floor(z / C)}`) ?? [])
+    .some(([a, b, c, d]) => x > a - m && x < c + m && z > b - m && z < d + m);
+
+  const step = 9;
+  const x1 = g.x0 + (g.n - 1) * g.cell, z1 = g.z0 + (g.n - 1) * g.cell;
+  for (let z = g.z0 + 20; z < z1 - 20; z += step) {
+    for (let x = g.x0 + 20; x < x1 - 20; x += step) {
+      const px = x + (rnd() - 0.5) * step, pz = z + (rnd() - 0.5) * step;
+      const dt = dist(px, pz);
+      if (dt < W + 6 || dt > 900) continue;
+      const y = heightAt(px, pz);
+      if (y < 1.6) continue;
+      const slope = Math.hypot(heightAt(px + 2, pz) - heightAt(px - 2, pz), heightAt(px, pz + 2) - heightAt(px, pz - 2)) / 4;
+      if (slope > 0.6) continue; // roca
+      if (nearBuilding(px, pz, 0)) continue;
+      if (inRects(stands, px, pz, 2)) continue;
+      const garden = nearBuilding(px, pz, 9); // jardín de una casa: menos árboles, más olivos y cipreses
+      const p = garden ? 0.2 : 0.34 * (1 - Math.max(0, Math.min(1, (dt - 250) / 600)) * 0.7);
+      if (rnd() > p) continue;
+      const r = rnd();
+      const kind = garden
+        ? r < 0.35 ? 'olivo' : r < 0.6 ? 'cipres' : r < 0.75 ? 'palmera' : 'arbusto'
+        : r < 0.32 ? 'pinon' : r < 0.55 ? 'carrasco' : r < 0.65 ? 'cipres' : r < 0.78 ? 'olivo' : 'arbusto';
+      list.push({ kind, x: px, y, z: pz, s: 0.75 + rnd() * 0.5, rot: rnd() * 6.28 });
+    }
+  }
+  plantTrees(scene, list);
+}
+
+/** ¿(x, z) cae dentro de alguno de los rectángulos {cx, cz, ux, uz, a, b} (+ margen)? */
+function inRects(rects, x, z, m = 0) {
+  return rects.some((r) => {
+    const dx = x - r.cx, dz = z - r.cz;
+    const s = dx * r.ux + dz * r.uz, t = -dx * r.uz + dz * r.ux;
+    return Math.abs(s) < r.a + m && Math.abs(t) < r.b + m;
   });
-  inst.castShadow = true;
-  inst.receiveShadow = true;
-  scene.add(inst);
 }
 
 // ---------------------------------------------------------------------------
 // Utilería del Racing Kit de Kenney: tribunas, pórtico de largada, banderas, carteles
 async function buildProps(scene, track) {
   const loader = new GLTFLoader();
-  const names = ['overheadLights', 'grandStandCovered', 'grandStandAwning', 'flagCheckers', 'bannerTowerRed', 'bannerTowerGreen', 'billboard', 'lightPostModern', 'treeLarge'];
+  const names = ['overheadLights', 'flagCheckers', 'bannerTowerRed', 'bannerTowerGreen', 'billboard', 'lightPostModern', 'treeLarge'];
   const models = {};
   await Promise.all(
     names.map(async (n) => {
@@ -604,11 +573,7 @@ async function buildProps(scene, track) {
 
   // Pórtico con semáforo sobre la largada
   place('overheadLights', 0, 0, 11, Math.PI / 2, -0.1);
-  // Tribunas sobre la recta (lado del puerto = derecha)
-  for (let k = -70; k <= 30; k += 6) place('grandStandCovered', k, W + 9, 11, -Math.PI / 2);
-  // Tribunas en la Piscina y en Sainte Dévote
-  for (let s = 0; s < 4; s++) place('grandStandAwning', Math.round(track.n * 0.86) + s * 6, -(W + 8), 10, Math.PI / 2);
-  for (let s = 0; s < 3; s++) place('grandStandAwning', 70 + s * 6, -(W + 9), 10, Math.PI / 2);
+  // (las tribunas las arma stands.js)
   // Banderas, torres y carteles
   place('flagCheckers', 2, -(W + 1.6), 5, Math.PI / 2);
   for (let k = 40; k < track.n; k += 90) {

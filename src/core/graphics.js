@@ -7,9 +7,9 @@ const KEY = 'sport-games:calidad';
 const ORDER = ['alta', 'media', 'baja'];
 
 export const PRESETS = {
-  alta: { pixelRatio: 1.5, grade: true, csm: { cascades: 3, size: 2048, maxFar: 900 }, clouds: true, particles: 1 },
-  media: { pixelRatio: 1.25, grade: true, csm: { cascades: 2, size: 1024, maxFar: 500 }, clouds: true, particles: 0.6 },
-  baja: { pixelRatio: 1, grade: false, csm: null, clouds: false, particles: 0.3 },
+  alta: { pixelRatio: 1.5, grade: true, csm: { cascades: 3, size: 2048, maxFar: 900 }, clouds: true, particles: 1, trees: 1 },
+  media: { pixelRatio: 1.25, grade: true, csm: { cascades: 2, size: 1024, maxFar: 500 }, clouds: true, particles: 0.6, trees: 0.6 },
+  baja: { pixelRatio: 1, grade: false, csm: null, clouds: false, particles: 0.3, trees: 0.35 },
 };
 
 function loadQuality() {

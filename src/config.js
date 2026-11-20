@@ -27,7 +27,7 @@ export const SURFACES = {
 export const CARS = {
   f1: {
     name: 'Fórmula 1',
-    color: 0xd7262e,
+    color: 0x2a2f3d,
     MASS: 750,                 // liviano = acelera y frena muy rápido
     LENGTH: 5.0, WIDTH: 1.9, HEIGHT: 0.55,
     WHEEL_RADIUS: 0.36,
@@ -61,7 +61,7 @@ export const CARS = {
 
   pickup: {
     name: 'Camioneta',
-    color: 0x2f6fb0,
+    color: 0x1d1f24,
     MASS: 2200,
     LENGTH: 5.3, WIDTH: 2.0, HEIGHT: 1.1,
     WHEEL_RADIUS: 0.45,
@@ -93,7 +93,7 @@ export const CARS = {
 
   luxury: {
     name: 'Auto de lujo',
-    color: 0x1b1b22,
+    color: 0xcfd2d6,
     MASS: 1800,
     LENGTH: 5.0, WIDTH: 1.95, HEIGHT: 0.75,
     WHEEL_RADIUS: 0.38,
@@ -124,7 +124,7 @@ export const CARS = {
   },
   rally: {
     name: 'Auto de rally',
-    color: 0x2e9b5f,
+    color: 0x22355e,
     MASS: 1250,                // liviano y ágil
     LENGTH: 4.1, WIDTH: 1.85, HEIGHT: 1.3,
     WHEEL_RADIUS: 0.42,
@@ -267,8 +267,8 @@ export const CAMERA = {
 
 // Dónde van los ojos del conductor en cada auto (metros desde el centro: x adelante, y arriba, z derecha)
 export const DRIVER_EYE = {
-  f1:     { x: 0.05,  y: 0.52, z: 0 },
-  pickup: { x: 0.25,  y: 0.45, z: -0.4 },
-  luxury: { x: -0.2,  y: 0.62, z: -0.38 },
-  rally:  { x: -0.15, y: 0.45, z: -0.35 },
+  f1:     { x: -0.25, y: 0.36, z: 0 },
+  pickup: { x: 0.1,   y: 0.38, z: -0.4 },
+  luxury: { x: -0.3,  y: 0.2,  z: -0.32 },
+  rally:  { x: -0.2,  y: 0.31, z: -0.36 },
 };

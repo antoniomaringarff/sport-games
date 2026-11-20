@@ -1,34 +1,43 @@
 [
   {
     "id": "f1",
-    "source": "assets-raw/car-kit/Models/GLB format/race.glb",
+    "source": "assets-raw/cars-real/2026_audi_r26/scene.gltf",
     "forward": "+z",
-    "length": 4.4,
-    "author": "Kenney (Car Kit 3.1)",
-    "license": "CC0"
+    "length": 5.4,
+    "simplify": 0.17,
+    "author": "Dave Love (Tyler_Dave)",
+    "license": "CC-BY-4.0",
+    "url": "https://sketchfab.com/3d-models/2026-audi-r26-32bf228264b047669b100b0f1b8769ac"
   },
   {
     "id": "pickup",
-    "source": "assets-raw/car-kit/Models/GLB format/truck.glb",
-    "forward": "+z",
-    "length": 4.9,
-    "author": "Kenney (Car Kit 3.1)",
-    "license": "CC0"
+    "source": "assets-raw/cars-real/lightbody_lifted_85_-_low_poly_model/scene.gltf",
+    "forward": "+x",
+    "length": 5.1,
+    "author": "Daniel Zhabotinsky",
+    "license": "CC-BY-4.0",
+    "url": "https://sketchfab.com/3d-models/lightbody-lifted-85-low-poly-model-67beae18c3d24be68f9c8f0ec382d8e3",
+    "simplify": 1
   },
   {
     "id": "luxury",
-    "source": "assets-raw/car-kit/Models/GLB format/sedan-sports.glb",
+    "source": "assets-raw/cars-real/lb-works_ferrari_f40__www.vecarz.com/scene.gltf",
     "forward": "+z",
     "length": 4.5,
-    "author": "Kenney (Car Kit 3.1)",
-    "license": "CC0"
+    "simplify": 0.05,
+    "author": "vecarz (heynic)",
+    "license": "CC-BY-NC-SA-4.0",
+    "url": "https://sketchfab.com/3d-models/lb-works-ferrari-f40-wwwvecarzcom-011cad3526e945799d6e98dde6390182",
+    "simplifyError": 0.02
   },
   {
     "id": "rally",
-    "source": "assets-raw/car-kit/Models/GLB format/hatchback-sports.glb",
+    "source": "assets-raw/cars-real/2000_porsche_911_carrera_996/scene.gltf",
     "forward": "+z",
-    "length": 4.1,
-    "author": "Kenney (Car Kit 3.1)",
-    "license": "CC0"
+    "length": 4.43,
+    "author": "Ddiaz Design",
+    "license": "CC-BY-NC-SA-4.0",
+    "url": "https://sketchfab.com/3d-models/2000-porsche-911-carrera-996-537f06116f1f40d7bc0de28a7ab653da",
+    "simplify": 0.5
   }
 ]

@@ -80,7 +80,9 @@ node tools/convert-models.mjs
 ```
 
 Eso genera `public/assets/models/cars/<id>.glb` y `cars.json` (posición y radio de las ruedas, tamaño de la carrocería), que usa la física.
-Las ruedas se detectan por nombre (`wheel`, `tire`, `rueda`) y tienen que ser 4 objetos separados.
+Las ruedas se detectan **por forma**, no por nombre: las piezas redondas que tocan el piso en cada esquina (las cubiertas) más todo lo que está adentro (llanta, maza, disco), aunque en el original estén pegadas a la carrocería.
+El script también aplana el modelo, simplifica (`simplify` en `cars.sources.json`), junta piezas del mismo material, pasa las texturas a WebP de 1024 px y cuantiza la geometría.
+Si un auto sale al revés, cambiá `forward` (`+x`, `-x`, `+z`, `-z`) en `tools/cars.sources.json`.
 Para `.fbx` hace falta [FBX2glTF](https://github.com/godotengine/FBX2glTF/releases) instalado.
 
 ## Rally – Tête de Chien

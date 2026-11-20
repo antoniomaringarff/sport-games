@@ -344,6 +344,13 @@ Desnivel real ~40 m: la subida a Casino y la bajada a la horquilla tienen que se
 - Se probó un posproceso completo (bloom + MSAA en buffer HDR): costaba ~15 ms por cuadro, se descartó.
 - [ ] Posibles siguientes: autos con pintura propia (no la paleta de Kenney), luces de freno, ventanas con reflejo/variedad, agua con espuma en la costa.
 
+**Autos realistas** ✅ (pedido del 19/11)
+- [x] F1 Audi R26, camioneta Lightbody Lifted '85, auto de lujo Ferrari F40 LB-Works, rally Porsche 911 (996), de Sketchfab.
+- [x] `convert-models.mjs`: ruedas por forma, simplificación (meshoptimizer), juntar por material, texturas WebP 1024, cuantización. 11 MB los cuatro (eran 130 MB).
+- [x] Sombra con un molde simple (envoltura convexa + cilindros): Mónaco quedó en ~5,7 ms por cuadro.
+- [ ] Ferrari y Porsche son CC-BY-NC-SA y los tres son marcas reales: reemplazar antes de publicar o vender.
+- [ ] Luces de freno que se prendan y volante que gire en la vista conductor.
+
 **Paso C — La ciudad completa (Fase 4)**
 - [ ] Importar todas las calles de OSM con cruces, rotondas, túneles y calles a distinto nivel (en `import-monaco.mjs`).
 - [ ] **Paseo libre**: el circuito se abre a la ciudad (sin vallas, con cruces); el **modo carrera** vuelve a cerrar todo.

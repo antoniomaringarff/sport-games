@@ -28,6 +28,7 @@ export function createRally(track, finishIdx, place = 'rally') {
   const n = track.n;
   const splits = track.splits;
   const map = createMinimap(track);
+  let lastRender = 0;
   const codriver = createCodriver(track, { enabled: COPILOT.RALLY, finishIdx });
 
   let carId = null;
@@ -92,7 +93,7 @@ export function createRally(track, finishIdx, place = 'rally') {
       el.lights.hidden = false;
       el.bulbs.forEach((x) => x.classList.remove('on'));
       el.msg.hidden = true;
-      this.render(0);
+      this.render(0, true);
     },
 
     filterInput(input) {
@@ -224,7 +225,10 @@ export function createRally(track, finishIdx, place = 'rally') {
       return { a, b, f: Math.min(1, Math.max(0, (tt - a[0]) / (b[0] - a[0] || 1))) };
     },
 
-    render(time) {
+    render(time, force = false) {
+      const now = performance.now();
+      if (!force && now - lastRender < 66) return;
+      lastRender = now;
       el.lap.textContent = phase === 'fin' ? '¡Llegada!' : phase === 'grid' ? 'Largada' : `Etapa ${Math.round((idx / finishIdx) * 100)}%`;
       el.time.textContent = fmt(time);
       el.last.textContent = fmt(last);

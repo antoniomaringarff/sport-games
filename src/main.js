@@ -77,6 +77,8 @@ async function getWorld(name) {
   w.sparks = createSparks(scene);
   w.tireFx = createTireFx(scene);
   prepareMaterials(scene, w.sky.csm);
+  // compilar todos los gráficos ahora (y no la primera vez que aparecen, que da un tirón)
+  renderer.compile(scene, camera);
   worlds[name] = w;
   return w;
 }
@@ -361,10 +363,10 @@ function tick(dt) {
   updateGhost();
 
   chase.update(model.group, vehicle, carId, dt);
-  hud.update(vehicle, carId, chase.modeName, dt);
+  hud.update(vehicle, carId, chase.modeName, dt, dynRes.pixelRatio);
   world.sky.follow(model.group.position, dt);
   // materiales nuevos (autos, fantasma, bots) también reciben las sombras en cascada
-  if ((prepT += dt) > 0.5) {
+  if ((prepT += dt) > 2) {
     prepT = 0;
     prepareMaterials(world.scene, world.sky.csm);
   }

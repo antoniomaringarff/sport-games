@@ -187,8 +187,6 @@ export const MINIMAP = {
 // Tecla Q en el menú: cambia la calidad (alta → media → baja) y recarga.
 export const GRAPHICS = {
   QUALITY: 'alta',      // 'alta', 'media' o 'baja' (si el juego va lento, bajala)
-  SATURATION: 1.1,      // color (1 = normal)
-  CONTRAST: 1.05,
   VIGNETTE: 0.55,       // bordes un poco más oscuros (0 = nada, 1 = mucho)
   ENV_LIGHT: 0.6,      // cuánto ilumina y se refleja el cielo
   CLOUDS: 0.7,          // cantidad de nubes (0 = cielo limpio)

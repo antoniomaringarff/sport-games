@@ -26,6 +26,7 @@ export function createRace(track, place) {
   const n = track.n;
   const S = track.sectors;
   const map = createMinimap(track);
+  let lastRender = 0;
   const codriver = createCodriver(track, { enabled: COPILOT.CIRCUIT }); // índices donde empieza cada sector
 
   let carId = null;
@@ -141,7 +142,7 @@ export function createRace(track, place) {
       el.lights.hidden = waiting;
       el.bulbs.forEach((b) => b.classList.remove('on'));
       el.msg.hidden = true;
-      this.render(0);
+      this.render(0, true);
     },
 
     /** Programa la largada: las luces se apagan dentro de `secs` segundos. */
@@ -302,7 +303,10 @@ export function createRace(track, place) {
       return phase === 'carrera';
     },
 
-    render(t) {
+    render(t, force = false) {
+      const now = performance.now();
+      if (!force && now - lastRender < 66) return;
+      lastRender = now;
       el.lap.textContent = laps
         ? phase === 'fin' ? '¡Llegada!' : crossings ? `Vuelta ${Math.min(crossings, laps)}/${laps}` : 'Grilla'
         : lap ? `Vuelta ${lap}` : 'Grilla';

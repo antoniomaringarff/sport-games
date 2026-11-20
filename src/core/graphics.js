@@ -33,18 +33,15 @@ export function cycleQuality() {
 }
 
 /**
- * Dibujo directo a la pantalla (con el antialias del navegador). La corrección de color y la
- * viñeta se hacen con CSS encima del canvas: el navegador lo compone casi gratis, mucho más
- * barato que un posproceso de pantalla completa.
+ * Dibujo directo a la pantalla (con el antialias del navegador) y una viñeta con CSS encima.
  */
 export function createRenderPipeline(renderer) {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, Q.pixelRatio));
-  const canvas = renderer.domElement;
+  // viñeta: una capa fija encima (no un filtro sobre el canvas, que en algunos navegadores
+  // obliga a reprocesar la imagen entera en cada cuadro y da tirones)
   const vignette = document.getElementById('vignette');
-  if (Q.grade) {
-    canvas.style.filter = `saturate(${GRAPHICS.SATURATION}) contrast(${GRAPHICS.CONTRAST})`;
-    if (vignette) vignette.style.opacity = String(GRAPHICS.VIGNETTE);
-  } else if (vignette) vignette.hidden = true;
+  if (Q.grade && vignette) vignette.style.opacity = String(GRAPHICS.VIGNETTE);
+  else if (vignette) vignette.hidden = true;
   return {
     render: (scene, camera) => renderer.render(scene, camera),
     setSize() {},
@@ -59,7 +56,15 @@ export function createDynamicResolution(renderer, pipeline) {
   const max = Math.min(window.devicePixelRatio, Q.pixelRatio);
   const min = Math.min(max, 0.75);
   let pr = renderer.getPixelRatio();
-  let t = 0, frames = 0;
+  let t = 0, frames = 0, goodWindows = 0, sinceChange = 0;
+  const apply = (next) => {
+    pr = next;
+    renderer.setPixelRatio(pr);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    pipeline.setSize(window.innerWidth, window.innerHeight);
+    sinceChange = 0;
+    goodWindows = 0;
+  };
   return {
     get pixelRatio() {
       return pr;
@@ -67,20 +72,18 @@ export function createDynamicResolution(renderer, pipeline) {
     update(dt) {
       if (!GRAPHICS.DYNAMIC_RESOLUTION) return;
       t += dt;
+      sinceChange += dt;
       frames++;
-      if (t < 1.5) return;
+      if (t < 3) return; // mirar ventanas de 3 segundos, no cuadros sueltos
       const fps = frames / t;
       t = 0;
       frames = 0;
-      let next = pr;
-      if (fps < 50 && pr > min) next = Math.max(min, pr - 0.15);
-      else if (fps > 58 && pr < max) next = Math.min(max, pr + 0.1);
-      if (next !== pr) {
-        pr = next;
-        renderer.setPixelRatio(pr);
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        pipeline.setSize(window.innerWidth, window.innerHeight);
-      }
+      if (fps < 45 && pr > min && sinceChange > 3) apply(Math.max(min, pr - 0.25));
+      else if (fps > 57) {
+        goodWindows++;
+        // subir solo si anduvo bien un buen rato (evita subir y bajar todo el tiempo)
+        if (goodWindows >= 3 && pr < max && sinceChange > 10) apply(Math.min(max, pr + 0.25));
+      } else goodWindows = 0;
     },
   };
 }

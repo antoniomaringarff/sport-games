@@ -83,7 +83,7 @@ export function createMinimap(track) {
     b.setLineDash([]);
   }
 
-  let flash = 0;
+  let flash = 0, lastDraw = 0;
 
   return {
     show(v) {
@@ -93,6 +93,10 @@ export function createMinimap(track) {
 
     /** idx: punto de la pista donde está el auto; pos/fwd del auto. */
     update(dt, idx, pos, fwd) {
+      flash += dt * 9;
+      const now = performance.now();
+      if (now - lastDraw < 33) return; // 30 veces por segundo alcanza
+      lastDraw = now;
       ctx.clearRect(0, 0, S, S);
       ctx.drawImage(base, 0, 0);
       ctx.lineJoin = ctx.lineCap = 'round';
@@ -144,7 +148,6 @@ export function createMinimap(track) {
       if (next && dist <= MINIMAP.WARN_DISTANCE) {
         corner.hidden = false;
         const near = dist < MINIMAP.WARN_CLOSE;
-        flash += dt * (near ? 9 : 0);
         corner.style.setProperty('--c', next.kind.color);
         corner.classList.toggle('near', near && Math.sin(flash) > 0);
         corner.querySelector('[data-arrow]').textContent = next.dir > 0 ? '↱' : '↰';

@@ -97,6 +97,8 @@ export function createTireFx(scene) {
   }
 
   const acc = [0, 0, 0, 0];
+  const cpTmp = { x: 0, y: 0, z: 0 };
+  const lastStore = [0, 1, 2, 3].map(() => ({ x: 0, y: 0, z: 0 }));
   return {
     /** Llamar cada cuadro con el auto propio (y los que quieras). */
     emitFor(vehicle, dt) {
@@ -108,7 +110,7 @@ export function createTireFx(scene) {
           lastContact[i] = null;
           continue;
         }
-        const cp = ctrl.wheelContactPoint(i);
+        const cp = ctrl.wheelContactPoint(i, cpTmp);
         if (!cp) continue;
         const surf = vehicle.wheelSurface[i];
         const skid = Math.max(vehicle.skid[i], vehicle.lastInputHandbrake && i >= 2 && kmh > 15 ? 0.6 : 0);
@@ -133,7 +135,9 @@ export function createTireFx(scene) {
         // marcas en el piso duro cuando patina
         if (hard && skid > 0.35) {
           if (lastContact[i]) addMark(lastContact[i], cp, 0.28);
-          lastContact[i] = { x: cp.x, y: cp.y, z: cp.z };
+          const st = lastStore[i];
+          st.x = cp.x; st.y = cp.y; st.z = cp.z;
+          lastContact[i] = st;
         } else lastContact[i] = null;
       }
     },

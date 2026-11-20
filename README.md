@@ -55,9 +55,10 @@ Cada jugador abre el juego (esa dirección en las otras compus, `http://localhos
 
 - Luz del cielo (reflejos en autos, vidrios y mar), sombras en cascada en todo el paisaje, nubes, terreno con textura, palmeras en Mónaco.
 - Humo al derrapar en asfalto, polvo en tierra/arena, marcas negras de frenada.
-- Corrección de color y viñeta con CSS (casi gratis). Resolución dinámica: si baja de ~50 fps, baja un poco la resolución sola.
+- Viñeta con CSS (una capa fija, casi gratis). Resolución dinámica tranquila: baja solo si el juego anda por debajo de 45 fps unos segundos, y sube cuando anduvo bien un rato.
+- Abajo a la derecha: `fps · peor X ms · res Y`. Si "peor" pasa de ~25 ms seguido, se notan tirones.
 - Todo en `GRAPHICS` de `src/config.js`; calidad con la tecla Q en el menú.
-- Medido en un MacBook Air M4 (1100×680, calidad alta): ~7 ms por cuadro en Mónaco, ~8 ms en el rally.
+- Medido en un MacBook Air M4 (1512×900, calidad alta): mediana 7 ms por cuadro en Mónaco y 9,5 ms en el rally, sin cuadros de más de 20 ms mientras se maneja.
 
 ## Ajustar cómo se maneja
 

@@ -32,7 +32,7 @@ export function buildRally(physics, scene, data) {
   buildBackdropTerrain(scene, monaco.terrain, data.monacoNear, stage.terrain);
   buildBuildings(scene, monaco.buildings);
   buildFar(scene, monaco.far, data.far, [monaco.terrain, stage.terrain]);
-  const sea = buildSea(scene);
+  const sea = buildSea(scene, { g: monaco.terrain, heights: data.monacoNear });
 
   // Camino de ripio
   const all = rangeIdx(track.n, 0, track.n - 1);

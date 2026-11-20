@@ -5,9 +5,10 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { stripesTexture } from './textures.js';
 import { WorldBuilder } from './builder.js';
+import { buildSea } from './sea.js';
 import { terrainMaterial, splatOf, asphaltMaterial, facadeMaterial, roofMaterial, FACADE_TILE } from './pbr.js';
 
-export { terrainMaterial };
+export { terrainMaterial, buildSea };
 
 const BASE = import.meta.env.BASE_URL;
 const DATA = `${BASE}assets/monaco/`;
@@ -27,7 +28,7 @@ export async function buildMonaco(physics, scene, data) {
 
   buildTerrain(b, meta.terrain, data.near, 'pasto', { buildings: meta.buildings, track });
   buildFar(scene, meta.far, data.far, meta.terrain);
-  const sea = buildSea(scene);
+  const sea = buildSea(scene, { g: meta.terrain, heights: data.near });
   buildRoad(b, track);
   buildKerbs(scene, track);
   buildBarriers(b, track);
@@ -248,54 +249,6 @@ export function gridGeometry(n, cell, x0, z0, h, colorOf) {
 }
 
 // ---------------------------------------------------------------------------
-export function buildSea(scene) {
-  const size = 512;
-  const c = document.createElement('canvas');
-  c.width = c.height = size;
-  const g = c.getContext('2d');
-  const img = g.createImageData(size, size);
-  // mapa de normales de olas (suma de senos, se repite sin cortes)
-  const waves = [[3, 1, 0.9], [1, 4, 0.6], [5, -2, 0.4], [-3, 6, 0.25], [8, 3, 0.2]];
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      let nx = 0, ny = 0;
-      for (const [a, bb, amp] of waves) {
-        const ph = ((a * x + bb * y) / size) * Math.PI * 2;
-        nx += Math.cos(ph) * a * amp;
-        ny += Math.cos(ph) * bb * amp;
-      }
-      const k = (y * size + x) * 4;
-      img.data[k] = 128 + nx * 6;
-      img.data[k + 1] = 128 + ny * 6;
-      img.data[k + 2] = 255;
-      img.data[k + 3] = 255;
-    }
-  }
-  g.putImageData(img, 0, 0);
-  const normal = new THREE.CanvasTexture(c);
-  normal.wrapS = normal.wrapT = THREE.RepeatWrapping;
-  normal.repeat.set(400, 400);
-  const mat = new THREE.MeshStandardMaterial({
-    color: 0x174f6e,
-    roughness: 0.22,
-    metalness: 0,
-    envMapIntensity: 0.9,
-    normalMap: normal,
-    normalScale: new THREE.Vector2(0.35, 0.35),
-  });
-  const sea = new THREE.Mesh(new THREE.PlaneGeometry(40000, 40000), mat);
-  sea.rotation.x = -Math.PI / 2;
-  sea.position.y = 0;
-  sea.receiveShadow = true;
-  scene.add(sea);
-  return {
-    update(dt) {
-      normal.offset.x += dt * 0.004;
-      normal.offset.y += dt * 0.0025;
-    },
-  };
-}
-
 // ---------------------------------------------------------------------------
 function buildRoad(b, track) {
   const all = rangeIdx(track.n, 0, track.n - 1);

@@ -65,14 +65,15 @@ export function terrainMaterial(scale = 9) {
     sh.uniforms.rockNormal = { value: rock.normalMap };
     sh.uniforms.pavedMap = { value: paved };
     sh.vertexShader = sh.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute vec4 splat;\nvarying vec4 vSplat;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSplat = splat;');
+      .replace('#include <common>', '#include <common>\nattribute vec4 splat;\nvarying vec4 vSplat;\nvarying float vTerrH;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSplat = splat;\nvTerrH = (modelMatrix * vec4(transformed, 1.0)).y;');
     sh.fragmentShader = sh.fragmentShader
       .replace(
         '#include <common>',
         `#include <common>
         uniform sampler2D rockMap, rockNormal, pavedMap;
         varying vec4 vSplat;
+        varying float vTerrH;
         // la misma textura a dos escalas: casi no se nota que se repite
         vec4 twoScale(sampler2D t, vec2 uv) {
           vec2 r = mat2(0.8, -0.6, 0.6, 0.8) * uv; // rotada: los patrones no se alinean
@@ -90,6 +91,8 @@ export function terrainMaterial(scale = 9) {
         vec3 c = mix(cGrass, cRock * vec3(1.05, 1.0, 0.95), vSplat.x);
         float lum = dot(cRock, vec3(0.33));
         c = mix(c, vec3(0.86, 0.78, 0.6) * (0.75 + lum * 0.6), vSplat.y);   // arena de la costa
+        // arena mojada: más oscura justo donde llega el agua
+        c *= 1.0 - 0.4 * vSplat.y * (1.0 - smoothstep(0.0, 0.8, vTerrH));
         c = mix(c, vec3(0.93, 0.95, 0.98) * (0.85 + lum * 0.3), vSplat.z);  // nieve
         // vereda / plaza: hormigón claro (la textura del asfalto, aclarada), baldosas de 4 m
         vec3 cPaved = texture2D(pavedMap, vMapUv * 2.2).rgb * vec3(2.0, 1.95, 1.85);

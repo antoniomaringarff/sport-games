@@ -145,3 +145,11 @@ Para probar desde la consola del navegador: `__game.advance(segundos)` avanza el
 - [x] Fase 2: modelos 3D de los autos (Kenney Car Kit) + pipeline de conversión + showroom
 - [x] Fase 3: circuito de Mónaco (relieve real, túnel, guardrails, edificios, tribunas, modo carrera con semáforo, vueltas, sectores y récord)
 - [ ] Fase 4: la ciudad completa
+
+## Online (Vercel + Railway)
+
+- **Juego → Vercel**: framework Vite, build `npm run build`, salida `dist`.
+- **Multijugador → Railway**: servicio desde la raíz del repo (no `server/`), start command `npm run server`.
+  Railway le da el puerto con `PORT`. En *Settings → Networking* generá un dominio público.
+- En Vercel cargá la variable `VITE_MULTI_URL = wss://<tu-dominio>.up.railway.app` y volvé a deployar
+  (Vite la mete en el juego al compilar, así que hay que redeployar si cambia).

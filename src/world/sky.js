@@ -53,12 +53,14 @@ export function createSky(scene, renderer, opts = {}, camera = null) {
       lightIntensity: sunIntensity,
       lightMargin: 400,
       lightFar: 5000,
-      shadowBias: -0.0002,
+      // ojo: el bias se mide sobre todo el rango de la luz (lightFar = 5 km): -0.0002 eran ~1 m
+      // y la sombra quedaba despegada del auto (parecía que flotaba). -0.00002 ≈ 10 cm.
+      shadowBias: -0.00002,
     });
     csm.fade = true;
     for (const l of csm.lights) {
       l.color.copy(sunColor);
-      l.shadow.normalBias = 0.05;
+      l.shadow.normalBias = 0.03;
     }
   } else {
     sun = new THREE.DirectionalLight(sunColor, sunIntensity);

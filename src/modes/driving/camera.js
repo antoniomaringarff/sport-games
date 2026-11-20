@@ -6,6 +6,8 @@ import { CAMERA, DRIVER_EYE } from '../../config.js';
 
 const _v = new THREE.Vector3();
 const _t = new THREE.Vector3();
+// vectores reusados: crear objetos nuevos en cada cuadro obliga a limpiar memoria y da tirones
+const _back = new THREE.Vector3(), _ahead = new THREE.Vector3(), _target = new THREE.Vector3(), _look = new THREE.Vector3();
 
 export class ChaseCamera {
   constructor(camera) {
@@ -16,6 +18,21 @@ export class ChaseCamera {
     this.pos = new THREE.Vector3();
     this.look = new THREE.Vector3();
     this.first = true;
+    this.shakeAmt = 0;
+  }
+
+  /** Sacudón de cámara (golpes). amount en metros aprox. */
+  shake(amount) {
+    this.shakeAmt = Math.max(this.shakeAmt, amount);
+  }
+
+  applyShake(dt) {
+    if (this.shakeAmt < 0.002) return;
+    const a = this.shakeAmt;
+    this.camera.position.x += (Math.random() - 0.5) * a;
+    this.camera.position.y += (Math.random() - 0.5) * a * 0.6;
+    this.camera.position.z += (Math.random() - 0.5) * a;
+    this.shakeAmt *= Math.exp(-9 * dt);
   }
 
   get modeName() {
@@ -58,6 +75,7 @@ export class ChaseCamera {
       cam.near = 0.05;
       cam.updateProjectionMatrix();
       this.first = false;
+      this.applyShake(dt);
       return;
     }
 
@@ -80,11 +98,11 @@ export class ChaseCamera {
     const camYaw = this.yaw + this.swing;
 
     const dist = view.DISTANCE + CAMERA.DISTANCE_AT_SPEED * speedFrac;
-    const back = new THREE.Vector3(-Math.cos(camYaw), 0, Math.sin(camYaw));
-    const ahead = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
-    const target = carObj.position.clone().addScaledVector(back, dist);
+    const back = _back.set(-Math.cos(camYaw), 0, Math.sin(camYaw));
+    const ahead = _ahead.set(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
+    const target = _target.copy(carObj.position).addScaledVector(back, dist);
     target.y = carObj.position.y + view.HEIGHT;
-    const lookAt = carObj.position.clone().addScaledVector(ahead, view.LOOK_AHEAD);
+    const lookAt = _look.copy(carObj.position).addScaledVector(ahead, view.LOOK_AHEAD);
     lookAt.y += 0.8;
 
     if (this.first) {
@@ -104,5 +122,6 @@ export class ChaseCamera {
     cam.fov += (fov - cam.fov) * k;
     cam.near = 0.1;
     cam.updateProjectionMatrix();
+    this.applyShake(dt);
   }
 }

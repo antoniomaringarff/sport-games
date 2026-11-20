@@ -18,6 +18,13 @@ html, body {
   height: 100vh;
 }
 [hidden] { display: none !important; }
+#vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+  opacity: 0;
+}
 
 #loading {
   position: fixed;
@@ -53,7 +60,7 @@ html, body {
 }
 .card {
   position: relative;
-  width: 230px;
+  width: 205px;
   padding: 16px 18px 14px;
   border: 2px solid rgba(255, 255, 255, 0.15);
   border-top: 6px solid var(--car);
@@ -93,6 +100,7 @@ html, body {
   background: linear-gradient(90deg, var(--accent) calc(var(--v) * 20%), rgba(255, 255, 255, 0.15) 0);
 }
 .hint { margin: 14px 0 0; opacity: 0.75; font-size: 14px; }
+.card .record { margin-top: 8px; font-size: 12px; opacity: 0.8; font-variant-numeric: tabular-nums; }
 
 /* ---------- HUD ---------- */
 #hud { position: fixed; inset: 0; pointer-events: none; }
@@ -130,7 +138,7 @@ html, body {
   font-size: 13px;
   opacity: 0.85;
 }
-#fps { position: absolute; right: 20px; top: 16px; font-size: 12px; opacity: 0.6; }
+#fps { position: absolute; right: 20px; bottom: 96px; font-size: 12px; opacity: 0.6; }
 
 @media (max-width: 700px) {
   #help { display: none; }
@@ -218,4 +226,131 @@ html, body {
   font-size: 10px;
   opacity: 0.55;
   pointer-events: none;
+}
+
+/* ---------- Minimapa ---------- */
+#minimap {
+  position: fixed;
+  right: 16px;
+  top: 16px;
+  border-radius: 14px;
+  background: rgba(12, 18, 28, 0.55);
+  pointer-events: none;
+}
+#next-corner {
+  position: fixed;
+  right: 16px;
+  top: calc(16px + 190px + 8px);
+  width: 190px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border-left: 6px solid var(--c, #ffcc33);
+  background: var(--panel);
+  pointer-events: none;
+  transition: background 0.1s;
+}
+#next-corner b { font-size: 34px; line-height: 1; color: var(--c, #ffcc33); }
+#next-corner span { display: block; font-weight: 800; font-size: 14px; }
+#next-corner small { font-size: 13px; opacity: 0.85; font-variant-numeric: tabular-nums; }
+#next-corner.near { background: color-mix(in srgb, var(--c) 45%, rgba(12, 18, 28, 0.8)); }
+@media (max-width: 700px) {
+  #minimap { width: 130px !important; height: 130px !important; }
+  #next-corner { top: calc(16px + 130px + 8px); width: 130px; }
+}
+@media (max-height: 560px) {
+  #minimap { width: 120px !important; height: 120px !important; }
+  #next-corner { top: calc(16px + 120px + 6px); width: 150px; padding: 5px 8px; }
+  #next-corner b { font-size: 24px; }
+  #next-corner span { font-size: 12px; }
+  #speed { font-size: 40px; }
+  #info { display: none; }
+}
+
+/* ---------- Multijugador ---------- */
+#lobby, #results {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(420px, calc(100vw - 32px));
+  padding: 20px 22px;
+  border-radius: 16px;
+  background: rgba(10, 16, 26, 0.88);
+  text-align: center;
+}
+#lobby h1, #results h1 { margin: 0 0 6px; font-size: 26px; }
+#lobby .count { font-size: 54px; font-weight: 900; color: var(--accent); line-height: 1.1; min-height: 1em; }
+#lobby label { display: block; margin: 8px 0 12px; font-size: 14px; opacity: 0.9; }
+#lobby input {
+  margin-left: 8px;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink);
+  font: inherit;
+}
+#lobby ul, #results ol { list-style: none; margin: 0; padding: 0; text-align: left; }
+#lobby li, #results li {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 15px;
+}
+#lobby li:nth-child(odd), #results li:nth-child(odd) { background: rgba(255, 255, 255, 0.06); }
+#lobby li.me, #results li.me { outline: 2px solid var(--accent); }
+#lobby li span, #results li span { opacity: 0.75; }
+#results li em { font-style: normal; font-weight: 900; width: 2em; color: var(--accent); }
+#results li b { flex: 1; }
+#lobby-status { margin: 12px 0 0; font-size: 14px; opacity: 0.9; }
+#lobby-status code { background: rgba(255,255,255,0.12); padding: 1px 6px; border-radius: 4px; }
+#positions {
+  position: fixed;
+  left: 16px;
+  top: 16px;
+  min-width: 170px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--panel);
+  pointer-events: none;
+  font-size: 13px;
+}
+#positions .big { font-size: 34px; font-weight: 900; line-height: 1; }
+#positions .big small { font-size: 18px; opacity: 0.7; }
+#positions ol { margin: 6px 0 0; padding-left: 20px; }
+#positions li.me { color: var(--accent); font-weight: 800; }
+body.multi #info { display: none; }
+body.multi #race .hint { display: none; }
+
+/* ---------- Pantallas angostas (celular, panel chico) ---------- */
+@media (max-width: 600px) {
+  #info, #help { display: none !important; }
+  #race {
+    left: 10px;
+    transform: none;
+    top: 10px;
+    min-width: 0;
+    width: calc(100vw - 150px);
+    padding: 6px 10px;
+  }
+  #race .row b { font-size: 14px; }
+  #race [data-time] { font-size: 16px; }
+  #race .small, #race .sectors { font-size: 11px; }
+  #race .hint { display: none; }
+  #minimap { right: 10px; top: 10px; width: 120px !important; height: 120px !important; }
+  #next-corner { right: 10px; top: calc(10px + 120px + 6px); width: 120px; padding: 4px 8px; gap: 6px; }
+  #next-corner b { font-size: 22px; }
+  #next-corner span { font-size: 11px; }
+  #speedo { right: 10px; bottom: 14px; padding: 6px 12px; }
+  #speed { font-size: 36px; }
+  #positions { top: auto; bottom: 14px; left: 10px; min-width: 0; font-size: 11px; }
+  #positions .big { font-size: 24px; }
+  #lights { top: 30%; gap: 8px; padding: 10px; }
+  #lights i { width: 26px; height: 26px; }
+  #race-msg { font-size: 22px; white-space: normal; text-align: center; width: 90vw; }
 }

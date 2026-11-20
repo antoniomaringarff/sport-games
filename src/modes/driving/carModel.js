@@ -1,6 +1,7 @@
 // Autos "de cajitas" para la Fase 1. En la Fase 2 se reemplazan por modelos GLB.
 // Ejes del auto: +X adelante, +Y arriba, +Z derecha (igual que la física).
 import * as THREE from 'three';
+import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
 
 const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.5, metalness: 0.1, ...extra });
 const M = {
@@ -103,6 +104,75 @@ const BUILDERS = {
   },
 };
 
+/** Material invisible que igual proyecta sombra (el paso de sombras ignora colorWrite). */
+const SHADOW_ONLY = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false });
+
+/**
+ * Molde de sombra: la envoltura convexa de la carrocería (con pocos puntos) y un cilindro por
+ * rueda. Proyecta casi la misma sombra que el modelo detallado y cuesta mucho menos.
+ */
+function addShadowProxy(group, body, wheels, asset, profile) {
+  const bodyNode = body.getObjectByName('body');
+  if (bodyNode) {
+    body.updateMatrixWorld(true);
+    const pts = [];
+    const v = new THREE.Vector3();
+    const toGroup = new THREE.Matrix4();
+    bodyNode.traverse((o) => {
+      if (!o.isMesh) return;
+      toGroup.copy(body.matrix).multiply(o.matrixWorld.clone().premultiply(body.matrixWorld.clone().invert()));
+      const pos = o.geometry.attributes.position;
+      const stride = Math.max(1, Math.floor(pos.count / 1500));
+      for (let i = 0; i < pos.count; i += stride) pts.push(v.fromBufferAttribute(pos, i).applyMatrix4(toGroup).clone());
+    });
+    if (pts.length > 8) {
+      const hull = new THREE.Mesh(new ConvexGeometry(pts), SHADOW_ONLY);
+      hull.castShadow = true;
+      hull.receiveShadow = false;
+      group.add(hull);
+    }
+  }
+  const r = asset.info.wheelRadius;
+  for (const w of wheels) {
+    const cyl = new THREE.Mesh(new THREE.CylinderGeometry(r, r, r * 0.7, 12).rotateX(Math.PI / 2), SHADOW_ONLY);
+    cyl.castShadow = true;
+    w.spin.add(cyl);
+  }
+}
+
+/**
+ * Sombra de contacto: una mancha oscura y suave justo debajo del auto. La sombra del sol sola
+ * no alcanza (con el sol bajo cae lejos, en la sombra no hay) y el auto parece flotar.
+ */
+let blobTexture = null;
+function contactShadow(profile) {
+  if (!blobTexture) {
+    const c = document.createElement('canvas');
+    c.width = c.height = 128;
+    const g = c.getContext('2d');
+    const grd = g.createRadialGradient(64, 64, 8, 64, 64, 64);
+    grd.addColorStop(0, 'rgba(0,0,0,1)');
+    grd.addColorStop(0.55, 'rgba(0,0,0,0.75)');
+    grd.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = grd;
+    g.fillRect(0, 0, 128, 128);
+    blobTexture = new THREE.CanvasTexture(c);
+  }
+  const mat = new THREE.MeshBasicMaterial({
+    map: blobTexture, color: 0x000000, transparent: true, opacity: 0.6, depthWrite: false,
+    polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+  });
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(profile.LENGTH * 1.15, profile.WIDTH * 1.3).rotateX(-Math.PI / 2), mat);
+  // a la altura de la parte de abajo de las ruedas (en reposo)
+  const bottom = profile.WHEELS
+    ? Math.min(...profile.WHEELS.map((w) => w.y)) - profile.WHEEL_RADIUS
+    : -profile.HEIGHT / 2 - profile.RIDE_HEIGHT;
+  m.position.y = bottom + 0.02;
+  m.renderOrder = 1;
+  m.castShadow = m.receiveShadow = false;
+  return m;
+}
+
 /**
  * Crea el auto que se ve. Si hay modelo GLB lo usa; si no, el de cajitas.
  * vehicle puede ser null (showroom): las ruedas quedan en su lugar de reposo.
@@ -138,12 +208,14 @@ export function createCarModel(id, profile, vehicle, asset = null) {
     });
     group.traverse((o) => {
       if (o.isMesh) {
-        o.castShadow = true;
+        // la sombra la hace un molde simple (abajo): el modelo detallado no se dibuja 3 veces más
+        o.castShadow = false;
         o.receiveShadow = true;
         // de un solo lado: así desde adentro (vista conductor) no se ve la carrocería por dentro
         for (const m of [o.material].flat()) m.side = THREE.FrontSide;
       }
     });
+    addShadowProxy(group, body, wheels, asset, profile);
   } else {
     // ---- Cajitas (por si no cargó el modelo) ----
     const chassis = new THREE.Group();
@@ -155,6 +227,8 @@ export function createCarModel(id, profile, vehicle, asset = null) {
       wheels.push({ ...w, angle: 0 });
     }
   }
+
+  if (typeof document !== 'undefined') group.add(contactShadow(profile));
 
   return {
     group,

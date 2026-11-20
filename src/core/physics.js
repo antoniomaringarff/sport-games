@@ -11,6 +11,8 @@ export async function createPhysics() {
 
   // collider.handle -> nombre de superficie ('asfalto', 'arena', ...)
   const surfaces = new Map();
+  // paredes y guardrails: el auto las "raspa" en vez de rebotar (ver vehicle.js)
+  const walls = new Set();
 
   return {
     RAPIER,
@@ -18,6 +20,12 @@ export async function createPhysics() {
     dt: 1 / PHYSICS.STEP_HZ,
     setSurface(collider, surface) {
       surfaces.set(collider.handle, surface);
+    },
+    markWall(collider) {
+      walls.add(collider.handle);
+    },
+    isWall(collider) {
+      return walls.has(collider.handle);
     },
     surfaceOf(collider) {
       if (!collider) return null;

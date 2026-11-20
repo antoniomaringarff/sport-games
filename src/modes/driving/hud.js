@@ -13,27 +13,54 @@ export function createHud() {
     cam: $('cam-mode'),
     fps: $('fps'),
   };
-  let fpsAcc = 0, fpsFrames = 0;
+  let fpsAcc = 0, fpsFrames = 0, hudT = 0, worst = 0;
+  const last = new Map();
+  // tocar el texto de la página obliga al navegador a recalcular: solo si cambió
+  const set = (node, v) => {
+    if (last.get(node) !== v) {
+      last.set(node, v);
+      node.textContent = v;
+    }
+  };
 
   return {
     show(v) {
       el.hud.hidden = !v;
     },
-    update(vehicle, carId, camMode, dt) {
-      el.speed.textContent = Math.round(vehicle.kmh);
-      el.gear.textContent = vehicle.speed < -0.5 ? 'R' : '';
-      el.car.textContent = CARS[carId].name;
-      el.surface.textContent = SURFACES[vehicle.surface]?.label ?? '';
-      el.cam.textContent = camMode;
+    update(vehicle, carId, camMode, dt, pixelRatio = null) {
       fpsAcc += dt;
+      worst = Math.max(worst, dt);
+      hudT += dt;
+      if (hudT >= 0.05) {
+        hudT = 0;
+        set(el.speed, String(Math.round(vehicle.kmh)));
+        set(el.gear, vehicle.speed < -0.5 ? 'R' : '');
+        set(el.car, CARS[carId].name);
+        set(el.surface, SURFACES[vehicle.surface]?.label ?? '');
+        set(el.cam, camMode);
+      }
       fpsFrames++;
-      if (fpsAcc > 0.5) {
-        el.fps.textContent = `${Math.round(fpsFrames / fpsAcc)} fps`;
+      if (fpsAcc > 1) {
+        // fps, el peor cuadro del último segundo (si pasa de ~25 ms se nota un tirón) y la resolución
+        set(el.fps, `${Math.round(fpsFrames / fpsAcc)} fps · peor ${Math.round(worst * 1000)} ms${pixelRatio ? ` · res ${pixelRatio.toFixed(2)}` : ''}`);
         fpsAcc = 0;
         fpsFrames = 0;
+        worst = 0;
       }
     },
   };
+}
+
+function bestLap(place, id) {
+  try {
+    return JSON.parse(localStorage.getItem(`sport-games:${place}:mejor:${id}`) ?? 'null')?.lap ?? null;
+  } catch {
+    return null;
+  }
+}
+function fmtLap(t) {
+  const m = Math.floor(t / 60), s = t - m * 60;
+  return `${m}:${s.toFixed(3).padStart(6, '0')}`;
 }
 
 /** Pantalla de elección de auto y lugar. onHighlight(id) al moverse, onChoose(id, lugar) al elegir. */
@@ -57,7 +84,8 @@ export function createCarSelect({ places, onHighlight, onChoose }) {
       <h2>${c.name}</h2>
       ${Object.entries(c.stats)
         .map(([k, v]) => `<div class="stat"><span>${k}</span><i style="--v:${v}"></i></div>`)
-        .join('')}`;
+        .join('')}
+      <div class="record" data-record></div>`;
     card.addEventListener('mouseenter', () => set(i));
     card.addEventListener('click', () => {
       set(i);
@@ -94,6 +122,11 @@ export function createCarSelect({ places, onHighlight, onChoose }) {
     },
     open(currentId, currentPlace) {
       root.hidden = false;
+      // récord en Mónaco de cada auto
+      [...list.children].forEach((card, k) => {
+        const t = bestLap('monaco', ids[k]);
+        card.querySelector('[data-record]').textContent = t ? `🏁 Récord Mónaco: ${fmtLap(t)}` : '🏁 Sin vueltas en Mónaco';
+      });
       setPlace(places[currentPlace] ? currentPlace : placeIds[0]);
       set(Math.max(0, ids.indexOf(currentId)));
     },

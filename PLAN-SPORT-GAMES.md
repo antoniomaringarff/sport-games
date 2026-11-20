@@ -2,7 +2,8 @@
 
 > Este plan **amplía** el `plan.md` original (stack, reglas de trabajo, `config.js`, Higgsfield).
 > Todo lo que dice ese archivo sigue vigente salvo donde este lo reemplaza explícitamente.
-> **Todavía no se construye nada: esto es solo el plan.**
+> **Estado (18/11/2026):** Fases 0 a 3 hechas, más cámaras, minimapa y golpes contra guardrails.
+> Rama `claude/sports-game-city-plan-eca3f5`, PR antoniomaringarff/sport-games#1. Ver sección 5.
 
 ---
 
@@ -274,62 +275,114 @@ Desnivel real ~40 m: la subida a Casino y la bajada a la horquilla tienen que se
 
 ---
 
-## 5. Fases
+## 5. Estado y próximos pasos
 
-Cada fase termina con algo **jugable** en `npm run dev`, playtest y commit.
+### 5.1 Lo que ya está hecho
 
-### Fase 0 — Setup
-- [ ] Vite + Three + Rapier, estructura de carpetas de la sección 2.
-- [ ] `GAME.md` con la sesión de diseño (nombres de la ciudad y los autos, colores).
-- **Listo cuando:** canvas con piso y cubo a 60 fps.
+| Fase | Qué quedó | Notas |
+|---|---|---|
+| 0 — Setup | Vite + Three.js + Rapier, estructura de carpetas | `npm run dev` |
+| 1 — Manejo | 3 autos con perfiles distintos, superficies, ayudas, pista de pruebas | El manejo quedó aprobado ("muy bueno"). `node tools/sim-test.mjs` mide los autos |
+| 2 — Autos 3D | Kenney Car Kit, conversor obj/fbx/gltf→glb, showroom | Estilo juguete. obj/fbx sin probar con archivos reales |
+| Cámaras | Afuera cerca/lejos, conductor, frente; ladeo al doblar | Perillas en `CAMERA` y `DRIVER_EYE` |
+| 3 — Mónaco | Circuito real (3.330 m), relieve, túnel, guardrails, 1.284 edificios OSM, tribunas, modo carrera (luces, vueltas, sectores, récord, contramano) | `node tools/import-monaco.mjs` regenera todo |
+| Extras | Minimapa con aviso de próxima curva, golpes realistas con chispas, luz por lugar (`LIGHT`), asfalto más claro | Pedido en la revisión del 18/11 |
 
-### Fase 1 — Pista de pruebas de manejo (la más importante)
-Antes de la ciudad: un **playground** con curvas, rectas, rampas, lomas, zona de adoquín, tierra, arena y una subida empinada.
-- [ ] Vehículo Rapier con perfil configurable, step fijo, input suavizado, cámara.
-- [ ] Los 3 autos como **cajas de colores** con sus perfiles distintos (F1 / camioneta / lujo).
-- [ ] Superficies con fricción distinta.
-- [ ] Ayudas (anti-vuelco, tracción, downforce).
-- [ ] HUD: velocímetro, nombre del auto, tecla para cambiar de auto al vuelo (solo debug).
-- **Listo cuando:** manejar cada auto 2 minutos ya es divertido **y** se sienten claramente distintos.
+### 5.2 Próximos pasos (en orden sugerido)
 
-### Fase 2 — Modelos de autos + pantalla de elección
-- [ ] Buscar y elegir modelos (F1, camioneta, lujo), licencias en `CREDITS.md`.
-- [ ] `tools/convert-models.mjs` (obj/fbx/gltf → glb normalizado) + `cars.json`.
-- [ ] Ruedas visuales que giran, doblan y siguen la suspensión.
-- [ ] Showroom de elección al entrar al juego.
-- **Listo cuando:** se entra, se elige uno de los 3, y se maneja en la pista con su modelo real.
+**Paso A — Pulido de la carrera (corto, alto impacto)**
+- [x] **Sonido** (sintetizado con Web Audio, sin archivos): motor por auto con caja de cambios, derrape, piso, viento, golpe y raspón contra guardrail, eco en el túnel, pitidos del semáforo. Tecla M silencia. Perillas en `AUDIO` y `SOUND` de cada auto.
+- [x] **Auto fantasma** de la mejor vuelta (se graba cada 0,1 s, se guarda por auto, tecla G lo oculta). Reubicar con R anula la vuelta.
+- [x] **Récords** por auto en las tarjetas del menú.
+- [ ] Probar vueltas reales con teclado y joystick; ajustar `WALL`, `LIGHT` y `MINIMAP` con el hijo.
+- [ ] Calle de boxes (aunque sea decorativa) y más carteles/tribunas en curvas clave.
 
-### Fase 3 — El circuito de Mónaco (primero la pista, después la ciudad)
-La parte más emocionante, temprano: se corre en el circuito aunque la ciudad todavía sea "maqueta".
-- [ ] `tools/import-dem.mjs`: heightmap de la zona del circuito (desniveles reales).
-- [ ] `tools/import-osm.mjs` (versión 1): solo el trazado del circuito + línea de costa + puerto → `circuit.json`.
-- [ ] Malla de la pista sobre el terreno, pianos, vallas, túnel, mar y puerto con shader de agua, cielo con atardecer.
-- [ ] Edificios a lo largo de la pista como cajas simples (de las huellas de OSM) para que se sienta encajonado.
-- [ ] Modo carrera: largada, cronómetro, 3 sectores, mejor vuelta en `localStorage`, reubicar en pista.
-- **Listo cuando:** dar una vuelta con el F1 es divertido y se reconocen Sainte Dévote, el Casino, la horquilla, el túnel y la Piscina.
+**Paso B — Multijugador y bots (carrera en Mónaco)** ✅ primera versión hecha
 
-### Fase 4 — La ciudad completa
-- [ ] `import-osm.mjs` completo: todas las calles, edificios, plazas, escaleras, playa de Larvotto.
-- [ ] Malla de calles con cruces, rotondas, túneles y calles a distinto nivel; aplanado del terreno.
-- [ ] Edificios extruidos con receta por barrio (Le Rocher, Condamine, Monte-Carlo, Fontvieille, Larvotto, ladera).
-- [ ] Hitos low-poly: Casino, Palacio, estadio, yates, faro.
-- [ ] Paseo libre vs. modo carrera (vallas que aparecen/desaparecen).
-- [ ] Chunks, instancing, LOD. Herramienta de debug F2 para corregir OSM.
-- **Listo cuando:** atravesar Mónaco de punta a punta es agradable y se mantiene en 60 fps.
+*Por qué va acá:* necesita el modo carrera terminado (Paso A) y reusa dos cosas de ese paso: el **auto fantasma** (grabar y reproducir un auto que no manejás vos = lo mismo que mostrar a otro jugador) y el **piloto automático** que ya usamos para probar (la base de los bots). Conviene hacerlo **antes de la ciudad**, porque es sobre el circuito, y así la ciudad nace pensando en varios autos.
 
-### Fase 5 — Las dos montañas
-- [ ] Tête de Chien: acantilado + ruta en cornisa + mirador.
-- [ ] Mont Agel: más alta, nevada arriba; serpentina con ripio; estacionamiento del centro de ski.
-- [ ] Distancias comprimidas; Alpes lejanos de fondo.
-- **Listo cuando:** subir con la camioneta es un placer y con el F1 es un desafío, y desde arriba se ve todo Mónaco y el mar.
+*Cómo funciona para el jugador:*
+1. En el menú, nuevo lugar/modo: **"Mónaco – multijugador"**.
+2. Se entra a una **sala de espera de 15 segundos**: se ve la lista de jugadores que se van sumando (máximo **10**).
+3. Al terminar los 15 s (o si se llena antes), los lugares vacíos se completan con **bots** hasta el tamaño de grilla elegido.
+4. Todos aparecen en la grilla de largada (orden: por llegada a la sala), semáforo común, carrera de N vueltas, tabla de posiciones en vivo y resultados al final.
 
-### Fase 6 — Pulido + Higgsfield
-- [ ] Sonido de motor por auto, eco en el túnel, derrape, choque, superficies.
-- [ ] Minimapa; auto fantasma de la mejor vuelta.
-- [ ] Higgsfield (con confirmación de créditos, como dice `plan.md`): fachadas por barrio, carteles inventados por el hijo (sin marcas reales), skybox, pantalla de título, fondo del showroom.
+*Cómo se arma (versión red local, dos computadoras):*
+- **Servidor chico en Node** (`server/`, con `ws`): maneja la sala, el reloj de 15 s, la largada sincronizada y los resultados. Se corre con `npm run server` en una de las compus.
+- Cada compu abre el juego apuntando a esa compu (`npm run dev -- --host` y entrar a `http://IP-de-la-compu:5173`).
+- **Cada jugador simula su propio auto** (manejo igual que ahora, sin lag) y manda su posición ~20 veces por segundo; los autos de los demás se dibujan **interpolados** y tienen un cuerpo físico "cinemático" para que se puedan tocar.
+- **Bots**: los maneja la compu del primer jugador (el anfitrión) con el piloto automático mejorado (línea de carrera, frenada antes de curva, 3 niveles de dificultad) y los manda como si fueran jugadores.
+- Después, con el Paso F, el mismo servidor se sube a internet.
 
-### Después (no ahora)
-Rivales en la carrera, tránsito, día/noche, otros objetivos (reparto, coleccionables), **snowboard** (desde Mont Agel), **surf** (desde Larvotto), controles táctiles.
+*Tareas:*
+- [x] `src/modes/race/ai.js`: bots que siguen la pista, frenan antes de las curvas (según la frenada y el agarre de su auto), van por su carril y se reubican si se traban.
+- [x] `server/`: sala (máx. 10), cuenta de 15 s, relleno con bots hasta 6, largada sincronizada, posiciones y resultados (los que no llegaron, ordenados por lo que recorrieron).
+- [x] `src/net/`: conexión, reloj compartido con el servidor, envío de posición 20 veces por segundo; autos remotos interpolados, con nombre arriba y cuerpo para chocarse.
+- [x] HUD: sala de espera con nombre, posición (P2/6) y tabla en vivo, pantalla de resultados, Enter para otra carrera.
+- [x] Probado con dos pestañas del navegador (dos clientes) y bots: sala, largada, posiciones, llegada y resultados.
+- [ ] **Probar entre dos computadoras de verdad** en la misma red (y revisar el firewall).
+- [ ] Si el anfitrión se va en medio de la carrera, los bots quedan quietos: pasarle los bots al siguiente jugador.
+- [ ] Sonido del motor de los demás autos (hoy solo suena el propio).
+- [ ] Bots más rápidos/variados y que se esquiven entre ellos.
+
+**Rally en la Tête de Chien** ✅ primera versión hecha (pedido del 19/11)
+- [x] Auto de rally (Kenney `hatchback-sports`): 4x4, liviano, suspensión larga, mucho agarre en tierra, freno de mano fuerte.
+- [x] Etapa de 5,2 km por caminos reales de OSM (Route de la Turbie → Avenue du Cap d'Ail → Route de la Tête de Chien), 216 → 542 m, 4 horquillas.
+- [x] Ripio, banquinas, postes, pinos/arbustos/piedras (los cercanos se chocan), arcos de largada/parciales/llegada, Mónaco y el mar de fondo.
+- [x] Modo rally: semáforo, 3 parciales contra el récord, llegada, récord y fantasma por auto, +5 s por reubicar, no se puede cortar entre horquillas.
+- [x] Minimapa y cartel de próxima curva (sirven de "copiloto") para caminos abiertos.
+- [x] Copiloto con voz (Web Speech, español): notas de ruta automáticas 1–6 / horquilla, "larga", encadenadas con "y", cantadas ~3 s antes según la velocidad; tecla V. También disponible en Mónaco (`COPILOT.CIRCUIT`).
+- [ ] Más etapas (bajada, de noche, con niebla) y polvo detrás del auto.
+- [ ] Rally multijugador (largadas cada 30 s contra el reloj).
+
+**Mejora gráfica** ✅ (pedido del 19/11)
+- [x] Luz del cielo (IBL con un cielo degradé; el disco del sol saturaba todo), menos luz en el túnel.
+- [x] Sombras en cascada (CSM) en todo el paisaje; materiales preparados solos.
+- [x] Nubes, terreno con textura de detalle, mar con reflejos, palmeras en Mónaco, estudio con reflejos en el showroom.
+- [x] Humo, polvo y marcas de frenada.
+- [x] Calidad alta/media/baja (tecla Q), resolución dinámica, color y viñeta por CSS.
+- Se probó un posproceso completo (bloom + MSAA en buffer HDR): costaba ~15 ms por cuadro, se descartó.
+- [ ] Posibles siguientes: autos con pintura propia (no la paleta de Kenney), luces de freno, ventanas con reflejo/variedad, agua con espuma en la costa.
+
+**Autos realistas** ✅ (pedido del 19/11)
+- [x] F1 Audi R26, camioneta Lightbody Lifted '85, auto de lujo Ferrari F40 LB-Works, rally Porsche 911 (996), de Sketchfab.
+- [x] `convert-models.mjs`: ruedas por forma, simplificación (meshoptimizer), juntar por material, texturas WebP 1024, cuantización. 11 MB los cuatro (eran 130 MB).
+- [x] Sombra con un molde simple (envoltura convexa + cilindros): Mónaco quedó en ~5,7 ms por cuadro.
+- [ ] Ferrari y Porsche son CC-BY-NC-SA y los tres son marcas reales: reemplazar antes de publicar o vender.
+- [ ] Luces de freno que se prendan y volante que gire en la vista conductor.
+
+**Paso C — La ciudad completa (Fase 4)**
+- [ ] Importar todas las calles de OSM con cruces, rotondas, túneles y calles a distinto nivel (en `import-monaco.mjs`).
+- [ ] **Paseo libre**: el circuito se abre a la ciudad (sin vallas, con cruces); el **modo carrera** vuelve a cerrar todo.
+- [ ] Barrios con su "receta" (Le Rocher con adoquín, Monte-Carlo, Fontvieille, Larvotto con la playa).
+- [ ] Hitos low-poly: Casino, Palacio, puerto con yates, estadio, faro.
+- [ ] Colisión de edificios (cajas simples) para el paseo libre.
+- [ ] Rendimiento: chunks, LOD, instancing (medir en la notebook del hijo).
+
+**Paso D — Las dos montañas (Fase 5)**
+- [x] Tête de Chien: hecha como etapa de rally (ver arriba).
+- [ ] Mont Agel: serpentina con nieve arriba (para el snowboard).
+- [ ] Estacionamiento del centro de ski (futura entrada al snowboard).
+- [ ] Distancias comprimidas para que el viaje dure 2–3 minutos.
+
+**Paso E — Identidad (Fase 6, Higgsfield)**
+- [ ] `STYLE.md` con el hijo; lista de assets con cantidad de generaciones y **confirmación antes de gastar créditos**.
+- [ ] Fachadas por barrio, carteles inventados, cielo, pantalla de título, fondo del showroom, colores/livery de los autos.
+
+**Paso F — Publicar (cuando quieran)**
+- [ ] Servidor de multijugador en internet (hoy solo red local): hosting del servidor WebSocket (Fly.io, Render o similar), con confirmación.
+- [ ] Deploy web (GitHub Pages o Vercel), solo con confirmación.
+- [ ] Partir el bundle (hoy ~4,9 MB por el WASM de Rapier) para que cargue más rápido.
+
+**Después:** snowboard (desde Mont Agel), surf (desde Larvotto), controles táctiles, tránsito, día/noche.
+
+### 5.3 Deuda técnica conocida
+- En pruebas largas del rally, dos veces el cuerpo físico del auto apareció *deshabilitado* (quedaba flotando). No se encontró la causa; `vehicle.js` lo reactiva y avisa en la consola. Investigar si vuelve a aparecer.
+- `import-rally.mjs` repite funciones de `import-monaco.mjs` (proyección, relieve, curvas): juntarlas en `tools/lib/`.
+- El relieve viene de datos de ~30 m: algunas pendientes del circuito quedan suavizadas.
+- Edificios sin colisión (hoy no importa porque los guardrails contienen el auto).
+- `window.__autopilot` y `__game.advance()` son ganchos de prueba: dejarlos, pero no usarlos en el juego.
+- El panel de vista previa del editor pausa la animación cuando no está a la vista: medir FPS siempre en un navegador normal.
 
 ---
 
@@ -337,22 +390,28 @@ Rivales en la carrera, tránsito, día/noche, otros objetivos (reparto, coleccio
 
 | Riesgo | Mitigación |
 |---|---|
-| El manejo se siente "de jabón" o los autos se parecen | Fase 1 dedicada, centro de masa bajo, perfiles bien distintos, perillas en `config.js` |
-| La API de vehículo de Rapier no da para algo (ej. downforce) | Se aplica como fuerza extra sobre el chasis; plan B: `cannon-es` |
-| Modelos con escalas/ejes/ruedas inconsistentes | Script de normalización + manifest; la física no depende del modelo |
-| Los datos de OSM vienen "sucios" (calles cortadas, huellas raras, túneles mal unidos) | Importar primero solo el circuito; limpiar con filtros + herramienta F2; plan B: dibujar a mano las calles principales |
-| Mónaco es muy empinado y denso: túneles y calles a distinto nivel complican la malla | Empezar por el circuito; túneles como piezas hechas a mano; calles superpuestas por capas |
-| Pista angosta + vallas = frustrante | Ayudas de frenado opcionales, rebote amable en vallas, reubicar rápido |
-| Licencias (OSM, DEM, dataset de circuitos) y marcas | Atribución en `CREDITS.md` y pantalla de créditos; cero logos/sponsors reales |
-| FPS con ciudad densa | Chunks, instancing, LOD, sombras limitadas, medir en cada fase |
+| El sonido sintetizado suena "a juguete" | Empezar con Web Audio (gratis); si no convence, buscar SFX CC0 (Kenney Audio, freesound CC0) |
+| La ciudad completa de OSM trae calles "sucias" y muchos cruces | Importar por barrios; herramienta F2 para corregir; plan B: solo calles principales |
+| FPS con ciudad + montañas | Chunks, LOD, sombras solo cerca, medir en cada paso |
+| Licencias (OSM, Terrain Tiles, Kenney, Higgsfield) y marcas | `CREDITS.md` al día; cero logos/sponsors reales |
+| El chico pierde interés | Pasos cortos que terminan en algo jugable; dejarle retos en `config.js` |
 
 ---
 
-## 7. Decisiones abiertas (para el game designer)
+## 7. Definiciones que hacen falta (para decidir con el hijo)
 
-- Nombre del modo carrera (sin usar marcas oficiales) y del juego.
-- ¿Manejo más arcade o más simulación? (se ajusta en Fase 1)
-- ¿Cámara por defecto lejos o cerca? ¿Cámara de cockpit para el F1?
-- ¿Cuántas vueltas por carrera? ¿Rivales más adelante?
-- ¿Hora del día por defecto? (recomendado: atardecer)
-- Carteles inventados para la ciudad y el circuito.
+Las primeras tres cambian lo que se construye en los Pasos A, B y C; conviene decidirlas ya.
+
+1. **Carrera: ¿cuántas vueltas?** Y en modo un jugador, ¿también rivales bot (salen gratis del Paso B) o solo contrarreloj + fantasma?
+   - **Multijugador:** ¿a cuántos autos se completa la grilla con bots (por ejemplo 6, o siempre 10)? ¿Los jugadores pueden elegir auto distinto o todos el mismo? ¿Choques entre autos sí o no?
+2. **Paseo libre por la ciudad: ¿para qué?** Solo pasear, o con un objetivo (repartos, coleccionables, desafíos de tiempo entre dos puntos). ¿Con tránsito?
+3. **Estilo de los autos**: seguir con los autos "juguete" de Kenney o pasar a modelos más realistas (hay un F1 más fino en el Racing Kit). ¿Se pueden elegir colores? ¿Sumamos más autos?
+4. **Dificultad del manejo**: ¿un selector arcade/simulación (ayudas on/off) o un solo nivel?
+5. **Daño**: ¿los golpes rompen el auto (se ve abollado, anda peor) o solo frenan?
+6. **Hora del día**: fija (tarde luminosa, como ahora), elegible en el menú, o ciclo día/noche.
+7. **Sonido y música**: ¿motor sintetizado o grabado? ¿Música en el menú y en carrera?
+8. **Montañas**: ¿qué tan cerca de la ciudad? ¿Mont Agel nevado siempre?
+9. **Controles**: teclado y joystick ya están; ¿hace falta celular/táctil?
+10. **Nombre del juego y del modo carrera** (sin marcas oficiales).
+11. **Higgsfield**: presupuesto de imágenes y qué va primero (pantalla de título, carteles, fachadas).
+12. **Publicar**: ¿cuándo y dónde? (link para amigos, GitHub Pages, Vercel). Para jugar multijugador por internet hace falta además un servidor.

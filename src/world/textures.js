@@ -36,7 +36,23 @@ function noise(g, size, r, base, spread, count, maxR = 2) {
 }
 
 export const SURFACE_TEXTURES = {
-  asfalto: () => canvasTexture('asfalto', 256, (g, s, r) => noise(g, s, r, '#4a4c50', 0.18, 9000, 2)),
+  asfalto: () =>
+    canvasTexture('asfalto', 256, (g, s, r) => {
+      noise(g, s, r, '#5f6165', 0.12, 12000, 1.4);
+      // piedritas claras del agregado
+      for (let i = 0; i < 1400; i++) {
+        const l = 55 + r() * 25;
+        g.fillStyle = `hsla(30, 4%, ${l}%, ${0.12 + r() * 0.18})`;
+        g.fillRect(r() * s, r() * s, 1 + r() * 1.5, 1 + r() * 1.5);
+      }
+      // manchas más oscuras (aceite, parches)
+      for (let i = 0; i < 18; i++) {
+        g.fillStyle = `rgba(30,30,32,${0.05 + r() * 0.08})`;
+        g.beginPath();
+        g.ellipse(r() * s, r() * s, 6 + r() * 26, 4 + r() * 14, r() * 3, 0, Math.PI * 2);
+        g.fill();
+      }
+    }),
   adoquin: () =>
     canvasTexture('adoquin', 256, (g, s, r) => {
       g.fillStyle = '#5b5148';
@@ -57,6 +73,21 @@ export const SURFACE_TEXTURES = {
       }
     }),
   tierra: () => canvasTexture('tierra', 256, (g, s, r) => noise(g, s, r, '#8a6a46', 0.3, 7000, 3)),
+  ripio: () =>
+    canvasTexture('ripio', 256, (g, s, r) => {
+      noise(g, s, r, '#a8977a', 0.22, 6000, 2);
+      for (let i = 0; i < 900; i++) {
+        const l = 50 + r() * 35;
+        g.fillStyle = `hsl(${30 + r() * 15}, ${8 + r() * 10}%, ${l}%)`;
+        g.beginPath();
+        g.arc(r() * s, r() * s, 0.8 + r() * 2.2, 0, Math.PI * 2);
+        g.fill();
+      }
+      // huellas de ruedas
+      g.fillStyle = 'rgba(80,65,45,0.18)';
+      g.fillRect(0, s * 0.28, s, s * 0.1);
+      g.fillRect(0, s * 0.62, s, s * 0.1);
+    }),
   arena: () => canvasTexture('arena', 256, (g, s, r) => noise(g, s, r, '#e2cf9c', 0.12, 9000, 2)),
   nieve: () => canvasTexture('nieve', 256, (g, s, r) => noise(g, s, r, '#eef3f8', 0.07, 5000, 3)),
   pasto: () => canvasTexture('pasto', 256, (g, s, r) => noise(g, s, r, '#5c8a3e', 0.25, 12000, 2)),

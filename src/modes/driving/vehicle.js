@@ -1,6 +1,6 @@
 // Física de un auto: chasis + 4 ruedas con el controlador de vehículo de Rapier.
 // Sin gráficos (los dibuja carModel.js). Ejes del auto: +X adelante, +Y arriba, +Z derecha.
-import { SURFACES, ASSISTS } from '../../config.js';
+import { SURFACES, ASSISTS, WALL } from '../../config.js';
 
 const FL = 0, FR = 1, RL = 2, RR = 3;
 const KMH = 3.6;
@@ -80,6 +80,10 @@ export class Vehicle {
     this.upsideDownTime = 0;
     this.skid = [0, 0, 0, 0];  // 0..1 cuánto patina cada rueda (para efectos)
     this.spawn = { ...spawn };
+    // golpes contra paredes (para chispas y cámara)
+    this.impact = 0;          // m/s de golpe de frente en este paso (0 = nada)
+    this.scrape = 0;          // m/s raspando a lo largo de la pared
+    this.contactPoint = null; // dónde toca la pared
   }
 
   get kmh() {
@@ -91,6 +95,13 @@ export class Vehicle {
     const p = this.p;
     const ctrl = this.ctrl;
     const body = this.body;
+
+    // Guarda: en pruebas largas del rally el cuerpo apareció deshabilitado (sin causa encontrada
+    // todavía) y el auto quedaba flotando. Si pasa, se reactiva y se avisa en la consola.
+    if (!body.isEnabled()) {
+      console.warn('[vehicle] cuerpo deshabilitado: se reactiva');
+      body.setEnabled(true);
+    }
 
     // Volver a empezar las fuerzas del paso anterior (downforce, ayudas)
     body.resetForces(true);
@@ -115,8 +126,11 @@ export class Vehicle {
     let engine = 0;
     let brake = 0; // m/s²
     const throttle = input.throttle, brakeIn = input.brake;
+    this.lastInputHandbrake = !!input.handbrake;
     if (throttle > 0 && speed > -1) {
       engine = p.ENGINE_FORCE * throttle * Math.max(0, 1 - Math.pow(speedFrac, 2.2));
+      // el motor también vence la resistencia del aire: así la velocidad máxima no cambia
+      if (speedFrac < 1) engine += (p.AERO_DRAG ?? 0) * absSpeed * absSpeed * p.MASS * throttle;
     } else if (throttle > 0) {
       brake = p.BRAKE * throttle; // venía marcha atrás: primero frena
     }
@@ -128,6 +142,15 @@ export class Vehicle {
       if (speed < -revMax * 1.1) brake = p.BRAKE * 0.5; // va para atrás muy rápido: frena
     }
     if (throttle === 0 && brakeIn === 0) brake = 0.6; // freno motor suave
+
+    // ABS: no pedir más freno del que las gomas pueden dar (agarre × peso + downforce).
+    // Sin ABS las ruedas se bloquean, patinan y el auto no dobla.
+    if (ASSISTS.ABS && brake > 0) {
+      const surfGrip = SURFACES[this.surface]?.grip ?? 1;
+      const off = p.OFFROAD[this.surface] ?? 1;
+      const limit = p.GRIP * surfGrip * off * (9.81 + (p.DOWNFORCE ?? 0) * speed * speed);
+      brake = Math.min(brake, limit);
+    }
 
     const perWheelEngine = engine / this.driven.length;
     // Rapier: el freno es un impulso máximo por rueda en cada paso
@@ -181,6 +204,12 @@ export class Vehicle {
       const f = p.DOWNFORCE * speed * speed * p.MASS;
       body.addForce({ x: -up.x * f, y: -up.y * f, z: -up.z * f }, true);
     }
+    // Resistencia del aire: crece con la velocidad al cuadrado (al soltar, un F1 frena solo)
+    if (p.AERO_DRAG > 0 && absSpeed > 1) {
+      const a = p.AERO_DRAG * absSpeed * absSpeed * p.MASS;
+      const inv = 1 / Math.hypot(lv.x, lv.y, lv.z);
+      body.addForce({ x: -lv.x * inv * a, y: -lv.y * inv * a, z: -lv.z * inv * a }, true);
+    }
     // Arrastre de la superficie (arena, pasto, tierra frenan)
     if (surfaceDrag > 0 && absSpeed > 0.1) {
       // crece con la velocidad: en arena se puede andar, pero no rápido
@@ -208,6 +237,9 @@ export class Vehicle {
       }, true);
     }
 
+    // ---- Paredes: golpe suave y realista en vez de rebote ----
+    this.handleWalls(dt);
+
     // ---- Si quedó dado vuelta, se reubica solo ----
     if (up.y < 0.3 && absSpeed < 3) this.upsideDownTime += dt;
     else this.upsideDownTime = 0;
@@ -223,6 +255,78 @@ export class Vehicle {
       this.skid[i] = ctrl.wheelIsInContact(i) ? clamp((lat - 2.5) / 6, 0, 1) : 0;
       void side; void fwdI;
     }
+  }
+
+  /** Busca si el chasis toca una pared. Devuelve { n (normal hacia afuera de la pared), point } o null. */
+  wallContact() {
+    const { world } = this.physics;
+    const pos = this.body.translation();
+    let found = null;
+    world.contactPairsWith(this.collider, (other) => {
+      if (found || !this.physics.isWall(other)) return;
+      world.contactPair(this.collider, other, (m) => {
+        if (found || m.numContacts() === 0 || m.contactDist(0) > 0.15) return;
+        const raw = m.normal();
+        let nx = raw.x, nz = raw.z;
+        const l = Math.hypot(nx, nz);
+        if (l < 0.3) return; // contacto de arriba/abajo, no es un costado
+        nx /= l; nz /= l;
+        // que apunte desde la pared hacia el auto (la pared está a lo lejos en la otra dirección)
+        const probe = Math.max(this.p.LENGTH, this.p.WIDTH);
+        const wallSide = this.physics.world.castRay(
+          new this.physics.RAPIER.Ray({ x: pos.x, y: pos.y, z: pos.z }, { x: -nx, y: 0, z: -nz }), probe, true,
+          undefined, undefined, this.collider);
+        if (!wallSide || wallSide.collider.handle !== other.handle) { nx = -nx; nz = -nz; }
+        const half = this.p.WIDTH / 2;
+        const p = { x: pos.x - nx * half, y: pos.y - this.p.HEIGHT * 0.2, z: pos.z - nz * half };
+        found = { n: { x: nx, z: nz }, point: { x: p.x, y: p.y, z: p.z } };
+      });
+    });
+    return found;
+  }
+
+  handleWalls(dt) {
+    this.impact = 0;
+    this.scrape = 0;
+    // velocidades de los últimos pasos (la física frena el golpe antes de que veamos el contacto)
+    const v = this.body.linvel();
+    this.velHist = this.velHist ?? [];
+    this.velHist.push({ x: v.x, z: v.z });
+    if (this.velHist.length > 5) this.velHist.shift();
+    const wc = this.wallContact();
+    this.contactPoint = wc?.point ?? null;
+    const wasTouching = this.touching;
+    this.touching = !!wc;
+    if (!wc) return;
+    const body = this.body;
+    const { n } = wc;
+    // qué tan de frente venía contra la pared (la física ya frenó esa parte)
+    let hitNow = 0;
+    for (const h of this.velHist) hitNow = Math.max(hitNow, -(h.x * n.x + h.z * n.z));
+    const vn = v.x * n.x + v.z * n.z;
+    let tx = v.x - n.x * vn, tz = v.z - n.z * vn;
+    let out = Math.max(vn, 0);
+    let keep = 1 - WALL.SCRAPE * dt;
+    if (!wasTouching) {
+      // golpe: se pierde más velocidad cuanto más de frente
+      keep = Math.max(0.35, 1 - hitNow * WALL.HIT_LOSS);
+      out = Math.max(out, Math.min(hitNow * WALL.BOUNCE, 2));
+      this.impact = hitNow;
+    }
+    tx *= keep;
+    tz *= keep;
+    body.setLinvel({ x: tx + n.x * out, y: Math.min(v.y, 1), z: tz + n.z * out }, true);
+    this.scrape = Math.hypot(tx, tz);
+
+    // El auto se acomoda paralelo a la pared y no sale girando como trompo
+    const f = rotateVec(body.rotation(), { x: 1, y: 0, z: 0 });
+    let dx = -n.z, dz = n.x; // dirección de la pared
+    if (dx * f.x + dz * f.z < 0) { dx = -dx; dz = -dz; }
+    let d = Math.atan2(-dz, dx) - Math.atan2(-f.z, f.x);
+    d = Math.atan2(Math.sin(d), Math.cos(d));
+    const av = body.angvel();
+    const want = Math.abs(d) < 1.1 ? d * WALL.ALIGN : av.y * 0.5;
+    body.setAngvel({ x: av.x * 0.6, y: av.y + (want - av.y) * 0.25, z: av.z * 0.6 }, true);
   }
 
   /** Reubica el auto: derecho, quieto, 1.5 m más arriba. */
@@ -251,6 +355,8 @@ export class Vehicle {
     body.setAngvel({ x: 0, y: 0, z: 0 }, true);
     this.steer = 0;
     this.upsideDownTime = 0;
+    this.velHist = [];
+    this.touching = false;
   }
 
   /** Estado de una rueda en coordenadas del chasis (para dibujarla). */

@@ -1,5 +1,9 @@
 // Modo carrera: semáforo de largada, vueltas, sectores, mejor vuelta y "contramano".
-import { CARS } from '../../config.js';
+import { CARS, COPILOT } from '../../config.js';
+import { createCodriver } from './codriver.js';
+import { createMinimap } from './minimap.js';
+import { beep } from '../../core/audio.js';
+import { rotateVec } from '../driving/vehicle.js';
 
 const fmt = (t) => {
   if (t == null || !isFinite(t)) return '--:--.---';
@@ -20,7 +24,10 @@ export function createRace(track, place) {
     msg: document.getElementById('race-msg'),
   };
   const n = track.n;
-  const S = track.sectors; // índices donde empieza cada sector
+  const S = track.sectors;
+  const map = createMinimap(track);
+  let lastRender = 0;
+  const codriver = createCodriver(track, { enabled: COPILOT.CIRCUIT }); // índices donde empieza cada sector
 
   let carId = null;
   let phase = 'grid';   // grid → luces → carrera
@@ -30,7 +37,14 @@ export function createRace(track, place) {
   let sectorStart = 0, sector = 0, sectorTimes = [null, null, null];
   let best = null, bestSectors = [null, null, null], last = null;
   let validLap = false, passed = new Set();
-  let wrongWay = 0, msgT = 0;
+  let wrongWay = 0, msgT = 0, lastOn = 0;
+  // Fantasma: la mejor vuelta grabada cada 0,1 s → [t, x, y, z, qx, qy, qz, qw]
+  const GHOST_DT = 0.1;
+  let rec = [], recNext = 0;
+  let ghost = null, ghostI = 0;
+  // Carrera con vueltas (multijugador): cruces de la línea, llegada
+  let laps = null, crossings = 0, goClock = 0, finishTime = null, onFinish = null, waiting = false;
+  let goWall = null; // hora real de la largada (multijugador: igual para todos aunque un cuadro se atrase)
 
   const key = () => `sport-games:${place}:mejor:${carId}`;
   function loadBest() {
@@ -47,6 +61,29 @@ export function createRace(track, place) {
       localStorage.setItem(key(), JSON.stringify({ lap: best, sectors: bestSectors }));
     } catch {}
   }
+  const ghostKey = () => `sport-games:${place}:fantasma:${carId}`;
+  function loadGhost() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(ghostKey()) ?? 'null');
+      ghost = Array.isArray(raw) && raw.length > 10 ? raw : null;
+    } catch {
+      ghost = null;
+    }
+  }
+  function saveGhost() {
+    try {
+      localStorage.setItem(ghostKey(), JSON.stringify(ghost));
+    } catch {}
+  }
+  function record(t, vehicle) {
+    if (t < recNext) return;
+    recNext = t + GHOST_DT;
+    const p = vehicle.body.translation(), q = vehicle.body.rotation();
+    const r2 = (v) => Math.round(v * 100) / 100;
+    const r4 = (v) => Math.round(v * 10000) / 10000;
+    rec.push([r2(t), r2(p.x), r2(p.y), r2(p.z), r4(q.x), r4(q.y), r4(q.z), r4(q.w)]);
+  }
+
   function say(text, secs = 2) {
     el.msg.textContent = text;
     el.msg.hidden = false;
@@ -68,45 +105,93 @@ export function createRace(track, place) {
   return {
     show(v) {
       root.hidden = !v;
+      map.show(v);
       if (!v) { el.lights.hidden = true; el.msg.hidden = true; }
     },
 
-    /** Arranca de nuevo desde la grilla. */
-    start(id) {
+    /**
+     * Arranca de nuevo desde la grilla.
+     * opts: { goIn: segundos hasta que se apagan las luces (null = esperar a go()),
+     *         laps: vueltas de la carrera (null = libre), onFinish(tiempo), idx: punto de largada }
+     */
+    start(id, opts = {}) {
       carId = id;
+      codriver.reset();
       loadBest();
+      loadGhost();
+      rec = [];
+      recNext = 0;
       phase = 'grid';
       lightT = 0;
+      lastOn = 0;
       goAt = 4 + 0.4 + Math.random() * 1.2; // 5 luces (0,8 s c/u) + espera al azar
-      idx = n - 14;
+      laps = opts.laps ?? null;
+      onFinish = opts.onFinish ?? null;
+      crossings = 0;
+      finishTime = null;
+      waiting = opts.goIn === null;
+      goWall = null;
+      if (opts.goIn != null) this.go(opts.goIn);
+      idx = opts.idx ?? n - 14;
       lap = 0;
       clock = 0;
       sector = 0;
       sectorTimes = [null, null, null];
       last = null;
       passed.clear();
-      el.lights.hidden = false;
+      el.lights.hidden = waiting;
       el.bulbs.forEach((b) => b.classList.remove('on'));
       el.msg.hidden = true;
-      this.render(0);
+      this.render(0, true);
+    },
+
+    /** Programa la largada: las luces se apagan dentro de `secs` segundos. */
+    go(secs) {
+      waiting = false;
+      // las 5 luces se prenden en los 4 s anteriores; lightT negativo = todavía nada
+      goAt = Math.max(0.5, Math.min(4.4, secs));
+      lightT = goAt - secs;
+      goWall = performance.now() + secs * 1000;
+      el.lights.hidden = false;
+    },
+
+    /** Progreso en la carrera (para ordenar posiciones): metros desde la largada. */
+    progress() {
+      return ((crossings - 1) * n + idx) * track.step;
+    },
+    get finished() {
+      return finishTime;
+    },
+    get lapNumber() {
+      return Math.max(1, Math.min(crossings, laps ?? crossings));
     },
 
     /** Durante el semáforo el auto no puede arrancar. */
     filterInput(input) {
+      if (phase === 'fin') return { ...input, throttle: 0, brake: 0.3 };
       if (phase === 'carrera') return input;
       return { ...input, throttle: 0, handbrake: true };
     },
 
     update(dt, vehicle) {
       clock += dt;
+      const fwd = rotateVec(vehicle.body.rotation(), { x: 1, y: 0, z: 0 });
+      map.update(dt, idx, vehicle.body.translation(), fwd);
       if (msgT > 0 && (msgT -= dt) <= 0) el.msg.hidden = true;
 
-      if (phase !== 'carrera') {
-        lightT += dt;
-        const on = Math.min(5, Math.floor(lightT / 0.8) + 1);
+      if (phase === 'grid' || phase === 'luces') {
+        if (waiting) {
+          this.render(0);
+          return;
+        }
+        lightT = goWall ? goAt - (goWall - performance.now()) / 1000 : lightT + dt;
+        const on = lightT < 0 ? 0 : Math.min(5, Math.floor(lightT / 0.8) + 1);
+        if (on !== lastOn && on > 0 && lightT < goAt) { beep(520, 0.15); lastOn = on; }
         el.bulbs.forEach((b, i) => b.classList.toggle('on', i < on && lightT < goAt));
         if (lightT >= goAt) {
           phase = 'carrera';
+          goClock = clock;
+          beep(880, 0.45, 0.3);
           lapStart = clock;
           sectorStart = clock;
           lap = 1;
@@ -127,6 +212,13 @@ export function createRace(track, place) {
 
       // ¿Cruzó la línea de llegada hacia adelante?
       if (prev > n - 60 && idx < 60) {
+        crossings++;
+        if (laps && crossings > laps && finishTime == null) {
+          finishTime = clock - goClock;
+          phase = 'fin';
+          say(`¡LLEGASTE! ${fmt(finishTime)}`, 3);
+          onFinish?.(finishTime);
+        }
         const lapTime = clock - lapStart;
         if (validLap && passed.size === 2) {
           sectorTimes[2] = clock - sectorStart;
@@ -135,6 +227,10 @@ export function createRace(track, place) {
             best = lapTime;
             bestSectors = [...sectorTimes];
             saveBest();
+            if (rec.length > 10) {
+              ghost = rec;
+              saveGhost();
+            }
             say(`¡VUELTA RÉCORD! ${fmt(lapTime)}`, 3);
           } else {
             say(`Vuelta ${lap}: ${fmt(lapTime)}`, 2.5);
@@ -142,6 +238,9 @@ export function createRace(track, place) {
           lap++;
         }
         validLap = true;
+        rec = [];
+        recNext = 0;
+        ghostI = 0;
         lapStart = clock;
         sectorStart = clock;
         sector = 0;
@@ -149,6 +248,7 @@ export function createRace(track, place) {
         passed.clear();
       } else if (prev < 60 && idx > n - 60) {
         validLap = false; // cruzó la línea para atrás
+        crossings--;
       }
       // Sectores
       for (const s of [1, 2]) {
@@ -160,6 +260,9 @@ export function createRace(track, place) {
         }
       }
 
+      if (validLap) record(clock - lapStart, vehicle);
+      codriver.update(idx, Math.hypot(vehicle.body.linvel().x, vehicle.body.linvel().z));
+
       // Contramano
       const v = vehicle.body.linvel();
       const d = track.d[idx];
@@ -168,6 +271,27 @@ export function createRace(track, place) {
       if (wrongWay > 1) say('¡CONTRAMANO!', 0.3);
 
       this.render(clock - lapStart);
+    },
+
+    /** Al reubicar con R la vuelta no cuenta como récord. */
+    onReset() {
+      if (phase === 'carrera' && validLap) {
+        validLap = false;
+        say('Vuelta anulada', 1.5);
+      }
+    },
+
+    /**
+     * Dónde está el fantasma ahora: { a, b, f } (dos muestras y cuánto mezclar) o null.
+     */
+    ghostPose() {
+      if (!ghost || phase !== 'carrera' || !validLap) return null;
+      const t = clock - lapStart;
+      if (t > ghost[ghost.length - 1][0]) return null;
+      while (ghostI < ghost.length - 2 && ghost[ghostI + 1][0] < t) ghostI++;
+      while (ghostI > 0 && ghost[ghostI][0] > t) ghostI--;
+      const a = ghost[ghostI], b = ghost[ghostI + 1];
+      return { a, b, f: Math.min(1, Math.max(0, (t - a[0]) / (b[0] - a[0] || 1))) };
     },
 
     /** Lugar para reubicar el auto: sobre la pista, mirando para adelante. */
@@ -179,8 +303,13 @@ export function createRace(track, place) {
       return phase === 'carrera';
     },
 
-    render(t) {
-      el.lap.textContent = lap ? `Vuelta ${lap}` : 'Grilla';
+    render(t, force = false) {
+      const now = performance.now();
+      if (!force && now - lastRender < 66) return;
+      lastRender = now;
+      el.lap.textContent = laps
+        ? phase === 'fin' ? '¡Llegada!' : crossings ? `Vuelta ${Math.min(crossings, laps)}/${laps}` : 'Grilla'
+        : lap ? `Vuelta ${lap}` : 'Grilla';
       el.time.textContent = fmt(phase === 'carrera' && validLap ? t : phase === 'carrera' ? t : 0);
       el.last.textContent = fmt(last);
       el.best.textContent = `${fmt(best)}  ·  ${CARS[carId]?.name ?? ''}`;

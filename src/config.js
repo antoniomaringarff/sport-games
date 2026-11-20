@@ -17,6 +17,7 @@ export const SURFACES = {
   asfalto:  { label: 'Asfalto',  grip: 1.0,  drag: 0.0 },
   adoquin:  { label: 'Adoquín',  grip: 0.82, drag: 0.0, bumpy: 0.6 },
   tierra:   { label: 'Tierra',   grip: 0.62, drag: 0.6 },
+  ripio:    { label: 'Ripio',    grip: 0.55, drag: 0.45, bumpy: 0.5 }, // piedras sueltas: patina más
   arena:    { label: 'Arena',    grip: 0.5,  drag: 2.2 },
   nieve:    { label: 'Nieve',    grip: 0.35, drag: 0.8 },
   pasto:    { label: 'Pasto',    grip: 0.6,  drag: 0.9 },
@@ -27,7 +28,7 @@ export const SURFACES = {
 export const CARS = {
   f1: {
     name: 'Fórmula 1',
-    color: 0xd7262e,
+    color: 0x2a2f3d,
     MASS: 750,                 // liviano = acelera y frena muy rápido
     LENGTH: 5.0, WIDTH: 1.9, HEIGHT: 0.55,
     WHEEL_RADIUS: 0.36,
@@ -39,7 +40,7 @@ export const CARS = {
     ENGINE_FORCE: 9000,        // más alto = acelera más fuerte
     TOP_SPEED: 320,            // velocidad máxima (km/h)
     REVERSE_SPEED: 30,
-    BRAKE: 16,                 // poder de frenado (m/s²). Más alto = frena más seco
+    BRAKE: 48,                 // poder de frenado (m/s²). Más alto = frena más seco (el ABS lo limita al agarre)
     HANDBRAKE: 9,              // poder del freno de mano (m/s²)
     MAX_STEER: 0.42,           // cuánto doblan las ruedas (radianes) a baja velocidad
     STEER_AT_SPEED: 0.07,      // cuánto doblan a velocidad máxima (más chico = más estable)
@@ -47,19 +48,22 @@ export const CARS = {
     GRIP: 1.6,                 // agarre de las ruedas: bajo = derrapa más
     SIDE_GRIP: 1.2,            // agarre lateral (para curvas)
     REAR_GRIP_HANDBRAKE: 0.35, // agarre trasero con freno de mano (bajo = derrapa más)
-    DOWNFORCE: 0.002,          // aerodinámica: aprieta el auto contra el piso a alta velocidad
+    DOWNFORCE: 0.0045,         // aerodinámica: aprieta el auto contra el piso a alta velocidad
+    AERO_DRAG: 0.0006,         // resistencia del aire: frena al soltar el acelerador (más a más velocidad)
     SUSPENSION_STIFFNESS: 70,  // más alto = suspensión más dura
     SUSPENSION_DAMPING: 6,     // más alto = rebota menos
     SUSPENSION_TRAVEL: 0.08,   // recorrido de la suspensión
     ANTI_ROLL: 0.6,            // resistencia a inclinarse en curvas (0 a 1)
     // Agarre extra (o menos) según superficie. 1 = como dice SURFACES.
-    OFFROAD: { asfalto: 1, adoquin: 0.95, tierra: 0.6, arena: 0.5, nieve: 0.55, pasto: 0.6 },
+    OFFROAD: { asfalto: 1, adoquin: 0.95, tierra: 0.6, ripio: 0.57, arena: 0.5, nieve: 0.55, pasto: 0.6 },
+    // Sonido del motor
+    SOUND: { IDLE_RPM: 4500, MAX_RPM: 15000, GEARS: 8, PULSES: 3, GRIT: 0.35, BRIGHT: 1.0, VOLUME: 0.9 },
     stats: { velocidad: 5, agarre: 5, todoterreno: 1 },
   },
 
   pickup: {
     name: 'Camioneta',
-    color: 0x2f6fb0,
+    color: 0x1d1f24,
     MASS: 2200,
     LENGTH: 5.3, WIDTH: 2.0, HEIGHT: 1.1,
     WHEEL_RADIUS: 0.45,
@@ -71,7 +75,7 @@ export const CARS = {
     ENGINE_FORCE: 11000,
     TOP_SPEED: 170,
     REVERSE_SPEED: 35,
-    BRAKE: 11,
+    BRAKE: 12,
     HANDBRAKE: 7,
     MAX_STEER: 0.55,
     STEER_AT_SPEED: 0.16,
@@ -80,17 +84,19 @@ export const CARS = {
     SIDE_GRIP: 0.9,
     REAR_GRIP_HANDBRAKE: 0.3,
     DOWNFORCE: 0,
+    AERO_DRAG: 0.00045,
     SUSPENSION_STIFFNESS: 24,
     SUSPENSION_DAMPING: 3,
     SUSPENSION_TRAVEL: 0.28,
     ANTI_ROLL: 0.35,
-    OFFROAD: { asfalto: 1, adoquin: 1.1, tierra: 1.45, arena: 1.6, nieve: 1.9, pasto: 1.4 },
+    OFFROAD: { asfalto: 1, adoquin: 1.1, tierra: 1.45, ripio: 1.38, arena: 1.6, nieve: 1.9, pasto: 1.4 },
+    SOUND: { IDLE_RPM: 750, MAX_RPM: 5200, GEARS: 6, PULSES: 4, GRIT: 0.8, BRIGHT: 0.35, VOLUME: 1.0 },
     stats: { velocidad: 2, agarre: 3, todoterreno: 5 },
   },
 
   luxury: {
     name: 'Auto de lujo',
-    color: 0x1b1b22,
+    color: 0xcfd2d6,
     MASS: 1800,
     LENGTH: 5.0, WIDTH: 1.95, HEIGHT: 0.75,
     WHEEL_RADIUS: 0.38,
@@ -102,7 +108,7 @@ export const CARS = {
     ENGINE_FORCE: 11500,
     TOP_SPEED: 250,
     REVERSE_SPEED: 30,
-    BRAKE: 12,
+    BRAKE: 15,
     HANDBRAKE: 8,
     MAX_STEER: 0.5,
     STEER_AT_SPEED: 0.1,
@@ -111,13 +117,137 @@ export const CARS = {
     SIDE_GRIP: 1.05,
     REAR_GRIP_HANDBRAKE: 0.4,
     DOWNFORCE: 0.0008,
+    AERO_DRAG: 0.0003,
     SUSPENSION_STIFFNESS: 38,
     SUSPENSION_DAMPING: 4,
     SUSPENSION_TRAVEL: 0.16,
     ANTI_ROLL: 0.5,
-    OFFROAD: { asfalto: 1, adoquin: 1, tierra: 0.85, arena: 0.7, nieve: 0.75, pasto: 0.85 },
+    OFFROAD: { asfalto: 1, adoquin: 1, tierra: 0.85, ripio: 0.81, arena: 0.7, nieve: 0.75, pasto: 0.85 },
+    SOUND: { IDLE_RPM: 850, MAX_RPM: 7200, GEARS: 7, PULSES: 6, GRIT: 0.25, BRIGHT: 0.6, VOLUME: 0.85 },
     stats: { velocidad: 4, agarre: 4, todoterreno: 2 },
   },
+  rally: {
+    name: 'Auto de rally',
+    color: 0x22355e,
+    MASS: 1250,                // liviano y ágil
+    LENGTH: 4.1, WIDTH: 1.85, HEIGHT: 1.3,
+    WHEEL_RADIUS: 0.42,
+    WHEELBASE: 2.55,
+    TRACK: 1.6,
+    RIDE_HEIGHT: 0.22,         // alto para el ripio y los saltos
+    CENTER_OF_MASS_Y: -0.4,
+    DRIVE: 'all',              // 4x4
+    ENGINE_FORCE: 10500,
+    TOP_SPEED: 205,
+    REVERSE_SPEED: 35,
+    BRAKE: 14,
+    HANDBRAKE: 11,             // freno de mano fuerte: para cruzarlo en las horquillas
+    MAX_STEER: 0.6,
+    STEER_AT_SPEED: 0.15,
+    STEER_SPEED: 4.4,          // volante rápido
+    GRIP: 1.1,
+    SIDE_GRIP: 1.0,
+    REAR_GRIP_HANDBRAKE: 0.28,
+    DOWNFORCE: 0.0004,
+    AERO_DRAG: 0.00035,
+    SUSPENSION_STIFFNESS: 30,
+    SUSPENSION_DAMPING: 3.4,
+    SUSPENSION_TRAVEL: 0.24,   // mucho recorrido: absorbe pozos y saltos
+    ANTI_ROLL: 0.45,
+    // En tierra y ripio agarra mucho más que los otros
+    OFFROAD: { asfalto: 1, adoquin: 1.05, tierra: 1.65, ripio: 1.57, arena: 1.35, nieve: 1.6, pasto: 1.35 },
+    SOUND: { IDLE_RPM: 950, MAX_RPM: 7800, GEARS: 6, PULSES: 2, GRIT: 0.65, BRIGHT: 0.75, VOLUME: 0.95 },
+    stats: { velocidad: 3, agarre: 4, todoterreno: 4 },
+  },
+};
+
+// ---------- Luz de cada lugar ----------
+// ELEVATION: altura del sol en grados (5 = atardecer, 60 = mediodía)
+// AZIMUTH: de dónde viene el sol (180 = sur/mar, 270 = oeste)
+// EXPOSURE: brillo general de la imagen · SKY_LIGHT: luz del cielo que rellena las sombras
+export const LIGHT = {
+  monaco: {
+    ELEVATION: 38, AZIMUTH: 228, SUN_COLOR: 0xffeed6, SUN: 3.6,
+    SKY_LIGHT: 1.5, EXPOSURE: 0.68, FOG: [0xa9bfd6, 1400, 13000],
+  },
+  rally: {
+    ELEVATION: 34, AZIMUTH: 215, SUN_COLOR: 0xffeed6, SUN: 3.6,
+    SKY_LIGHT: 1.5, EXPOSURE: 0.68, FOG: [0xa9bfd6, 1600, 15000],
+  },
+  condor: {
+    // mediodía en las Altas Cumbres: aire limpio, sol fuerte, se ve lejísimos
+    ELEVATION: 48, AZIMUTH: 20, SUN_COLOR: 0xfff2e2, SUN: 3.8,
+    SKY_LIGHT: 1.6, EXPOSURE: 0.66, FOG: [0xb5c8dc, 2500, 26000],
+  },
+  pista: {
+    ELEVATION: 40, AZIMUTH: 210, SUN_COLOR: 0xffeed6, SUN: 3.3,
+    SKY_LIGHT: 1.3, EXPOSURE: 0.64, FOG: [0xbfd4e6, 180, 900],
+  },
+};
+
+// ---------- Minimapa ----------
+export const MINIMAP = {
+  SIZE: 190,            // tamaño en pantalla (px)
+  LOOK_AHEAD: 260,      // cuántos metros de pista que viene se pintan de color
+  WARN_DISTANCE: 220,   // a cuántos metros aparece el cartel de la próxima curva
+  WARN_CLOSE: 70,       // a cuántos metros el cartel empieza a titilar
+};
+
+// ---------- Gráficos ----------
+// Tecla Q en el menú: cambia la calidad (alta → media → baja) y recarga.
+export const GRAPHICS = {
+  QUALITY: 'alta',      // 'alta', 'media' o 'baja' (si el juego va lento, bajala)
+  VIGNETTE: 0.55,       // bordes un poco más oscuros (0 = nada, 1 = mucho)
+  ENV_LIGHT: 0.32,     // cuánto ilumina y se refleja el cielo (más alto = todo brilla más)
+  CLOUDS: 0.7,          // cantidad de nubes (0 = cielo limpio)
+  DYNAMIC_RESOLUTION: true, // si va lento, baja un poco la resolución sola para mantener 60 fps
+};
+
+// ---------- Copiloto (voz que canta las curvas) ----------
+// Tecla V: prender / apagar la voz.
+// Las curvas se numeran como en el rally de verdad: 1 = muy cerrada ... 6 = casi recta.
+export const COPILOT = {
+  RALLY: true,          // copiloto en el rally
+  CIRCUIT: false,       // copiloto en el circuito de Mónaco
+  SECONDS_AHEAD: 3.2,   // cuántos segundos antes de la curva la canta
+  MIN_DISTANCE: 70,     // nunca la canta a menos de esto (m)
+  CHAIN: 45,            // si la siguiente curva empieza a menos de esto, dice "y ..."
+  RATE: 1.15,           // velocidad de la voz
+  VOLUME: 1,
+};
+
+// ---------- Multijugador ----------
+export const MULTI = {
+  PORT: 8787,           // puerto del servidor (npm run server)
+  LOBBY_SECONDS: 15,    // cuánto se espera a que se sumen jugadores
+  MAX_PLAYERS: 10,      // máximo de autos en la carrera (personas + bots)
+  GRID_SIZE: 6,         // si hay menos personas, se completa con bots hasta este número
+  LAPS: 3,              // vueltas de la carrera
+  RESULTS_WAIT: 40,     // segundos que se espera a los demás después de que llega el primero
+  BOT_SKILL: [0.8, 0.95], // qué tan rápidos son los bots (1 = al límite)
+  SEND_HZ: 20,          // cuántas veces por segundo se manda la posición
+};
+
+// ---------- Sonido ----------
+// Tecla M: silenciar. PULSES = explosiones por vuelta del motor (cilindros / 2): más = más agudo y suave.
+// GRIT = qué tan "sucio"/ronco suena · BRIGHT = qué tan brillante (agudos)
+export const AUDIO = {
+  VOLUME: 0.7,          // volumen general (0 a 1)
+  ENGINE: 0.55,         // volumen del motor
+  SKID: 0.5,            // volumen del derrape
+  HITS: 0.9,            // volumen de golpes y raspones
+  WIND: 0.25,           // viento a alta velocidad
+  TUNNEL_ECHO: 0.9,     // cuánto eco hay en el túnel
+};
+
+// ---------- Golpes contra guardrails y paredes ----------
+export const WALL = {
+  BOUNCE: 0.12,       // cuánto rebota (0 = nada). Más alto = más "pelota"
+  HIT_LOSS: 0.018,    // velocidad que se pierde por cada m/s de golpe de frente
+  SCRAPE: 0.15,       // cuánto frena raspando (por segundo)
+  ALIGN: 3.5,         // qué tan rápido el auto se acomoda paralelo a la pared
+  SPARKS: true,       // chispas al raspar
+  SHAKE: 0.5,         // cuánto tiembla la cámara en un golpe fuerte
 };
 
 // ---------- Ayudas de manejo ----------
@@ -125,6 +255,7 @@ export const ASSISTS = {
   ANTI_FLIP: true,        // ayuda a que el auto no vuelque
   AIR_CONTROL: 0.6,       // cuánto se endereza solo en el aire (0 = nada)
   AUTO_RESET_SECONDS: 3,  // si está dado vuelta tanto tiempo, se reubica solo
+  ABS: true,              // al frenar a fondo las ruedas no se bloquean: frena al límite y se puede doblar
 };
 
 // ---------- Cámara ----------
@@ -147,7 +278,8 @@ export const CAMERA = {
 
 // Dónde van los ojos del conductor en cada auto (metros desde el centro: x adelante, y arriba, z derecha)
 export const DRIVER_EYE = {
-  f1:     { x: 0.05,  y: 0.52, z: 0 },
-  pickup: { x: 0.25,  y: 0.45, z: -0.4 },
-  luxury: { x: -0.2,  y: 0.62, z: -0.38 },
+  f1:     { x: -0.25, y: 0.36, z: 0 },
+  pickup: { x: 0.1,   y: 0.38, z: -0.4 },
+  luxury: { x: -0.3,  y: 0.2,  z: -0.32 },
+  rally:  { x: -0.2,  y: 0.31, z: -0.36 },
 };

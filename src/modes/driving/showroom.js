@@ -1,12 +1,20 @@
 // Showroom: una escena aparte con una plataforma giratoria para elegir el auto.
 import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { createCarModel } from './carModel.js';
 import { carAsset, physicsProfile } from './carAssets.js';
 
 const TOP = 0.25; // altura de la plataforma
 
-export function createShowroom() {
+export function createShowroom(renderer) {
   const scene = new THREE.Scene();
+  // reflejos de estudio en la pintura y los vidrios
+  if (renderer) {
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environmentIntensity = 0.55;
+    pmrem.dispose();
+  }
   scene.background = new THREE.Color(0x0e1622);
   scene.fog = new THREE.Fog(0x0e1622, 14, 40);
 

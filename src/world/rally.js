@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { WorldBuilder } from './builder.js';
 import { surfaceMaterial } from './textures.js';
-import { makeTrack, ribbon, rangeIdx, buildTerrain, buildFar, buildSea, buildBuildings, gridGeometry } from './monaco.js';
+import { makeTrack, ribbon, rangeIdx, buildTerrain, buildFar, buildSea, buildBuildings, gridGeometry, terrainMaterial } from './monaco.js';
 
 const BASE = import.meta.env.BASE_URL;
 
@@ -94,7 +94,7 @@ function buildBackdropTerrain(scene, g, heights, hole) {
     if (x > hole.x0 + 8 && x < hole.x0 + hole.size - 8 && z > hole.z0 + 8 && z < hole.z0 + hole.size - 8) h[j * n + i] = -30;
   }
   const geo = gridGeometry(n, cell, x0, z0, h, (y, slope) => (y < 1.2 ? [0.82, 0.76, 0.6] : slope > 0.9 ? [0.55, 0.52, 0.48] : [0.42, 0.5, 0.3]));
-  const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 }));
+  const mesh = new THREE.Mesh(geo, terrainMaterial());
   mesh.position.y = -0.2;
   mesh.receiveShadow = true;
   scene.add(mesh);

@@ -335,6 +335,15 @@ Desnivel real ~40 m: la subida a Casino y la bajada a la horquilla tienen que se
 - [ ] Más etapas (bajada, de noche, con niebla) y polvo detrás del auto.
 - [ ] Rally multijugador (largadas cada 30 s contra el reloj).
 
+**Mejora gráfica** ✅ (pedido del 19/11)
+- [x] Luz del cielo (IBL con un cielo degradé; el disco del sol saturaba todo), menos luz en el túnel.
+- [x] Sombras en cascada (CSM) en todo el paisaje; materiales preparados solos.
+- [x] Nubes, terreno con textura de detalle, mar con reflejos, palmeras en Mónaco, estudio con reflejos en el showroom.
+- [x] Humo, polvo y marcas de frenada.
+- [x] Calidad alta/media/baja (tecla Q), resolución dinámica, color y viñeta por CSS.
+- Se probó un posproceso completo (bloom + MSAA en buffer HDR): costaba ~15 ms por cuadro, se descartó.
+- [ ] Posibles siguientes: autos con pintura propia (no la paleta de Kenney), luces de freno, ventanas con reflejo/variedad, agua con espuma en la costa.
+
 **Paso C — La ciudad completa (Fase 4)**
 - [ ] Importar todas las calles de OSM con cruces, rotondas, túneles y calles a distinto nivel (en `import-monaco.mjs`).
 - [ ] **Paseo libre**: el circuito se abre a la ciudad (sin vallas, con cruces); el **modo carrera** vuelve a cerrar todo.

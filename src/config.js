@@ -163,15 +163,15 @@ export const CARS = {
 export const LIGHT = {
   monaco: {
     ELEVATION: 38, AZIMUTH: 228, SUN_COLOR: 0xfff1dc, SUN: 3.2,
-    SKY_LIGHT: 1.7, EXPOSURE: 0.88, FOG: [0xcfdce6, 700, 9000],
+    SKY_LIGHT: 1.7, EXPOSURE: 0.74, FOG: [0xc7d6e2, 900, 9000],
   },
   rally: {
     ELEVATION: 34, AZIMUTH: 215, SUN_COLOR: 0xfff1dc, SUN: 3.1,
-    SKY_LIGHT: 1.6, EXPOSURE: 0.86, FOG: [0xcfdce6, 900, 11000],
+    SKY_LIGHT: 1.6, EXPOSURE: 0.74, FOG: [0xc7d6e2, 1100, 11000],
   },
   pista: {
     ELEVATION: 40, AZIMUTH: 210, SUN_COLOR: 0xfff0dc, SUN: 2.8,
-    SKY_LIGHT: 1.3, EXPOSURE: 0.8, FOG: [0xbfd4e6, 180, 900],
+    SKY_LIGHT: 1.3, EXPOSURE: 0.72, FOG: [0xbfd4e6, 180, 900],
   },
 };
 
@@ -181,6 +181,18 @@ export const MINIMAP = {
   LOOK_AHEAD: 260,      // cuántos metros de pista que viene se pintan de color
   WARN_DISTANCE: 220,   // a cuántos metros aparece el cartel de la próxima curva
   WARN_CLOSE: 70,       // a cuántos metros el cartel empieza a titilar
+};
+
+// ---------- Gráficos ----------
+// Tecla Q en el menú: cambia la calidad (alta → media → baja) y recarga.
+export const GRAPHICS = {
+  QUALITY: 'alta',      // 'alta', 'media' o 'baja' (si el juego va lento, bajala)
+  SATURATION: 1.1,      // color (1 = normal)
+  CONTRAST: 1.05,
+  VIGNETTE: 0.55,       // bordes un poco más oscuros (0 = nada, 1 = mucho)
+  ENV_LIGHT: 0.6,      // cuánto ilumina y se refleja el cielo
+  CLOUDS: 0.7,          // cantidad de nubes (0 = cielo limpio)
+  DYNAMIC_RESOLUTION: true, // si va lento, baja un poco la resolución sola para mantener 60 fps
 };
 
 // ---------- Copiloto (voz que canta las curvas) ----------

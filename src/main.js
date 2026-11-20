@@ -1,7 +1,9 @@
 // Arranque del juego: renderer, lugares (mundos), elección de auto y bucle principal.
 import * as THREE from 'three';
-import { CARS, PHYSICS, LIGHT, WALL } from './config.js';
+import { CARS, PHYSICS, LIGHT, WALL, GRAPHICS } from './config.js';
 import { createSparks } from './world/sparks.js';
+import { createTireFx } from './world/tireFx.js';
+import { createRenderPipeline, prepareMaterials, cycleQuality, QUALITY, createDynamicResolution } from './core/graphics.js';
 import { unlockAudio, CarSound, toggleMute, setEcho, impactSound } from './core/audio.js';
 import { createPhysics } from './core/physics.js';
 import { readDriving, justPressed, clearPressed } from './core/input.js';
@@ -23,8 +25,10 @@ import { createMulti } from './modes/race/multi.js';
 // ---------- Render ----------
 const canvas = document.getElementById('game');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+const pipeline = createRenderPipeline(renderer);
 renderer.setSize(window.innerWidth, window.innerHeight);
+pipeline.setSize(window.innerWidth, window.innerHeight);
+const dynRes = createDynamicResolution(renderer, pipeline);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 
@@ -33,6 +37,8 @@ window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  pipeline.setSize(window.innerWidth, window.innerHeight);
+  for (const w of Object.values(worlds)) w.sky.resize();
 });
 
 // ---------- Lugares ----------
@@ -51,24 +57,26 @@ async function getWorld(name) {
   const scene = new THREE.Scene();
   let w;
   if (name === 'rally') {
-    const sky = createSky(scene, renderer, lightOpts(LIGHT.rally));
+    const sky = createSky(scene, renderer, lightOpts(LIGHT.rally), camera);
     const data = await loadRallyData();
     const m = buildRally(physics, scene, data);
     w = { physics, scene, sky, builder: m.builder, spawn: m.spawn, spawnAt: m.spawnAt, track: m.track, update: m.update };
     w.race = createRally(m.track, m.finishIdx);
   } else if (name === 'pista') {
-    const sky = createSky(scene, renderer, lightOpts(LIGHT.pista));
+    const sky = createSky(scene, renderer, lightOpts(LIGHT.pista), camera);
     const builder = buildTestTrack(physics, scene);
     w = { physics, scene, sky, builder, spawn: SPAWN, update() {} };
   } else {
     // tarde sobre el Mediterráneo (el sol viene del suroeste, del lado del mar)
-    const sky = createSky(scene, renderer, lightOpts(LIGHT.monaco));
+    const sky = createSky(scene, renderer, lightOpts(LIGHT.monaco), camera);
     const data = await loadMonacoData();
     const m = await buildMonaco(physics, scene, data);
     w = { physics, scene, sky, builder: m.builder, spawn: m.spawn, spawnAt: m.spawnAt, gridSpot: m.gridSpot, track: m.track, update: m.update };
     w.race = createRace(m.track, 'monaco');
   }
   w.sparks = createSparks(scene);
+  w.tireFx = createTireFx(scene);
+  prepareMaterials(scene, w.sky.csm);
   worlds[name] = w;
   return w;
 }
@@ -124,6 +132,7 @@ function makeGhost(id) {
   });
   m.group.visible = false;
   world.scene.add(m.group);
+  prepareMaterials(world.scene, world.sky.csm);
   ghost = { id, group: m.group, mats, scene: world.scene };
 }
 
@@ -169,6 +178,7 @@ function spawnCar(id, at) {
   carSound?.dispose();
   carSound = new CarSound(profile);
   world.scene.add(model.group);
+  prepareMaterials(world.scene, world.sky.csm);
   syncTransforms();
   chase.snap();
 }
@@ -202,7 +212,7 @@ function save(key, v) {
 // ---------- Cámara, HUD, menú ----------
 const chase = new ChaseCamera(camera);
 const hud = createHud();
-const showroom = createShowroom();
+const showroom = createShowroom(renderer);
 const loadingEl = document.getElementById('loading');
 let state = 'loading';
 
@@ -282,6 +292,7 @@ function currentSpot() {
   return { x: t.x, y: t.y + 0.5, z: t.z, yaw: yawOf(vehicle.body.rotation()) };
 }
 
+document.getElementById('quality').textContent = QUALITY;
 loadingEl.textContent = 'Cargando autos…';
 await loadCarAssets((f) => (loadingEl.textContent = `Cargando autos… ${Math.round(f * 100)}%`));
 loadingEl.hidden = true;
@@ -290,11 +301,13 @@ openMenu();
 // ---------- Bucle principal ----------
 const STEP = 1 / PHYSICS.STEP_HZ;
 let acc = 0;
+let prepT = 0;
 let last = performance.now();
 
 function frame(now) {
   const dt = Math.min((now - last) / 1000, 0.1);
   last = now;
+  if (state === 'driving') dynRes.update(dt);
   tick(dt);
   render();
   requestAnimationFrame(frame);
@@ -327,7 +340,13 @@ function tick(dt) {
   }
   wallEffects(hit, dt);
   carSound?.update(dt, vehicle, input, { scrape: vehicle.contactPoint ? vehicle.scrape : 0 });
-  setEcho(world.track && world.track.isTunnel[world.race.resetPoint()] ? 1 : 0);
+  world.tireFx.emitFor(vehicle, dt);
+  world.tireFx.update(dt);
+  const inTunnel = !!(world.track && world.track.isTunnel[world.race.resetPoint()]);
+  setEcho(inTunnel ? 1 : 0);
+  // en el túnel no llega la luz del cielo: se apaga de a poco
+  const envTarget = inTunnel ? GRAPHICS.ENV_LIGHT * 0.2 : GRAPHICS.ENV_LIGHT;
+  world.scene.environmentIntensity += (envTarget - world.scene.environmentIntensity) * Math.min(1, dt * 3);
 
   // Interpolar entre los dos últimos pasos de física: movimiento suave en pantallas de 120 Hz
   const alpha = acc / STEP;
@@ -343,7 +362,12 @@ function tick(dt) {
 
   chase.update(model.group, vehicle, carId, dt);
   hud.update(vehicle, carId, chase.modeName, dt);
-  world.sky.follow(model.group.position);
+  world.sky.follow(model.group.position, dt);
+  // materiales nuevos (autos, fantasma, bots) también reciben las sombras en cascada
+  if ((prepT += dt) > 0.5) {
+    prepT = 0;
+    prepareMaterials(world.scene, world.sky.csm);
+  }
 }
 
 /** Chispas y sacudón de cámara al tocar una pared. */
@@ -363,8 +387,8 @@ function wallEffects(hit, dt) {
 }
 
 function render() {
-  if (state === 'menu') renderer.render(showroom.scene, showroom.camera);
-  else if (state === 'driving') renderer.render(world.scene, camera);
+  if (state === 'menu') pipeline.render(showroom.scene, showroom.camera);
+  else if (state === 'driving') pipeline.render(world.scene, camera);
 }
 
 function handleKeys() {
@@ -377,6 +401,7 @@ function handleKeys() {
     if (justPressed('Digit2')) select.pick(1);
     if (justPressed('Digit3')) select.pick(2);
     if (justPressed('Digit4')) select.pick(3);
+    if (justPressed('KeyQ')) cycleQuality();
     return;
   }
   if (state !== 'driving') return;
@@ -424,7 +449,7 @@ window.__game = {
   get vehicle() { return vehicle; },
   get world() { return world; },
   get carSound() { return carSound; },
-  camera, renderer,
+  camera, renderer, pipeline,
   /** Debug: avanzar el juego N segundos de golpe (para probar sin esperar). */
   advance(seconds) {
     for (let t = 0; t < seconds; t += 1 / 60) tick(1 / 60);

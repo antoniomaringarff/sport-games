@@ -32,6 +32,7 @@ export async function buildMonaco(physics, scene, data) {
   buildStartLine(scene, track);
   buildBuildings(scene, meta.buildings);
   buildPiers(scene, meta.piers);
+  buildPalms(scene, track);
   await buildProps(scene, track);
 
   // Lugar de largada: unos metros detrás de la línea, en el medio de la pista
@@ -124,7 +125,7 @@ export function buildTerrain(b, g, heights, surface = 'pasto') {
     if (slope > 0.9) return [0.55, 0.52, 0.48];      // roca
     return [0.42 + Math.random() * 0.04, 0.5 + Math.random() * 0.05, 0.3];
   });
-  const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 }));
+  const mesh = new THREE.Mesh(geo, terrainMaterial());
   mesh.receiveShadow = true;
   b.scene.add(mesh);
 
@@ -159,10 +160,47 @@ export function buildFar(scene, g, heights, holes) {
     if (slope > 0.8) return [0.56, 0.53, 0.5];
     return [0.38, 0.47, 0.3];
   });
-  const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 }));
+  const mesh = new THREE.Mesh(geo, terrainMaterial(0.1));
   mesh.position.y = -0.3;
   mesh.receiveShadow = true;
   scene.add(mesh);
+}
+
+/** Terreno con color por vértice × una textura de detalle (pasto, tierra, piedritas). */
+let detailTex = null;
+export function terrainMaterial(repeat = 1) {
+  if (!detailTex) {
+    const size = 256;
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const g = c.getContext('2d');
+    g.fillStyle = '#e6e6e6';
+    g.fillRect(0, 0, size, size);
+    let seed = 11;
+    const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    for (let i = 0; i < 2600; i++) {
+      const v = 170 + r() * 85;
+      g.fillStyle = `rgba(${v},${v},${v * 0.97},${0.25 + r() * 0.5})`;
+      const s = 1 + r() * 5;
+      g.beginPath();
+      g.ellipse(r() * size, r() * size, s, s * (0.4 + r()), r() * 3, 0, Math.PI * 2);
+      g.fill();
+    }
+    for (let i = 0; i < 400; i++) {
+      g.fillStyle = `rgba(90,85,70,${0.15 + r() * 0.25})`;
+      g.fillRect(r() * size, r() * size, 1 + r() * 2, 1 + r() * 2);
+    }
+    detailTex = new THREE.CanvasTexture(c);
+    detailTex.wrapS = detailTex.wrapT = THREE.RepeatWrapping;
+    detailTex.colorSpace = THREE.SRGBColorSpace;
+    detailTex.anisotropy = 8;
+  }
+  const t = repeat === 1 ? detailTex : detailTex.clone();
+  if (repeat !== 1) {
+    t.needsUpdate = true;
+    t.repeat.set(repeat, repeat);
+  }
+  return new THREE.MeshStandardMaterial({ vertexColors: true, map: t, roughness: 0.95 });
 }
 
 export function gridGeometry(n, cell, x0, z0, h, colorOf) {
@@ -190,6 +228,10 @@ export function gridGeometry(n, cell, x0, z0, h, colorOf) {
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  // UV en metros: la textura de detalle se repite cada 12 m
+  const uv = new Float32Array(n * n * 2);
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) uv.set([(i * cell) / 12, (j * cell) / 12], (j * n + i) * 2);
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
   g.setIndex(new THREE.BufferAttribute(idx, 1));
   g.computeVertexNormals();
   return g;
@@ -224,9 +266,10 @@ export function buildSea(scene) {
   normal.wrapS = normal.wrapT = THREE.RepeatWrapping;
   normal.repeat.set(400, 400);
   const mat = new THREE.MeshStandardMaterial({
-    color: 0x1f6f99,
-    roughness: 0.12,
-    metalness: 0.25,
+    color: 0x1b5e86,
+    roughness: 0.06,
+    metalness: 0.05,
+    envMapIntensity: 1.6,
     normalMap: normal,
     normalScale: new THREE.Vector2(0.35, 0.35),
   });
@@ -499,6 +542,68 @@ function buildPiers(scene, piers) {
   mesh.receiveShadow = true;
   mesh.castShadow = true;
   scene.add(mesh);
+}
+
+// ---------------------------------------------------------------------------
+/** Palmeras low-poly en la parte baja del circuito (puerto, costanera). */
+function palmGeometry() {
+  const parts = [];
+  // tronco curvo: tramos de cilindro que se van inclinando
+  let x = 0, y = 0, ang = 0;
+  for (let i = 0; i < 6; i++) {
+    const h = 1.3, r = 0.22 - i * 0.02;
+    const seg = new THREE.CylinderGeometry(r * 0.9, r, h, 6);
+    seg.translate(0, h / 2, 0);
+    seg.rotateZ(-ang);
+    seg.translate(x, y, 0);
+    parts.push({ geo: seg, mat: 0 });
+    x += Math.sin(ang) * h;
+    y += Math.cos(ang) * h;
+    ang += 0.06;
+  }
+  // hojas: conos aplastados que salen de la punta y caen
+  for (let i = 0; i < 8; i++) {
+    const leaf = new THREE.ConeGeometry(0.45, 3.4, 4, 1);
+    leaf.scale(1, 1, 0.18);
+    leaf.translate(0, 1.7, 0);
+    leaf.rotateZ(-1.15 - (i % 2) * 0.25);
+    leaf.rotateY((i / 8) * Math.PI * 2);
+    leaf.translate(x, y, 0);
+    parts.push({ geo: leaf, mat: 1 });
+  }
+  const trunk = mergeGeometries(parts.filter((p) => p.mat === 0).map((p) => p.geo.toNonIndexed()));
+  const leaves = mergeGeometries(parts.filter((p) => p.mat === 1).map((p) => p.geo.toNonIndexed()));
+  return mergeGeometries([trunk, leaves], true);
+}
+
+function buildPalms(scene, track) {
+  const W = track.width / 2;
+  const spots = [];
+  let seed = 3;
+  const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let k = 0; k < track.n; k += 9) {
+    if (track.isTunnel[k] || track.p[k].y > 14) continue; // solo abajo, cerca del mar
+    for (const s of [-1, 1]) {
+      if (r() < 0.35) continue;
+      const P = track.p[k], R = track.r[k];
+      const off = s * (W + 3.5 + r() * 2.5);
+      spots.push([P.x + R.x * off, P.y - 0.2, P.z + R.z * off, 0.85 + r() * 0.4, r() * Math.PI * 2]);
+    }
+  }
+  const mats = [
+    new THREE.MeshStandardMaterial({ color: 0x8a6b4a, roughness: 0.9 }),
+    new THREE.MeshStandardMaterial({ color: 0x4f8a3a, roughness: 0.8, side: THREE.DoubleSide }),
+  ];
+  const inst = new THREE.InstancedMesh(palmGeometry(), mats, spots.length);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
+  spots.forEach(([x, y, z, s, rot], i) => {
+    q.setFromEuler(e.set(0, rot, 0));
+    m.compose(new THREE.Vector3(x, y, z), q, new THREE.Vector3(s, s, s));
+    inst.setMatrixAt(i, m);
+  });
+  inst.castShadow = true;
+  inst.receiveShadow = true;
+  scene.add(inst);
 }
 
 // ---------------------------------------------------------------------------

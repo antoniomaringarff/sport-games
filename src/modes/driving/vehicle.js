@@ -126,6 +126,7 @@ export class Vehicle {
     let engine = 0;
     let brake = 0; // m/s²
     const throttle = input.throttle, brakeIn = input.brake;
+    this.lastInputHandbrake = !!input.handbrake;
     if (throttle > 0 && speed > -1) {
       engine = p.ENGINE_FORCE * throttle * Math.max(0, 1 - Math.pow(speedFrac, 2.2));
     } else if (throttle > 0) {

@@ -26,6 +26,7 @@ Abrir http://localhost:5173, elegir auto (← →, o 1 a 4) y lugar (↑ ↓): *
 | 1 / 2 / 3 | Cambiar de auto en el lugar |
 | Enter (en Mónaco) | Reiniciar la carrera desde la grilla |
 | Esc | Volver al menú |
+| Q (en el menú) | Calidad gráfica: alta → media → baja (recarga la página) |
 
 También anda con joystick (gatillos para acelerar/frenar, A = freno de mano).
 
@@ -49,6 +50,14 @@ Cada jugador abre el juego (esa dirección en las otras compus, `http://localhos
 - Carrera de **3 vueltas** con semáforo común, posiciones en vivo y resultados. Enter: otra carrera.
 - Todo se ajusta en `MULTI` de `src/config.js`. Para probar rápido: `LAPS=1 LOBBY=5 npm run server`.
 - Si la otra compu no conecta, revisá que el firewall de la Mac deje entrar conexiones a `node`.
+
+## Gráficos
+
+- Luz del cielo (reflejos en autos, vidrios y mar), sombras en cascada en todo el paisaje, nubes, terreno con textura, palmeras en Mónaco.
+- Humo al derrapar en asfalto, polvo en tierra/arena, marcas negras de frenada.
+- Corrección de color y viñeta con CSS (casi gratis). Resolución dinámica: si baja de ~50 fps, baja un poco la resolución sola.
+- Todo en `GRAPHICS` de `src/config.js`; calidad con la tecla Q en el menú.
+- Medido en un MacBook Air M4 (1100×680, calidad alta): ~7 ms por cuadro en Mónaco, ~8 ms en el rally.
 
 ## Ajustar cómo se maneja
 

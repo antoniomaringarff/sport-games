@@ -17,6 +17,7 @@ function loadQuality() {
     const q = localStorage.getItem(KEY);
     if (PRESETS[q]) return q;
   } catch {}
+  if (matchMedia('(pointer: coarse)').matches && PRESETS[GRAPHICS.TOUCH_QUALITY]) return GRAPHICS.TOUCH_QUALITY;
   return PRESETS[GRAPHICS.QUALITY] ? GRAPHICS.QUALITY : 'alta';
 }
 

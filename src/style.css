@@ -539,3 +539,298 @@ body.multi #race .hint { display: none; }
   #lights i { width: 26px; height: 26px; }
   #race-msg { font-size: 22px; white-space: normal; text-align: center; width: 90vw; }
 }
+
+/* ---------- Pantalla táctil (celular y tablet) ---------- */
+body:not(.touch) .touch-only { display: none !important; }
+body.touch .no-touch { display: none !important; }
+body.touch {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+body.touch #game { touch-action: none; }
+body.touch button { touch-action: manipulation; }
+body.touch input { -webkit-user-select: text; user-select: text; }
+
+#touch {
+  --b: clamp(64px, 18vmin, 124px);   /* tamaño de los pedales y botones */
+  --gap: 12px;
+  --sl: max(14px, env(safe-area-inset-left));
+  --sr: max(14px, env(safe-area-inset-right));
+  --sb: max(14px, env(safe-area-inset-bottom));
+  --st: max(10px, env(safe-area-inset-top));
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+#touch button, #t-zone { pointer-events: auto; touch-action: none; }
+#touch button {
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  background: rgba(12, 18, 28, 0.42);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: background 0.06s, transform 0.06s;
+}
+#touch button.on { transform: scale(0.95); }
+
+/* t-a: del lado del pulgar que dobla, t-b: del lado de los pedales. --x y --y: corrimiento */
+.t-a, .t-b { position: absolute; bottom: calc(var(--sb) + var(--y, 0px)); }
+.t-a { left: calc(var(--sl) + var(--x, 0px)); }
+.t-b { right: calc(var(--sr) + var(--x, 0px)); }
+#touch.swap .t-a { left: auto; right: calc(var(--sr) + var(--x, 0px)); }
+#touch.swap .t-b { right: auto; left: calc(var(--sl) + var(--x, 0px)); }
+
+#t-gas {
+  width: var(--b);
+  height: calc(var(--b) * 1.5);
+  border-radius: 18px;
+  border-color: rgba(94, 224, 122, 0.85) !important;
+  font-size: calc(var(--b) * 0.15);
+}
+#t-gas.on { background: rgba(94, 224, 122, 0.55); }
+#t-brake {
+  --x: calc(var(--b) + var(--gap));
+  width: calc(var(--b) * 1.1);
+  height: var(--b);
+  border-radius: 18px;
+  border-color: rgba(255, 90, 90, 0.85) !important;
+  font-size: calc(var(--b) * 0.16);
+}
+#t-brake.on { background: rgba(255, 90, 90, 0.55); }
+#t-hand {
+  --x: calc(var(--b) + var(--gap));
+  --y: calc(var(--b) + var(--gap));
+  width: calc(var(--b) * 1.1);
+  height: calc(var(--b) * 0.55);
+  border-radius: 14px;
+  border-color: rgba(255, 204, 51, 0.8) !important;
+  font-size: calc(var(--b) * 0.14);
+}
+#t-hand.on { background: rgba(255, 204, 51, 0.5); }
+
+/* acelera solo: sin pedal de acelerador, el freno ocupa su lugar */
+#touch.auto #t-gas { display: none; }
+#touch.auto #t-brake { --x: 0px; width: var(--b); height: calc(var(--b) * 1.3); }
+#touch.auto #t-hand { --x: 0px; --y: calc(var(--b) * 1.3 + var(--gap)); width: var(--b); }
+
+/* inclinar: el freno pasa al otro pulgar, el freno de mano queda arriba del acelerador */
+#touch.mode-inclinar #t-brake { --x: 0px; width: calc(var(--b) * 1.2); height: calc(var(--b) * 1.2); }
+#touch.mode-inclinar #t-hand { --x: 0px; --y: calc(var(--b) * 1.5 + var(--gap)); width: var(--b); }
+#touch.mode-inclinar.auto #t-hand { --y: 0px; }
+
+#touch:not(.mode-botones) #t-arrows { display: none; }
+#touch:not(.mode-volante) #t-zone { display: none; }
+
+#t-arrows { display: flex; gap: var(--gap); }
+#t-arrows button {
+  width: calc(var(--b) * 1.05);
+  height: calc(var(--b) * 1.05);
+  border-radius: 50%;
+  font-size: calc(var(--b) * 0.36);
+}
+#t-arrows button.on { background: rgba(255, 204, 51, 0.5); }
+
+/* volante: se apoya el pulgar en cualquier parte de esta zona y se desliza a los costados */
+#t-zone { position: absolute; left: 0; bottom: 0; width: 46%; height: 78%; }
+#touch.swap #t-zone { left: auto; right: 0; }
+#t-wheel {
+  --w: calc(var(--b) * 1.35);
+  position: fixed;
+  left: calc(var(--sl) + var(--w) / 2 + 6px);
+  top: calc(100% - var(--sb) - var(--w) / 2 - 14px);
+  width: var(--w);
+  height: var(--w);
+  transform: translate(-50%, -50%);
+  color: #fff;
+  opacity: 0.5;
+  pointer-events: none;
+}
+#touch.swap #t-wheel:not(.active) { left: calc(100% - var(--sr) - var(--w) / 2 - 6px); }
+#t-wheel.active { opacity: 0.85; }
+#t-wheel svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: rotate(var(--r, 0deg));
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
+}
+#t-wheel small {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+#t-wheel.active small { display: none; }
+
+#t-top { position: absolute; top: var(--st); left: var(--sl); display: flex; gap: 8px; }
+#t-top button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 17px;
+  letter-spacing: 0;
+}
+
+/* el HUD se acomoda a los controles: velocímetro abajo al medio, lo de arriba a la izquierda más abajo */
+body.touch #help, body.touch #race .hint { display: none; }
+body.touch #speedo {
+  right: auto;
+  left: 50%;
+  bottom: calc(max(14px, env(safe-area-inset-bottom)) + 6px);
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+body.touch #fps {
+  right: auto;
+  left: 50%;
+  bottom: calc(max(14px, env(safe-area-inset-bottom)) + 76px);
+  transform: translateX(-50%);
+}
+body.touch #info, body.touch #positions { top: calc(max(10px, env(safe-area-inset-top)) + 56px); }
+body.touch #hud:not([hidden]) ~ #credits { right: auto; left: 50%; transform: translateX(-50%); }
+
+/* ---------- Pausa y ajustes de los controles ---------- */
+#pause, #controls {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+  background: rgba(8, 12, 20, 0.6);
+}
+.sheet {
+  width: min(560px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: rgba(10, 16, 26, 0.95);
+  text-align: center;
+}
+.sheet h1 { margin: 0 0 12px; font-size: 22px; }
+.sheet .actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.sheet button, .t-row button {
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.sheet button.primary, .t-row button.primary { border-color: var(--accent); background: var(--accent); color: #1a1400; }
+.sheet > button.primary { width: 100%; margin-top: 12px; }
+body:not(.race) .race-only, body.multi .race-only { display: none; }
+.t-opt { display: grid; gap: 6px; margin: 0 0 10px; text-align: left; font-size: 13px; }
+.t-opt > span { opacity: 0.8; font-weight: 700; }
+.seg { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: rgba(255, 255, 255, 0.06); }
+.seg button {
+  flex: 1;
+  min-height: 40px;
+  padding: 8px 6px;
+  border: 0;
+  background: transparent;
+}
+.seg button[aria-pressed='true'] { background: var(--accent); color: #1a1400; }
+.t-desc { margin: 4px 0 0; font-size: 13px; line-height: 1.4; opacity: 0.85; text-align: left; }
+.t-desc.warn { color: #ffb347; opacity: 1; }
+.t-row { display: flex; gap: 8px; justify-content: center; margin-top: 14px; }
+.t-row button { flex: 1; }
+
+/* ---------- Menú con el dedo ---------- */
+#go {
+  display: block;
+  margin: 12px auto 0;
+  padding: 12px 40px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #1a1400;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+}
+body.touch #select {
+  padding: 10px max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+}
+body.touch .card .key { display: none; }
+#lobby, #results { max-height: calc(100% - 24px); overflow: auto; }
+
+/* celular acostado: todo en filas que se deslizan de costado, para que se vea el auto */
+@media (max-height: 560px) {
+  body.touch #select h1 { display: none; }
+  body.touch #places, body.touch #sections, body.touch #cards {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-bottom: 6px;
+    padding: 2px;
+  }
+  body.touch #places > :first-child, body.touch #sections > :first-child { margin-left: auto; }
+  body.touch #places > :last-child, body.touch #sections > :last-child { margin-right: auto; }
+  body.touch #cards { justify-content: safe center; }
+  body.touch .place { flex: none; padding: 6px 12px; font-size: 13px; white-space: nowrap; }
+  body.touch .section { flex: none; padding: 4px 10px 6px; font-size: 13px; white-space: nowrap; }
+  body.touch .card { flex: none; width: 170px; padding: 10px 12px 8px; }
+  body.touch .card.active { transform: none; }
+  body.touch .card h2 { margin: 0 0 4px; font-size: 15px; }
+  body.touch .stat { grid-template-columns: 70px 1fr; margin: 2px 0; font-size: 11px; }
+  body.touch .card .record { margin-top: 4px; font-size: 11px; }
+  body.touch #colors { margin-top: 6px; gap: 6px; }
+  body.touch #colors::after { display: none; }
+  body.touch .swatch { width: 26px; height: 26px; }
+  body.touch #go { margin-top: 8px; padding: 10px 34px; font-size: 16px; }
+  body.touch .hint { margin-top: 6px; font-size: 12px; }
+  body.touch #lobby .count { font-size: 36px; }
+  .sheet { padding: 12px 14px; }
+  .sheet h1 { margin-bottom: 8px; font-size: 18px; }
+  .sheet .actions { margin-bottom: 10px; }
+  .sheet .actions button { min-height: 38px; padding: 6px 10px; }
+  .t-opt { grid-template-columns: 96px 1fr; align-items: center; margin-bottom: 6px; }
+  .seg button { min-height: 34px; padding: 4px 6px; }
+}
+@media (max-height: 430px) {
+  body.touch .stat { display: none; }
+}
+
+/* ---------- Celular parado: pedir que lo giren ---------- */
+#rotate { display: none; }
+@media (orientation: portrait) {
+  body.touch #rotate {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-content: center;
+    gap: 12px;
+    padding: 24px;
+    background: #1d2b3a;
+    font-size: 22px;
+    font-weight: 800;
+    text-align: center;
+  }
+  body.touch #rotate span { font-size: 64px; animation: rotate-hint 1.6s ease-in-out infinite; }
+}
+@keyframes rotate-hint { 50% { transform: rotate(90deg); } }
+@media (prefers-reduced-motion: reduce) {
+  body.touch #rotate span { animation: none; }
+}

@@ -4,6 +4,7 @@ import { CARS } from '../../config.js';
 import { roomStatus } from '../../net/net.js';
 
 const POLL_MS = 3000;
+const MAX_POLL_MS = 60000; // sin servidor se pregunta cada vez menos, para no llenar la consola de errores
 const TITLE = document.title;
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -11,8 +12,10 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&
 /** onJoin(status): se llama al tocar "Sumarme" (o J). */
 export function createLiveRoom({ onJoin }) {
   const root = document.getElementById('live');
+  let running = false;
   let timer = null;
   let tick = null;
+  let wait = POLL_MS;
   let status = null;
   let offset = 0; // hora del servidor - hora local
 
@@ -49,10 +52,12 @@ export function createLiveRoom({ onJoin }) {
 
   async function poll() {
     const s = await roomStatus();
-    if (!timer) return; // ya se cerró el menú
+    if (!running) return; // ya se cerró el menú
     status = s;
     if (s) offset = s.serverNow - Date.now();
     render();
+    wait = s ? POLL_MS : Math.min(wait * 2, MAX_POLL_MS);
+    timer = setTimeout(poll, wait);
   }
 
   function join() {
@@ -61,13 +66,15 @@ export function createLiveRoom({ onJoin }) {
 
   return {
     start() {
-      if (timer) return;
-      timer = setInterval(poll, POLL_MS);
+      if (running) return;
+      running = true;
+      wait = POLL_MS;
       tick = setInterval(render, 500);
       poll();
     },
     stop() {
-      clearInterval(timer);
+      running = false;
+      clearTimeout(timer);
       clearInterval(tick);
       timer = tick = null;
       root.hidden = true;

@@ -24,7 +24,7 @@
     "source": "assets-raw/cars-real/lb-works_ferrari_f40__www.vecarz.com/scene.gltf",
     "forward": "+z",
     "length": 4.5,
-    "simplify": 0.05,
+    "simplify": 0.025,
     "author": "vecarz (heynic)",
     "license": "CC-BY-NC-SA-4.0",
     "url": "https://sketchfab.com/3d-models/lb-works-ferrari-f40-wwwvecarzcom-011cad3526e945799d6e98dde6390182",
@@ -39,5 +39,37 @@
     "license": "CC-BY-NC-SA-4.0",
     "url": "https://sketchfab.com/3d-models/2000-porsche-911-carrera-996-537f06116f1f40d7bc0de28a7ab653da",
     "simplify": 0.5
+  },
+  {
+    "id": "wrc",
+    "source": "assets-raw/cars-real/2015_volkswagen_polo_r_wrc/scene.gltf",
+    "forward": "+z",
+    "length": 4.0,
+    "author": "Ddiaz Design",
+    "license": "CC-BY-NC-SA-4.0",
+    "url": "https://sketchfab.com/3d-models/2015-volkswagen-polo-r-wrc-d57694d382bc49d5b53ff470ce001219",
+    "simplify": 1
+  },
+  {
+    "id": "hyper",
+    "source": "assets-raw/cars-real/ferrari_fxx_k_2015__www.vecarz.com/scene.gltf",
+    "forward": "+z",
+    "length": 4.9,
+    "simplify": 0.3,
+    "author": "vecarz (heynic)",
+    "license": "CC-BY-4.0",
+    "url": "https://sketchfab.com/3d-models/ferrari-fxx-k-2015-wwwvecarzcom-0ede942688584219ac035ab097f3dfee"
+  },
+  {
+    "id": "suv",
+    "source": "assets-raw/cars-real/2025_toyota_land_cruiser_250/scene.gltf",
+    "forward": "+z",
+    "length": 4.93,
+    "simplify": 0.025,
+    "simplifyError": 0.02,
+    "author": "Ddiaz Design",
+    "license": "CC-BY-NC-SA-4.0",
+    "url": "https://sketchfab.com/3d-models/2025-toyota-land-cruiser-250-b53e78d5e3474474a788e7ef4deccda0",
+    "rebuildNormals": true
   }
 ]

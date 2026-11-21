@@ -21,6 +21,13 @@ async function load() {
   const res = await fetch('/api/backoffice/data', { cache: 'no-store' });
   if (res.status === 401) return showLogin();
   if (!res.ok) {
+    const { error } = await res.json().catch(() => ({}));
+    if (!data) {
+      showLogin();
+      $('login-error').textContent = error ?? 'No se pudieron leer los datos. Probá de nuevo.';
+      $('login-error').hidden = false;
+      return;
+    }
     $('content').innerHTML = '<p class="empty">No se pudieron leer los datos. Probá de nuevo.</p>';
     return;
   }

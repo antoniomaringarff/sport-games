@@ -81,7 +81,7 @@ export async function topRecords(place) {
   if (c && performance.now() - c.at < 20000) return c.top;
   try {
     const res = await fetch(`/api/records?place=${place}`);
-    if (!res.ok) return null;
+    if (res.status !== 200) return null;
     const { top } = await res.json();
     rankingCache[place] = { at: performance.now(), top };
     return top;

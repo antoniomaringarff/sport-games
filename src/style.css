@@ -325,6 +325,31 @@ html, body {
 }
 .place.active { border-color: var(--accent); color: var(--accent); }
 
+/* Secciones de autos: pestañas, para no confundirlas con los lugares */
+#sections {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.section {
+  padding: 6px 14px 8px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  opacity: 0.6;
+  cursor: pointer;
+  transition: opacity 0.15s, border-color 0.15s;
+}
+.section small { font-size: 12px; font-weight: 600; opacity: 0.7; }
+.section:hover { opacity: 0.9; }
+.section.active { opacity: 1; border-bottom-color: var(--accent); color: var(--accent); }
+
 /* ---------- Carrera ---------- */
 #race {
   position: fixed;

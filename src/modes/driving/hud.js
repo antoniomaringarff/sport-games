@@ -1,5 +1,5 @@
 // HUD (velocímetro) y pantalla de elección de auto. HTML encima del canvas.
-import { CARS, SURFACES, COLORS } from '../../config.js';
+import { CARS, CAR_IDS, SECTIONS, SURFACES, COLORS } from '../../config.js';
 import { carColor, savedColor, chooseColor } from './colors.js';
 
 const $ = (id) => document.getElementById(id);
@@ -75,10 +75,22 @@ export function createCarSelect({ places, onHighlight, onChoose, onPlace = () =>
   const list = $('cards');
   const placesEl = $('places');
   const colorsEl = $('colors');
-  const ids = Object.keys(CARS);
+  const sectionsEl = $('sections');
+  const ids = CAR_IDS;
   const placeIds = Object.keys(places);
   let index = 0;
   let place = placeIds[0];
+
+  // Secciones: solo se ven las tarjetas de la sección del auto marcado
+  sectionsEl.innerHTML = '';
+  Object.entries(SECTIONS).forEach(([sid, name]) => {
+    const b = document.createElement('button');
+    b.className = 'section';
+    b.dataset.section = sid;
+    b.innerHTML = `${name} <small>${ids.filter((id) => CARS[id].section === sid).length}</small>`;
+    b.addEventListener('click', () => set(ids.findIndex((id) => CARS[id].section === sid)));
+    sectionsEl.appendChild(b);
+  });
 
   list.innerHTML = '';
   ids.forEach((id, i) => {
@@ -157,7 +169,12 @@ export function createCarSelect({ places, onHighlight, onChoose, onPlace = () =>
 
   function set(i) {
     index = (i + ids.length) % ids.length;
-    [...list.children].forEach((c, k) => c.classList.toggle('active', k === index));
+    const section = CARS[ids[index]].section;
+    [...list.children].forEach((c, k) => {
+      c.classList.toggle('active', k === index);
+      c.hidden = CARS[ids[k]].section !== section;
+    });
+    [...sectionsEl.children].forEach((b) => b.classList.toggle('active', b.dataset.section === section));
     renderColors();
     onHighlight(ids[index]);
   }

@@ -23,11 +23,21 @@ export const SURFACES = {
   pasto:    { label: 'Pasto',    grip: 0.6,  drag: 0.9 },
 };
 
+// ---------- Secciones del menú de autos ----------
+export const SECTIONS = {
+  carreras:    'Carreras',
+  rally:       'Rally',
+  todoterreno: 'Todo terreno',
+  altagama:    'Alta gama',
+};
+
 // ---------- Los autos ----------
 // Unidades: masa en kg, fuerzas en Newtons, distancias en metros, velocidad en km/h.
+// section: en qué sección del menú aparece (ver SECTIONS).
 export const CARS = {
   f1: {
     name: 'Fórmula 1',
+    section: 'carreras',
     color: 0x2a2f3d,
     paint: { material: 'sauber_paint', keepTexture: false }, // material del modelo que se pinta
     MASS: 750,                 // liviano = acelera y frena muy rápido
@@ -64,6 +74,7 @@ export const CARS = {
 
   pickup: {
     name: 'Camioneta',
+    section: 'todoterreno',
     color: 0x1d1f24,
     paint: { material: 'krmlgtbdy85_Bodymat', keepTexture: false },
     MASS: 2200,
@@ -98,6 +109,7 @@ export const CARS = {
 
   luxury: {
     name: 'Auto de lujo',
+    section: 'altagama',
     color: 0xcfd2d6,
     paint: { material: 'Paint', keepTexture: true },
     MASS: 1800,
@@ -130,7 +142,8 @@ export const CARS = {
     stats: { velocidad: 4, agarre: 4, todoterreno: 2 },
   },
   rally: {
-    name: 'Auto de rally',
+    name: 'Rally clásico',
+    section: 'rally',
     color: 0x22355e,
     paint: { material: 'CarPaint', keepTexture: false },
     MASS: 1250,                // liviano y ágil
@@ -163,7 +176,112 @@ export const CARS = {
     SOUND: { IDLE_RPM: 950, MAX_RPM: 7800, GEARS: 6, PULSES: 2, GRIT: 0.65, BRIGHT: 0.75, VOLUME: 0.95 },
     stats: { velocidad: 3, agarre: 4, todoterreno: 4 },
   },
+  wrc: {
+    name: 'Rally WRC',
+    section: 'rally',
+    color: 0x1d3fbf,
+    paint: { material: 'carpaint', keepTexture: true }, // tiñe el ploteo de rally
+    MASS: 1200,                // auto de rally de verdad: liviano, turbo y 4x4
+    LENGTH: 4.0, WIDTH: 1.9, HEIGHT: 1.4,
+    WHEEL_RADIUS: 0.33,
+    WHEELBASE: 2.5,
+    TRACK: 1.56,
+    RIDE_HEIGHT: 0.2,
+    CENTER_OF_MASS_Y: -0.42,
+    DRIVE: 'all',
+    ENGINE_FORCE: 11000,
+    TOP_SPEED: 210,
+    REVERSE_SPEED: 35,
+    BRAKE: 15,
+    HANDBRAKE: 12,             // el que mejor cruza en las horquillas
+    MAX_STEER: 0.62,
+    STEER_AT_SPEED: 0.15,
+    STEER_SPEED: 4.8,
+    GRIP: 1.12,
+    SIDE_GRIP: 1.02,
+    REAR_GRIP_HANDBRAKE: 0.26,
+    DOWNFORCE: 0.0006,         // alerón grande
+    AERO_DRAG: 0.00038,
+    SUSPENSION_STIFFNESS: 28,
+    SUSPENSION_DAMPING: 3.4,
+    SUSPENSION_TRAVEL: 0.26,
+    ANTI_ROLL: 0.45,
+    OFFROAD: { asfalto: 1, adoquin: 1.08, tierra: 1.75, ripio: 1.68, arena: 1.4, nieve: 1.7, pasto: 1.4 },
+    SOUND: { IDLE_RPM: 1100, MAX_RPM: 8500, GEARS: 6, PULSES: 2, GRIT: 0.75, BRIGHT: 0.85, VOLUME: 1.0 },
+    stats: { velocidad: 3, agarre: 4, todoterreno: 5 },
+  },
+  suv: {
+    name: 'SUV 4x4',
+    section: 'todoterreno',
+    color: 0x4a9fd8,
+    paint: { material: 'CarPaint', keepTexture: false }, // también pinta CarPaint_N2
+    MASS: 2300,                // pesada pero cómoda: va lejos por cualquier camino
+    LENGTH: 4.93, WIDTH: 1.98, HEIGHT: 1.6,
+    WHEEL_RADIUS: 0.41,
+    WHEELBASE: 2.85,
+    TRACK: 1.67,
+    RIDE_HEIGHT: 0.3,
+    CENTER_OF_MASS_Y: -0.45,
+    DRIVE: 'all',
+    ENGINE_FORCE: 10500,
+    TOP_SPEED: 175,
+    REVERSE_SPEED: 35,
+    BRAKE: 12,
+    HANDBRAKE: 7,
+    MAX_STEER: 0.52,
+    STEER_AT_SPEED: 0.15,
+    STEER_SPEED: 2.6,
+    GRIP: 1.0,
+    SIDE_GRIP: 0.92,
+    REAR_GRIP_HANDBRAKE: 0.32,
+    DOWNFORCE: 0,
+    AERO_DRAG: 0.0005,
+    SUSPENSION_STIFFNESS: 26,
+    SUSPENSION_DAMPING: 3.2,
+    SUSPENSION_TRAVEL: 0.26,
+    ANTI_ROLL: 0.4,
+    OFFROAD: { asfalto: 1, adoquin: 1.1, tierra: 1.5, ripio: 1.45, arena: 1.7, nieve: 1.8, pasto: 1.45 },
+    SOUND: { IDLE_RPM: 700, MAX_RPM: 4800, GEARS: 8, PULSES: 2, GRIT: 0.7, BRIGHT: 0.4, VOLUME: 0.95 },
+    stats: { velocidad: 2, agarre: 4, todoterreno: 4 },
+  },
+  hyper: {
+    name: 'Hiperdeportivo',
+    section: 'altagama',
+    color: 0xc8102e,
+    paint: { material: 'Paint_Material', keepTexture: false }, // la textura es roja: teñida queda oscura
+    MASS: 1250,                // V12 híbrido de pista: el más rápido después del F1
+    LENGTH: 4.9, WIDTH: 2.05, HEIGHT: 1.1,
+    WHEEL_RADIUS: 0.35,
+    WHEELBASE: 2.67,
+    TRACK: 1.7,
+    RIDE_HEIGHT: 0.1,
+    CENTER_OF_MASS_Y: -0.32,
+    DRIVE: 'rear',
+    ENGINE_FORCE: 14000,
+    TOP_SPEED: 330,
+    REVERSE_SPEED: 30,
+    BRAKE: 30,                 // frenos carbono-cerámicos
+    HANDBRAKE: 8,
+    MAX_STEER: 0.46,
+    STEER_AT_SPEED: 0.08,
+    STEER_SPEED: 3.6,
+    GRIP: 1.35,
+    SIDE_GRIP: 1.15,
+    REAR_GRIP_HANDBRAKE: 0.38,
+    DOWNFORCE: 0.0025,         // alerón y difusor de pista
+    AERO_DRAG: 0.0004,
+    SUSPENSION_STIFFNESS: 55,
+    SUSPENSION_DAMPING: 5.5,
+    SUSPENSION_TRAVEL: 0.1,
+    ANTI_ROLL: 0.55,
+    OFFROAD: { asfalto: 1, adoquin: 0.95, tierra: 0.7, ripio: 0.66, arena: 0.55, nieve: 0.6, pasto: 0.7 },
+    SOUND: { IDLE_RPM: 1000, MAX_RPM: 9200, GEARS: 7, PULSES: 6, GRIT: 0.3, BRIGHT: 0.95, VOLUME: 0.95 },
+    stats: { velocidad: 5, agarre: 4, todoterreno: 1 },
+  },
 };
+
+/** Autos en el orden del menú: sección por sección. */
+export const CAR_IDS = Object.keys(SECTIONS).flatMap((s) => Object.keys(CARS).filter((id) => CARS[id].section === s));
 
 // ---------- Colores de pintura ----------
 // Si no elegís uno, cada auto sale de un color al azar (así en el multijugador se distinguen).
@@ -306,4 +424,7 @@ export const DRIVER_EYE = {
   pickup: { x: 0.1,   y: 0.38, z: -0.4 },
   luxury: { x: -0.3,  y: 0.2,  z: -0.32 },
   rally:  { x: -0.2,  y: 0.31, z: -0.36 },
+  wrc:    { x: -0.22, y: 0.35, z: -0.3 },
+  suv:    { x: -0.2,  y: 0.45, z: -0.38 },
+  hyper:  { x: 0.02,  y: 0.3,  z: -0.3 },
 };

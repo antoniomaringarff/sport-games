@@ -1,6 +1,6 @@
 // Arranque del juego: renderer, lugares (mundos), elección de auto y bucle principal.
 import * as THREE from 'three';
-import { CARS, PHYSICS, LIGHT, WALL, GRAPHICS } from './config.js';
+import { CARS, CAR_IDS, PHYSICS, LIGHT, WALL, GRAPHICS } from './config.js';
 import { createSparks } from './world/sparks.js';
 import { createTireFx } from './world/tireFx.js';
 import { createRenderPipeline, prepareMaterials, cycleQuality, QUALITY, createDynamicResolution } from './core/graphics.js';
@@ -452,10 +452,7 @@ function handleKeys() {
     if (justPressed('ArrowRight', 'KeyD', 'Pad15')) select.move(1);
     if (justPressed('ArrowUp', 'ArrowDown', 'KeyW', 'KeyS', 'Tab', 'Pad12', 'Pad13')) select.nextPlace();
     if (justPressed('Enter', 'Space', 'Pad0')) select.choose();
-    if (justPressed('Digit1')) select.pick(0);
-    if (justPressed('Digit2')) select.pick(1);
-    if (justPressed('Digit3')) select.pick(2);
-    if (justPressed('Digit4')) select.pick(3);
+    CAR_IDS.forEach((_, i) => justPressed(`Digit${i + 1}`) && select.pick(i));
     if (justPressed('KeyQ')) cycleQuality();
     if (justPressed('KeyC')) select.nextColor();
     if (justPressed('KeyJ')) liveRoom.join();
@@ -486,7 +483,7 @@ function handleKeys() {
   if (justPressed('KeyM')) toggleMute();
   if (justPressed('KeyG')) ghostOn = !ghostOn;
   if (justPressed('KeyV')) toggleCodriverVoice();
-  const ids = Object.keys(CARS);
+  const ids = CAR_IDS;
   for (let i = 0; i < ids.length; i++) {
     if (!world.multi?.active && justPressed(`Digit${i + 1}`) && ids[i] !== carId) {
       // cambiar de auto en el mismo lugar (para comparar)

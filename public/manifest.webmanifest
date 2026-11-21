@@ -1,0 +1,10 @@
+{
+  "name": "Sport Games",
+  "short_name": "Sport Games",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#1d2b3a",
+  "theme_color": "#1d2b3a",
+  "lang": "es"
+}

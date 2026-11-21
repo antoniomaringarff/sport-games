@@ -30,6 +30,23 @@ Abrir http://localhost:5173, elegir auto (← →, o 1 a 4) y lugar (↑ ↓): *
 
 También anda con joystick (gatillos para acelerar/frenar, A = freno de mano).
 
+## Celular y tablet
+
+Se juega acostado, con los dos pulgares, copiando los controles de F1 Mobile Racing y Real Racing 3.
+En el menú se toca el auto y **¡A correr!** (pide pantalla completa y apaisado donde el navegador lo deja).
+
+- **Volante** (por defecto): apoyá el pulgar izquierdo en cualquier parte de la mitad izquierda y deslizalo a los costados. Pasado el tope, el centro acompaña al dedo, así volver para el otro lado responde enseguida.
+- **Botones ◀ ▶**: dos botones para doblar; se puede deslizar el pulgar de uno al otro.
+- **Inclinar**: girá el aparato como un volante (o bajá un costado si lo tenés acostado). El freno pasa al pulgar izquierdo. Necesita https y, en el iPhone, dar permiso.
+- Pulgar derecho: **acelerador**, **freno** y **mano** (freno de mano); se desliza entre los pedales sin levantar el dedo.
+- **Acelerador automático**: el auto acelera solo y vos solo frenás (quieto, el freno da marcha atrás).
+- **Volante a la derecha**: invierte los lados, para zurdos.
+- Arriba a la izquierda: pausa (con los ajustes, reiniciar carrera, sonido, fantasma, copiloto y menú), cámara y volver a la pista.
+
+Los ajustes se cambian en el menú (**controles**) o en la pausa, y se recuerdan. Sensibilidad del volante y de la inclinación: `TOUCH` en `src/config.js`.
+En celulares y tablets arranca en calidad **media** (`GRAPHICS.TOUCH_QUALITY`); se cambia tocando **calidad** en el menú.
+Para probar en el celular en la misma red: `npm run dev:lan` y abrir la dirección que muestra (la inclinación solo anda con https, por ejemplo en el deploy de Vercel).
+
 ## Multijugador (dos o más compus en la misma red)
 
 En **una** compu (la que hace de servidor), en dos terminales:

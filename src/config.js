@@ -343,6 +343,18 @@ export const GRAPHICS = {
   ENV_LIGHT: 0.32,     // cuánto ilumina y se refleja el cielo (más alto = todo brilla más)
   CLOUDS: 0.7,          // cantidad de nubes (0 = cielo limpio)
   DYNAMIC_RESOLUTION: true, // si va lento, baja un poco la resolución sola para mantener 60 fps
+  TOUCH_QUALITY: 'media', // calidad de arranque en celulares y tablets (si no se eligió otra)
+};
+
+// ---------- Controles táctiles (celular y tablet) ----------
+// Como F1 Mobile Racing y Real Racing 3: un pulgar dobla y el otro acelera y frena.
+// Se eligen en el menú (Controles táctiles) o en la pausa: volante, botones ◀ ▶ o inclinar.
+export const TOUCH = {
+  WHEEL_TRAVEL: 0.17,   // volante: cuánto hay que deslizar el pulgar para doblar a fondo (parte del lado corto de la pantalla)
+  WHEEL_DEADZONE: 0.05, // volante: zona muerta en el centro (0..1)
+  WHEEL_CURVE: 1.25,    // volante: más de 1 = más fino cerca del centro
+  TILT_MAX: 28,         // inclinar: grados para doblar a fondo
+  TILT_DEADZONE: 2,     // inclinar: grados que no cuentan (para ir derecho sin temblar)
 };
 
 // ---------- Copiloto (voz que canta las curvas) ----------

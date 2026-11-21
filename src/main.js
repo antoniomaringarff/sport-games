@@ -6,7 +6,8 @@ import { createTireFx } from './world/tireFx.js';
 import { createRenderPipeline, prepareMaterials, cycleQuality, QUALITY, createDynamicResolution } from './core/graphics.js';
 import { unlockAudio, CarSound, toggleMute, setEcho, impactSound } from './core/audio.js';
 import { createPhysics } from './core/physics.js';
-import { readDriving, justPressed, clearPressed } from './core/input.js';
+import { readDriving, justPressed, clearPressed, press } from './core/input.js';
+import { initTouch, touchUi } from './core/touch.js';
 import { createSky } from './world/sky.js';
 import { buildTestTrack, SPAWN } from './world/testTrack.js';
 import { loadMonacoData, buildMonaco } from './world/monaco.js';
@@ -38,13 +39,16 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 
 const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 20000);
-window.addEventListener('resize', () => {
+function onResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
   pipeline.setSize(window.innerWidth, window.innerHeight);
   for (const w of Object.values(worlds)) w.sky.resize();
-});
+}
+window.addEventListener('resize', onResize);
+// al girar el celular algunos navegadores avisan el tamaño nuevo un rato después
+window.addEventListener('orientationchange', () => setTimeout(onResize, 300));
 
 // ---------- Lugares ----------
 // Cada lugar tiene su propia escena y su propio mundo de física.
@@ -111,6 +115,7 @@ const curr = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
 // El audio arranca con la primera tecla o clic (regla de los navegadores)
 window.addEventListener('keydown', unlockAudio);
 window.addEventListener('pointerdown', unlockAudio);
+window.addEventListener('touchend', unlockAudio); // Safari del iPhone solo lo deja al soltar el dedo
 let carSound = null;
 
 // ---------- Auto fantasma (la mejor vuelta) ----------
@@ -254,6 +259,7 @@ const liveRoom = createLiveRoom({
 
 /** Arrancar a jugar con un auto en un lugar. color: para forzar uno (si no, el del auto). */
 async function play(id, place, color = carColor(id)) {
+  touchUi.prepare();
   select.close();
   liveRoom.stop();
   state = 'loading';
@@ -301,7 +307,9 @@ async function play(id, place, color = carColor(id)) {
   renderer.toneMappingExposure = world.sky.exposure;
   save(LAST_CAR_KEY, id);
   save(LAST_PLACE_KEY, place);
+  document.body.classList.toggle('race', !!world.race);
   hud.show(true);
+  touchUi.show(true);
   dynRes.reset();
   carSound?.setActive(true);
   state = 'driving';
@@ -315,6 +323,7 @@ function openMenu() {
   document.body.classList.remove('multi');
   carSound?.setActive(false);
   hud.show(false);
+  touchUi.show(false);
   world?.race?.show(false);
   renderer.toneMappingExposure = 0.75;
   meName.textContent = playerName() ?? '';
@@ -338,9 +347,12 @@ function currentSpot() {
   return { x: t.x, y: t.y + 0.5, z: t.z, yaw: yawOf(vehicle.body.rotation()) };
 }
 
-document.getElementById('quality').textContent = QUALITY;
+for (const el of document.querySelectorAll('#quality, [data-quality]')) el.textContent = QUALITY;
+initTouch({ onAction: press });
 const meName = document.getElementById('me-name');
 document.getElementById('change-name').addEventListener('click', changeName);
+// directo en el toque (no por el bucle): pantalla completa y permiso de inclinar solo se piden ahí
+document.getElementById('go').addEventListener('click', () => select.choose());
 loadingEl.textContent = 'Cargando autos…';
 await loadCarAssets((f) => (loadingEl.textContent = `Cargando autos… ${Math.round(f * 100)}%`));
 loadingEl.hidden = true;
@@ -443,7 +455,7 @@ function wallEffects(hit, dt) {
 
 function render() {
   if (state === 'menu') pipeline.render(showroom.scene, showroom.camera);
-  else if (state === 'driving') pipeline.render(world.scene, camera);
+  else if (state === 'driving' || state === 'paused') pipeline.render(world.scene, camera);
 }
 
 function handleKeys() {
@@ -459,8 +471,21 @@ function handleKeys() {
     if (justPressed('KeyN')) changeName();
     return;
   }
+  if (state === 'paused') {
+    if (justPressed('Escape', 'Pad9')) return openMenu();
+    if (!justPressed('Resume', 'Pause')) return toggleKeys();
+    state = 'driving';
+    carSound?.setActive(true);
+  }
   if (state !== 'driving') return;
   if (justPressed('Escape', 'Pad9')) return openMenu();
+  // pausa (botón de la pantalla táctil): en el multijugador la carrera sigue
+  if (justPressed('Pause') && !world.multi?.active) {
+    state = 'paused';
+    carSound?.setActive(false);
+    return;
+  }
+  justPressed('Resume');
   if (justPressed('KeyR', 'Pad3')) {
     if (world.race) {
       world.race.onReset();
@@ -480,9 +505,7 @@ function handleKeys() {
     makeGhost(carId);
   }
   if (justPressed('KeyC', 'Pad2')) chase.nextMode();
-  if (justPressed('KeyM')) toggleMute();
-  if (justPressed('KeyG')) ghostOn = !ghostOn;
-  if (justPressed('KeyV')) toggleCodriverVoice();
+  toggleKeys();
   const ids = CAR_IDS;
   for (let i = 0; i < ids.length; i++) {
     if (!world.multi?.active && justPressed(`Digit${i + 1}`) && ids[i] !== carId) {
@@ -495,6 +518,13 @@ function handleKeys() {
       }
     }
   }
+}
+
+/** Prender / apagar: sonido, fantasma y copiloto (también andan en pausa). */
+function toggleKeys() {
+  if (justPressed('KeyM')) toggleMute();
+  if (justPressed('KeyG')) ghostOn = !ghostOn;
+  if (justPressed('KeyV')) toggleCodriverVoice();
 }
 
 requestAnimationFrame(frame);

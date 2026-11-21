@@ -105,10 +105,17 @@ export function createCarSelect({ places, onHighlight, onChoose, onPlace = () =>
         .map(([k, v]) => `<div class="stat"><span>${k}</span><i style="--v:${v}"></i></div>`)
         .join('')}
       <div class="record" data-record></div>`;
-    card.addEventListener('mouseenter', () => set(i));
+    card.addEventListener('pointerenter', (e) => e.pointerType === 'mouse' && set(i));
+    // con el dedo, el primer toque marca el auto (se ve en el showroom) y el segundo lo elige
+    let tapByTouch = false, wasActive = false;
+    card.addEventListener('pointerdown', (e) => {
+      tapByTouch = e.pointerType !== 'mouse';
+      wasActive = index === i;
+    });
     card.addEventListener('click', () => {
       set(i);
-      choose();
+      if (!tapByTouch || wasActive) choose();
+      tapByTouch = false;
     });
     list.appendChild(card);
   });

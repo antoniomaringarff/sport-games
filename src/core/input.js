@@ -1,4 +1,6 @@
-// Teclado + joystick. Devuelve lo que el auto necesita: acelerar, frenar, doblar, freno de mano.
+// Teclado + joystick + pantalla táctil. Devuelve lo que el auto necesita: acelerar, frenar, doblar, freno de mano.
+import { readTouch } from './touch.js';
+
 const down = new Set();
 const pressed = new Set(); // teclas recién apretadas (para acciones de una vez)
 
@@ -22,6 +24,14 @@ export function readDriving() {
   let brake = any('KeyS', 'ArrowDown') ? 1 : 0;
   let steer = (any('KeyD', 'ArrowRight') ? 1 : 0) - (any('KeyA', 'ArrowLeft') ? 1 : 0);
   let handbrake = any('Space');
+
+  const touch = readTouch();
+  if (touch) {
+    throttle = Math.max(throttle, touch.throttle);
+    brake = Math.max(brake, touch.brake);
+    if (touch.steer) steer = touch.steer;
+    handbrake ||= touch.handbrake;
+  }
 
   const pad = navigator.getGamepads?.()[0];
   if (pad) {
@@ -48,6 +58,11 @@ export function justPressed(...codes) {
     }
   }
   return hit;
+}
+
+/** Un botón de la pantalla "aprieta" una tecla (o una acción propia, como 'Pause'). */
+export function press(code) {
+  pressed.add(code);
 }
 
 export function clearPressed() {

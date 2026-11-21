@@ -1,5 +1,6 @@
 // HUD (velocímetro) y pantalla de elección de auto. HTML encima del canvas.
-import { CARS, SURFACES } from '../../config.js';
+import { CARS, SURFACES, COLORS } from '../../config.js';
+import { carColor, savedColor, chooseColor } from './colors.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -63,11 +64,17 @@ function fmtLap(t) {
   return `${m}:${s.toFixed(3).padStart(6, '0')}`;
 }
 
-/** Pantalla de elección de auto y lugar. onHighlight(id) al moverse, onChoose(id, lugar) al elegir. */
-export function createCarSelect({ places, onHighlight, onChoose }) {
+const hexCss = (hex) => `#${hex.toString(16).padStart(6, '0')}`;
+
+/**
+ * Pantalla de elección de auto, color y lugar.
+ * onHighlight(id) al moverse o cambiar el color, onPlace(lugar) al cambiar de lugar, onChoose(id, lugar) al elegir.
+ */
+export function createCarSelect({ places, onHighlight, onChoose, onPlace = () => {} }) {
   const root = $('select');
   const list = $('cards');
   const placesEl = $('places');
+  const colorsEl = $('colors');
   const ids = Object.keys(CARS);
   const placeIds = Object.keys(places);
   let index = 0;
@@ -103,14 +110,61 @@ export function createCarSelect({ places, onHighlight, onChoose }) {
     placesEl.appendChild(b);
   });
 
+  // Colores: "al azar" + la paleta. El elegido se recuerda para cada auto.
+  const colorIds = [null, ...Object.keys(COLORS)];
+  colorsEl.innerHTML = '';
+  colorIds.forEach((cid) => {
+    const b = document.createElement('button');
+    b.className = 'swatch';
+    if (cid == null) {
+      b.classList.add('random');
+      b.textContent = '🎲';
+      b.title = 'Al azar';
+    } else if (COLORS[cid].hex == null) {
+      b.classList.add('original');
+      b.title = COLORS[cid].name;
+    } else {
+      b.style.setProperty('--c', hexCss(COLORS[cid].hex));
+      b.title = COLORS[cid].name;
+    }
+    b.setAttribute('aria-label', `Color: ${b.title}`);
+    b.addEventListener('click', () => setColor(cid));
+    colorsEl.appendChild(b);
+  });
+
+  function renderColors() {
+    const id = ids[index];
+    const saved = savedColor(id);
+    const now = carColor(id);
+    [...colorsEl.children].forEach((b, k) => {
+      const cid = colorIds[k];
+      b.classList.toggle('active', cid === saved);
+      // al azar: se marca el color que tocó, con un borde punteado
+      b.classList.toggle('rolled', !saved && cid === now);
+    });
+    const label = saved ? COLORS[saved].name : `al azar (${COLORS[now].name.toLowerCase()})`;
+    colorsEl.dataset.label = `Color: ${label}`;
+    // la franja de arriba de cada tarjeta muestra el color con el que sale ese auto
+    [...list.children].forEach((card, k) => {
+      card.style.setProperty('--car', hexCss(COLORS[carColor(ids[k])].hex ?? CARS[ids[k]].color));
+    });
+  }
+  function setColor(cid) {
+    chooseColor(ids[index], cid);
+    renderColors();
+    onHighlight(ids[index]);
+  }
+
   function set(i) {
     index = (i + ids.length) % ids.length;
     [...list.children].forEach((c, k) => c.classList.toggle('active', k === index));
+    renderColors();
     onHighlight(ids[index]);
   }
   function setPlace(pid) {
     place = pid;
     [...placesEl.children].forEach((b, k) => b.classList.toggle('active', placeIds[k] === place));
+    onPlace(place);
   }
   function choose() {
     onChoose(ids[index], place);
@@ -138,6 +192,11 @@ export function createCarSelect({ places, onHighlight, onChoose }) {
     },
     nextPlace() {
       setPlace(placeIds[(placeIds.indexOf(place) + 1) % placeIds.length]);
+    },
+    /** C: pasar al color siguiente del auto marcado. */
+    nextColor() {
+      const saved = savedColor(ids[index]);
+      setColor(colorIds[(colorIds.indexOf(saved) + 1) % colorIds.length]);
     },
     pick(i) {
       set(i);

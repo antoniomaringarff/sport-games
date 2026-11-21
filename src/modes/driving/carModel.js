@@ -2,6 +2,7 @@
 // Ejes del auto: +X adelante, +Y arriba, +Z derecha (igual que la física).
 import * as THREE from 'three';
 import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
+import { CARS, COLORS } from '../../config.js';
 
 const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.5, metalness: 0.1, ...extra });
 const M = {
@@ -174,12 +175,40 @@ function contactShadow(profile) {
 }
 
 /**
+ * Pinta la carrocería del modelo GLB. Los materiales del modelo se comparten entre todas las
+ * copias, así que se clona el de la pintura para este auto. Devuelve los clonados (para liberarlos).
+ */
+function paintBody(root, id, hex) {
+  const paint = CARS[id]?.paint;
+  if (!paint || hex == null) return [];
+  const copies = new Map();
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    const mats = [o.material].flat().map((m) => {
+      if (!m.name?.startsWith(paint.material)) return m;
+      if (!copies.has(m)) {
+        const c = m.clone();
+        c.color.set(hex);
+        if (!paint.keepTexture) c.map = null;
+        copies.set(m, c);
+      }
+      return copies.get(m);
+    });
+    o.material = Array.isArray(o.material) ? mats : mats[0];
+  });
+  return [...copies.values()];
+}
+
+/**
  * Crea el auto que se ve. Si hay modelo GLB lo usa; si no, el de cajitas.
  * vehicle puede ser null (showroom): las ruedas quedan en su lugar de reposo.
+ * color: clave de COLORS ('original' o null = la pintura del modelo).
  */
-export function createCarModel(id, profile, vehicle, asset = null) {
+export function createCarModel(id, profile, vehicle, asset = null, color = null) {
   const group = new THREE.Group();
   const wheels = [];
+  const hex = COLORS[color]?.hex ?? null;
+  let painted = [];
 
   if (asset) {
     // ---- Modelo GLB ----
@@ -187,6 +216,7 @@ export function createCarModel(id, profile, vehicle, asset = null) {
     const body = asset.scene.clone(true);
     body.position.set(off.x, off.y, off.z);
     group.add(body);
+    painted = paintBody(body, id, hex);
     const names = ['wheel_FL', 'wheel_FR', 'wheel_RL', 'wheel_RR'];
     const keys = ['FL', 'FR', 'RL', 'RR'];
     names.forEach((name, i) => {
@@ -220,7 +250,7 @@ export function createCarModel(id, profile, vehicle, asset = null) {
     // ---- Cajitas (por si no cargó el modelo) ----
     const chassis = new THREE.Group();
     group.add(chassis);
-    const { wheelWidth } = BUILDERS[id](chassis, profile);
+    const { wheelWidth } = BUILDERS[id](chassis, hex == null ? profile : { ...profile, color: hex });
     for (let i = 0; i < 4; i++) {
       const w = makeWheel(profile.WHEEL_RADIUS, i < 2 ? wheelWidth[0] : wheelWidth[1]);
       group.add(w.pivot);
@@ -246,6 +276,7 @@ export function createCarModel(id, profile, vehicle, asset = null) {
     },
     dispose() {
       if (!asset) group.traverse((o) => o.geometry?.dispose());
+      for (const m of painted) m.dispose();
     },
   };
 }

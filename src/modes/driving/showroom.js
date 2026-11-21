@@ -59,23 +59,23 @@ export function createShowroom(renderer) {
   turntable.add(disc, ring);
   scene.add(turntable);
 
-  let current = null; // { id, model }
+  let current = null; // { id, color, model }
   let pop = 1;
 
-  function show(id) {
-    if (current?.id === id) return;
+  function show(id, color = null) {
+    if (current?.id === id && current.color === color) return;
     if (current) {
       turntable.remove(current.model.group);
       current.model.dispose();
     }
     const profile = physicsProfile(id);
     const asset = carAsset(id);
-    const model = createCarModel(id, profile, null, asset);
+    const model = createCarModel(id, profile, null, asset, color);
     // apoyar las ruedas sobre la plataforma
     const y = profile.MODEL_OFFSET ? TOP - profile.MODEL_OFFSET.y : TOP + profile.HEIGHT / 2 + profile.RIDE_HEIGHT + 0.05;
     model.group.position.set(0, y, 0);
     turntable.add(model.group);
-    current = { id, model };
+    current = { id, color, model };
     pop = 0;
   }
 

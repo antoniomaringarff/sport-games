@@ -7,7 +7,7 @@ import { carAsset, physicsProfile } from '../driving/carAssets.js';
 const DELAY = 120; // ms: se dibuja un poquito en el pasado para poder interpolar
 
 export class RemoteCar {
-  constructor(physics, scene, { id, name, car }) {
+  constructor(physics, scene, { id, name, car, color }) {
     this.id = id;
     this.name = name;
     this.car = car;
@@ -24,7 +24,7 @@ export class RemoteCar {
       steer: 0,
       wheelState: (i) => ({ ...p.WHEELS?.[i] ?? { x: 0, y: 0, z: 0 }, steering: i < 2 ? -this.fake.steer * 0.4 : 0 }),
     };
-    this.model = createCarModel(car, p, this.fake, carAsset(car));
+    this.model = createCarModel(car, p, this.fake, carAsset(car), color);
     this.model.group.visible = false;
     scene.add(this.model.group);
     this.tag = nameTag(name);

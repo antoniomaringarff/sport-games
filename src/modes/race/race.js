@@ -4,6 +4,7 @@ import { createCodriver } from './codriver.js';
 import { createMinimap } from './minimap.js';
 import { beep } from '../../core/audio.js';
 import { rotateVec } from '../driving/vehicle.js';
+import { submitRecord } from '../../net/player.js';
 
 const fmt = (t) => {
   if (t == null || !isFinite(t)) return '--:--.---';
@@ -223,6 +224,7 @@ export function createRace(track, place) {
         if (validLap && passed.size === 2) {
           sectorTimes[2] = clock - sectorStart;
           last = lapTime;
+          submitRecord({ place, car: carId, time: lapTime, sectors: [...sectorTimes] });
           if (best == null || lapTime < best) {
             best = lapTime;
             bestSectors = [...sectorTimes];

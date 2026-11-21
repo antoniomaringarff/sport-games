@@ -29,6 +29,7 @@ export const CARS = {
   f1: {
     name: 'Fórmula 1',
     color: 0x2a2f3d,
+    paint: { material: 'sauber_paint', keepTexture: false }, // material del modelo que se pinta
     MASS: 750,                 // liviano = acelera y frena muy rápido
     LENGTH: 5.0, WIDTH: 1.9, HEIGHT: 0.55,
     WHEEL_RADIUS: 0.36,
@@ -64,6 +65,7 @@ export const CARS = {
   pickup: {
     name: 'Camioneta',
     color: 0x1d1f24,
+    paint: { material: 'krmlgtbdy85_Bodymat', keepTexture: false },
     MASS: 2200,
     LENGTH: 5.3, WIDTH: 2.0, HEIGHT: 1.1,
     WHEEL_RADIUS: 0.45,
@@ -97,6 +99,7 @@ export const CARS = {
   luxury: {
     name: 'Auto de lujo',
     color: 0xcfd2d6,
+    paint: { material: 'Paint', keepTexture: true },
     MASS: 1800,
     LENGTH: 5.0, WIDTH: 1.95, HEIGHT: 0.75,
     WHEEL_RADIUS: 0.38,
@@ -129,6 +132,7 @@ export const CARS = {
   rally: {
     name: 'Auto de rally',
     color: 0x22355e,
+    paint: { material: 'CarPaint', keepTexture: false },
     MASS: 1250,                // liviano y ágil
     LENGTH: 4.1, WIDTH: 1.85, HEIGHT: 1.3,
     WHEEL_RADIUS: 0.42,
@@ -160,6 +164,26 @@ export const CARS = {
     stats: { velocidad: 3, agarre: 4, todoterreno: 4 },
   },
 };
+
+// ---------- Colores de pintura ----------
+// Si no elegís uno, cada auto sale de un color al azar (así en el multijugador se distinguen).
+// 'original' deja la pintura que trae el modelo.
+export const COLORS = {
+  original: { name: 'Original', hex: null },
+  rojo:     { name: 'Rojo',     hex: 0xc8102e },
+  naranja:  { name: 'Naranja',  hex: 0xff6a13 },
+  amarillo: { name: 'Amarillo', hex: 0xffc72c },
+  verde:    { name: 'Verde',    hex: 0x1f9e4a },
+  celeste:  { name: 'Celeste',  hex: 0x4fb3e8 },
+  azul:     { name: 'Azul',     hex: 0x1d3fbf },
+  violeta:  { name: 'Violeta',  hex: 0x6b2fbf },
+  rosa:     { name: 'Rosa',     hex: 0xff4f9a },
+  blanco:   { name: 'Blanco',   hex: 0xf2f2f2 },
+  negro:    { name: 'Negro',    hex: 0x141414 },
+  plata:    { name: 'Plata',    hex: 0x9aa3ad },
+};
+/** Colores que pueden salir al azar (todos menos el original). */
+export const RANDOM_COLORS = Object.keys(COLORS).filter((c) => c !== 'original');
 
 // ---------- Luz de cada lugar ----------
 // ELEVATION: altura del sol en grados (5 = atardecer, 60 = mediodía)

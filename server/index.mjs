@@ -7,9 +7,12 @@
 // grilla y se manda la hora exacta de la largada. Cada jugador simula su propio auto y manda
 // su posición; el servidor la reenvía a los demás. Los bots los maneja el anfitrión (el
 // primero de la lista) y los manda como si fueran jugadores.
+//
+// GET /sala devuelve el estado de la sala (para avisar en el menú que hay una carrera por arrancar).
 import { WebSocketServer } from 'ws';
+import http from 'node:http';
 import os from 'node:os';
-import { MULTI, CARS } from '../src/config.js';
+import { MULTI, CARS, COLORS, RANDOM_COLORS } from '../src/config.js';
 
 // Para probar rápido: LAPS=1 LOBBY=5 npm run server
 if (process.env.LAPS) MULTI.LAPS = Number(process.env.LAPS);
@@ -17,7 +20,21 @@ if (process.env.LOBBY) MULTI.LOBBY_SECONDS = Number(process.env.LOBBY);
 
 // en la nube (Railway) el puerto lo da la variable PORT; en casa se usa el de siempre
 const PORT = Number(process.env.PORT) || MULTI.PORT;
-const wss = new WebSocketServer({ port: PORT, host: '0.0.0.0' });
+const server = http.createServer((req, res) => {
+  if ((req.url ?? '/').split('?')[0] === '/sala') {
+    res.writeHead(200, {
+      'content-type': 'application/json',
+      'access-control-allow-origin': '*',
+      'cache-control': 'no-store',
+    });
+    res.end(JSON.stringify(roomStatus()));
+    return;
+  }
+  res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8' });
+  res.end('Servidor multijugador de sport-games\n');
+});
+const wss = new WebSocketServer({ server });
+server.listen(PORT, '0.0.0.0');
 
 const BOT_NAMES = ['Bot Turbo', 'Bot Rayo', 'Bot Pistón', 'Bot Nitro', 'Bot Chispa', 'Bot Trueno', 'Bot Cometa', 'Bot Bólido', 'Bot Zeta'];
 const CAR_IDS = Object.keys(CARS);
@@ -54,11 +71,31 @@ function hostId() {
   // el anfitrión es el jugador más antiguo que sigue conectado
   return joined()[0]?.id ?? null;
 }
+/** Lo que ve el menú: si hay sala esperando, quiénes están (el primero eligió el auto) y cuándo larga. */
+function roomStatus() {
+  return {
+    phase: room.phase,
+    players: joined().map(({ name, car, color }) => ({ name, car, color })),
+    endsAt: room.endsAt,
+    racing: room.phase === 'carrera' ? room.grid.filter((g) => !g.bot).length : 0,
+    max: MULTI.MAX_PLAYERS,
+    serverNow: now(),
+  };
+}
+
+/** Color para un bot: uno que no tenga otro auto igual en la grilla. */
+function botColor(car, grid) {
+  const taken = grid.filter((g) => g.car === car).map((g) => g.color);
+  const free = RANDOM_COLORS.filter((c) => !taken.includes(c));
+  const pool = free.length ? free : RANDOM_COLORS;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 function lobbyInfo() {
   return {
     t: 'sala',
     phase: room.phase,
-    players: joined().map(({ id, name, car }) => ({ id, name, car })),
+    players: joined().map(({ id, name, car, color }) => ({ id, name, car, color })),
     endsAt: room.endsAt,
     host: hostId(),
     max: MULTI.MAX_PLAYERS,
@@ -81,10 +118,11 @@ function startRace() {
     room = newRoom();
     return;
   }
-  const grid = humans.map((p, i) => ({ id: p.id, name: p.name, car: p.car, bot: false, slot: i }));
+  const grid = humans.map((p, i) => ({ id: p.id, name: p.name, car: p.car, color: p.color, bot: false, slot: i }));
   const fill = Math.min(MULTI.MAX_PLAYERS, Math.max(MULTI.GRID_SIZE, humans.length));
   for (let i = grid.length, b = 0; i < fill; i++, b++) {
-    grid.push({ id: 1000 + b, name: BOT_NAMES[b % BOT_NAMES.length], car: CAR_IDS[b % CAR_IDS.length], bot: true, slot: i });
+    const car = CAR_IDS[b % CAR_IDS.length];
+    grid.push({ id: 1000 + b, name: BOT_NAMES[b % BOT_NAMES.length], car, color: botColor(car, grid), bot: true, slot: i });
   }
   room.phase = 'carrera';
   room.grid = grid;
@@ -117,7 +155,7 @@ function endRace() {
 
 wss.on('connection', (ws) => {
   const id = nextId++;
-  const p = { id, ws, name: `Jugador ${id}`, car: 'f1', joined: false };
+  const p = { id, ws, name: `Jugador ${id}`, car: 'f1', color: null, joined: false };
   players.set(id, p);
   send(ws, { t: 'hola', id, serverNow: now() });
 
@@ -129,9 +167,10 @@ wss.on('connection', (ws) => {
       return;
     }
     switch (m.t) {
-      case 'entrar': // entrar a la sala con nombre y auto
-        p.name = String(m.name ?? p.name).slice(0, 16) || p.name;
+      case 'entrar': // entrar a la sala con nombre, auto y color
+        p.name = String(m.name ?? '').trim().slice(0, 16) || p.name;
         p.car = CARS[m.car] ? m.car : 'f1';
+        p.color = COLORS[m.color] ? m.color : null;
         p.joined = true;
         if (room.phase === 'espera') {
           startCountdown();

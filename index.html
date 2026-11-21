@@ -13,10 +13,25 @@
     <div id="loading">Cargando…</div>
 
     <section id="select" hidden>
+      <aside id="live" hidden></aside>
+      <aside id="ranking" hidden></aside>
       <h1>Elegí tu auto</h1>
       <div id="places"></div>
+      <div id="sections"></div>
       <div id="cards"></div>
-      <p class="hint">← → auto · ↑ ↓ lugar · Enter para elegir · o hacé clic · Q calidad gráfica: <b id="quality"></b></p>
+      <div id="colors"></div>
+      <p class="hint">← → auto (pasa de sección) · ↑ ↓ lugar · C color · Enter para elegir · o hacé clic · Q calidad gráfica: <b id="quality"></b></p>
+      <p class="hint me">Jugás como <b id="me-name"></b> · <button type="button" id="change-name">cambiar nombre (N)</button></p>
+    </section>
+
+    <section id="player" hidden>
+      <form id="player-form" novalidate>
+        <h1>¿Cómo te llamás?</h1>
+        <p>Tu nombre aparece en los récords y en las carreras multijugador.</p>
+        <input id="player-name" name="name" maxlength="16" autocomplete="nickname" placeholder="Tu nombre" aria-label="Tu nombre" />
+        <button type="submit">Jugar</button>
+        <p id="player-error" role="alert" hidden>Poné un nombre de 2 a 16 letras.</p>
+      </form>
     </section>
 
     <section id="hud" hidden>
@@ -29,7 +44,7 @@
         <div>Cámara: <span id="cam-mode"></span></div>
       </div>
       <div id="help">
-        W/↑ acelerar · S/↓ frenar/atrás · A/D doblar · Espacio freno de mano · R reubicar · C cámara (4 vistas) · M sonido · G fantasma · V copiloto · 1/2/3 cambiar auto · Esc menú
+        W/↑ acelerar · S/↓ frenar/atrás · A/D doblar · Espacio freno de mano · R reubicar · C cámara (4 vistas) · M sonido · G fantasma · V copiloto · 1–7 cambiar auto · Esc menú
       </div>
       <div id="fps"></div>
     </section>
@@ -48,7 +63,7 @@
     <section id="lobby" hidden>
       <h1>Sala de espera</h1>
       <div class="count" id="lobby-count"></div>
-      <label>Tu nombre <input id="lobby-name" maxlength="16" placeholder="Jugador" /></label>
+      <p class="me-name">Corrés como <b id="lobby-name"></b></p>
       <ul id="lobby-list"></ul>
       <p id="lobby-status"></p>
       <p class="hint">Esc: volver al menú</p>

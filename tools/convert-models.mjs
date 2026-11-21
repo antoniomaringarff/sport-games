@@ -17,7 +17,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { NodeIO, getBounds } from '@gltf-transform/core';
-import { transformMesh, prune, dedup, weld, simplify, textureCompress, quantize, join } from '@gltf-transform/functions';
+import { transformMesh, prune, dedup, weld, simplify, textureCompress, quantize, join, normals } from '@gltf-transform/functions';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import { MeshoptSimplifier, MeshoptEncoder, MeshoptDecoder } from 'meshoptimizer';
 import sharp from 'sharp';
@@ -48,7 +48,11 @@ for (const src of sources) {
   orient(doc, src);
   if (src.simplify && src.simplify < 1) {
     const before = countTris(doc);
+    // Con normales por cara cada triángulo queda suelto y no se puede simplificar: en las piezas sin
+    // textura se sacan normales y UV, se simplifica y las normales se vuelven a calcular.
+    if (src.rebuildNormals) stripUntexturedAttributes(doc);
     await doc.transform(weld(), simplify({ simplifier: MeshoptSimplifier, ratio: src.simplify, error: src.simplifyError ?? 0.004 }));
+    if (src.rebuildNormals) await doc.transform(normals({ overwrite: false }));
     console.log(`  simplificado: ${before} → ${countTris(doc)} triángulos`);
   }
   const wheels = extractWheels(doc, src);
@@ -157,6 +161,15 @@ function mul(a, b) {
   const o = new Array(16).fill(0);
   for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) for (let k = 0; k < 4; k++) o[j * 4 + i] += a[k * 4 + i] * b[j * 4 + k];
   return o;
+}
+
+function stripUntexturedAttributes(doc) {
+  for (const mesh of doc.getRoot().listMeshes())
+    for (const prim of mesh.listPrimitives()) {
+      const m = prim.getMaterial();
+      if (m && (m.getBaseColorTexture() || m.getNormalTexture() || m.getMetallicRoughnessTexture())) continue;
+      for (const sem of prim.listSemantics()) if (sem === 'NORMAL' || sem.startsWith('TEXCOORD_')) prim.setAttribute(sem, null);
+    }
 }
 
 function countTris(doc) {

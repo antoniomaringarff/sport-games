@@ -68,3 +68,17 @@ function serverUrl() {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
   return `${proto}://${host}:${MULTI.PORT}`;
 }
+
+/**
+ * Estado de la sala sin entrar (para el aviso del menú):
+ * { phase, players: [{ name, car, color }], endsAt, racing, max, serverNow } o null si no hay servidor.
+ */
+export async function roomStatus() {
+  const url = serverUrl().replace(/^ws/, 'http').replace(/\/$/, '');
+  try {
+    const res = await fetch(`${url}/sala`, { cache: 'no-store' });
+    return res.ok ? await res.json() : null;
+  } catch {
+    return null;
+  }
+}

@@ -1,6 +1,6 @@
 // Arranque del juego: renderer, lugares (mundos), elección de auto y bucle principal.
 import * as THREE from 'three';
-import { CARS, PHYSICS, LIGHT, WALL, GRAPHICS } from './config.js';
+import { CARS, CAR_IDS, PHYSICS, LIGHT, WALL, GRAPHICS } from './config.js';
 import { createSparks } from './world/sparks.js';
 import { createTireFx } from './world/tireFx.js';
 import { createRenderPipeline, prepareMaterials, cycleQuality, QUALITY, createDynamicResolution } from './core/graphics.js';
@@ -21,6 +21,11 @@ import { loadCarAssets, carAsset, physicsProfile } from './modes/driving/carAsse
 import { createShowroom } from './modes/driving/showroom.js';
 import { createRace } from './modes/race/race.js';
 import { createMulti } from './modes/race/multi.js';
+import { carColor, colorAvoiding } from './modes/driving/colors.js';
+import { askName } from './modes/driving/playerForm.js';
+import { createRanking } from './modes/driving/ranking.js';
+import { createLiveRoom } from './modes/driving/liveRoom.js';
+import { playerName, registerPlayer } from './net/player.js';
 
 // ---------- Render ----------
 const canvas = document.getElementById('game');
@@ -99,6 +104,7 @@ let placeId = load(LAST_PLACE_KEY, (v) => PLACES[v], 'monaco');
 let world = null;
 let vehicle = null;
 let model = null;
+let myColor = null; // color con el que salió el auto propio
 const prev = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
 const curr = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
 
@@ -172,12 +178,13 @@ function removeCar() {
   vehicle = null;
 }
 
-function spawnCar(id, at) {
+function spawnCar(id, at, color = carColor(id)) {
   removeCar();
   carId = id;
+  myColor = color;
   const profile = physicsProfile(id);
   vehicle = new Vehicle(world.physics, profile, at);
-  model = createCarModel(id, profile, vehicle, carAsset(id));
+  model = createCarModel(id, profile, vehicle, carAsset(id), color);
   carSound?.dispose();
   carSound = new CarSound(profile);
   world.scene.add(model.group);
@@ -219,65 +226,88 @@ const showroom = createShowroom(renderer);
 const loadingEl = document.getElementById('loading');
 let state = 'loading';
 
+const ranking = createRanking();
+// lugar del menú → récords de qué mundo (el multijugador es la vuelta de Mónaco)
+const RANKING_OF = { monaco: 'monaco', multi: 'monaco', rally: 'rally', condor: 'condor' };
+
 const select = createCarSelect({
   places: PLACES,
   onHighlight(id) {
-    showroom.show(id);
+    showroom.show(id, carColor(id));
   },
-  async onChoose(id, place) {
-    select.close();
-    state = 'loading';
-    const P = PLACES[place];
-    const changedPlace = P.world !== PLACES[placeId]?.world || !world;
-    world?.multi?.leave();
-    document.body.classList.toggle('multi', !!P.multi);
-    if (changedPlace) {
-      loadingEl.textContent = `Cargando ${PLACES[place].name}…`;
-      loadingEl.hidden = false;
-      await new Promise((r) => setTimeout(r, 30)); // dejar que se vea el cartel
-      removeCar();
-      removeGhost();
-      if (world?.race) world.race.show(false);
-      world = await getWorld(P.world);
-      placeId = place;
-      loadingEl.hidden = true;
-    }
-    if (P.multi) {
-      // multijugador: sala de espera y después la grilla con los demás y los bots
-      removeGhost();
-      spawnCar(id, world.gridSpot(0));
-      world.race.show(true);
-      world.multi ??= createMulti(world, {
-        vehicle: () => vehicle,
-        carId: () => carId,
-        teleport(spot) {
-          vehicle.teleport(spot);
-          syncTransforms();
-        },
-      });
-      world.multi.enter();
-    } else if (world.race) {
-      // carrera: siempre se arranca desde la grilla
-      spawnCar(id, world.spawn);
-      world.race.show(true);
-      world.race.start(id);
-      makeGhost(id);
-    } else if (!vehicle || changedPlace) {
-      spawnCar(id, world.spawn);
-    } else if (id !== carId) {
-      spawnCar(id, currentSpot());
-    }
-    renderer.toneMappingExposure = world.sky.exposure;
-    save(LAST_CAR_KEY, id);
-    save(LAST_PLACE_KEY, place);
-    hud.show(true);
-    dynRes.reset();
-    carSound?.setActive(true);
-    state = 'driving';
-    chase.snap();
-    clearPressed();
+  onPlace(place) {
+    ranking.show(RANKING_OF[place]);
+  },
+  onChoose(id, place) {
+    play(id, place);
   },
 });
+
+/** Sumarse desde el aviso del menú: con el auto del primero que entró y un color que no esté repetido. */
+const liveRoom = createLiveRoom({
+  onJoin(status) {
+    const car = status.players[0].car;
+    const taken = status.players.filter((p) => p.car === car).map((p) => p.color);
+    play(CARS[car] ? car : 'f1', 'multi', colorAvoiding(car, taken));
+  },
+});
+
+/** Arrancar a jugar con un auto en un lugar. color: para forzar uno (si no, el del auto). */
+async function play(id, place, color = carColor(id)) {
+  select.close();
+  liveRoom.stop();
+  state = 'loading';
+  const P = PLACES[place];
+  const changedPlace = P.world !== PLACES[placeId]?.world || !world;
+  world?.multi?.leave();
+  document.body.classList.toggle('multi', !!P.multi);
+  if (changedPlace) {
+    loadingEl.textContent = `Cargando ${PLACES[place].name}…`;
+    loadingEl.hidden = false;
+    await new Promise((r) => setTimeout(r, 30)); // dejar que se vea el cartel
+    removeCar();
+    removeGhost();
+    if (world?.race) world.race.show(false);
+    world = await getWorld(P.world);
+    placeId = place;
+    loadingEl.hidden = true;
+  }
+  if (P.multi) {
+    // multijugador: sala de espera y después la grilla con los demás y los bots
+    removeGhost();
+    spawnCar(id, world.gridSpot(0), color);
+    world.race.show(true);
+    world.multi ??= createMulti(world, {
+      vehicle: () => vehicle,
+      carId: () => carId,
+      color: () => myColor,
+      teleport(spot) {
+        vehicle.teleport(spot);
+        syncTransforms();
+      },
+    });
+    world.multi.enter();
+  } else if (world.race) {
+    // carrera: siempre se arranca desde la grilla
+    spawnCar(id, world.spawn, color);
+    world.race.show(true);
+    world.race.start(id);
+    makeGhost(id);
+  } else if (!vehicle || changedPlace) {
+    spawnCar(id, world.spawn, color);
+  } else if (id !== carId || color !== myColor) {
+    spawnCar(id, currentSpot(), color);
+  }
+  renderer.toneMappingExposure = world.sky.exposure;
+  save(LAST_CAR_KEY, id);
+  save(LAST_PLACE_KEY, place);
+  hud.show(true);
+  dynRes.reset();
+  carSound?.setActive(true);
+  state = 'driving';
+  chase.snap();
+  clearPressed();
+}
 
 function openMenu() {
   state = 'menu';
@@ -287,7 +317,19 @@ function openMenu() {
   hud.show(false);
   world?.race?.show(false);
   renderer.toneMappingExposure = 0.75;
+  meName.textContent = playerName() ?? '';
   select.open(carId, placeId);
+  liveRoom.start();
+}
+
+/** N en el menú: cambiar el nombre. */
+async function changeName() {
+  state = 'name';
+  select.close();
+  liveRoom.stop();
+  await askName();
+  clearPressed();
+  openMenu();
 }
 
 /** Lugar actual del auto (para cambiar de auto sin moverse). */
@@ -297,9 +339,18 @@ function currentSpot() {
 }
 
 document.getElementById('quality').textContent = QUALITY;
+const meName = document.getElementById('me-name');
+document.getElementById('change-name').addEventListener('click', changeName);
 loadingEl.textContent = 'Cargando autos…';
 await loadCarAssets((f) => (loadingEl.textContent = `Cargando autos… ${Math.round(f * 100)}%`));
 loadingEl.hidden = true;
+// sin nombre no se juega; si ya hay, se anota la visita (IP y ciudad)
+if (playerName()) registerPlayer();
+else {
+  state = 'name';
+  await askName();
+  clearPressed();
+}
 openMenu();
 
 // ---------- Bucle principal ----------
@@ -401,11 +452,11 @@ function handleKeys() {
     if (justPressed('ArrowRight', 'KeyD', 'Pad15')) select.move(1);
     if (justPressed('ArrowUp', 'ArrowDown', 'KeyW', 'KeyS', 'Tab', 'Pad12', 'Pad13')) select.nextPlace();
     if (justPressed('Enter', 'Space', 'Pad0')) select.choose();
-    if (justPressed('Digit1')) select.pick(0);
-    if (justPressed('Digit2')) select.pick(1);
-    if (justPressed('Digit3')) select.pick(2);
-    if (justPressed('Digit4')) select.pick(3);
+    CAR_IDS.forEach((_, i) => justPressed(`Digit${i + 1}`) && select.pick(i));
     if (justPressed('KeyQ')) cycleQuality();
+    if (justPressed('KeyC')) select.nextColor();
+    if (justPressed('KeyJ')) liveRoom.join();
+    if (justPressed('KeyN')) changeName();
     return;
   }
   if (state !== 'driving') return;
@@ -432,7 +483,7 @@ function handleKeys() {
   if (justPressed('KeyM')) toggleMute();
   if (justPressed('KeyG')) ghostOn = !ghostOn;
   if (justPressed('KeyV')) toggleCodriverVoice();
-  const ids = Object.keys(CARS);
+  const ids = CAR_IDS;
   for (let i = 0; i < ids.length; i++) {
     if (!world.multi?.active && justPressed(`Digit${i + 1}`) && ids[i] !== carId) {
       // cambiar de auto en el mismo lugar (para comparar)

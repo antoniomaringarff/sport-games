@@ -5,6 +5,7 @@ import { createCodriver } from './codriver.js';
 import { createMinimap } from './minimap.js';
 import { beep } from '../../core/audio.js';
 import { rotateVec } from '../driving/vehicle.js';
+import { submitRecord } from '../../net/player.js';
 
 const PENALTY = 5; // segundos por reubicar con R
 const fmt = (t) => {
@@ -163,6 +164,7 @@ export function createRally(track, finishIdx, place = 'rally') {
           finishTime = elapsed;
           last = finishTime;
           phase = 'fin';
+          submitRecord({ place, car: carId, time: finishTime, sectors: [...splitTimes] });
           if (best == null || finishTime < best) {
             best = finishTime;
             bestSplits = [...splitTimes];

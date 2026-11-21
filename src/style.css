@@ -100,7 +100,164 @@ html, body {
   background: linear-gradient(90deg, var(--accent) calc(var(--v) * 20%), rgba(255, 255, 255, 0.15) 0);
 }
 .hint { margin: 14px 0 0; opacity: 0.75; font-size: 14px; }
+.hint.me { margin-top: 6px; }
+.hint.me button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
 .card .record { margin-top: 8px; font-size: 12px; opacity: 0.8; font-variant-numeric: tabular-nums; }
+
+/* ---------- Color del auto ---------- */
+#colors {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+#colors::after {
+  content: attr(data-label);
+  flex-basis: 100%;
+  font-size: 13px;
+  opacity: 0.8;
+}
+.swatch {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  background: var(--c, transparent);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.12s, border-color 0.12s;
+}
+.swatch:hover { transform: scale(1.12); }
+.swatch.original { background: conic-gradient(#ff6a13, #9aa3ad, #1d3fbf, #ff6a13); }
+.swatch.random { background: var(--panel); }
+.swatch.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.swatch.rolled { border: 2px dashed var(--accent); }
+
+/* ---------- Récords online ---------- */
+#ranking {
+  position: fixed;
+  left: 20px;
+  top: 18px;
+  width: 270px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--panel);
+  text-align: left;
+  font-size: 13px;
+}
+#ranking h2 { margin: 0 0 8px; font-size: 15px; }
+#ranking ol { margin: 0; padding-left: 22px; }
+#ranking li { display: flex; gap: 6px; padding: 2px 0; }
+#ranking li b { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#ranking li span { opacity: 0.65; font-size: 12px; }
+#ranking li em { font-style: normal; font-weight: 700; font-variant-numeric: tabular-nums; }
+#ranking li.me { color: var(--accent); }
+#ranking p { margin: 0; opacity: 0.8; }
+
+/* ---------- Aviso: carrera multijugador por arrancar ---------- */
+#live {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: min(560px, calc(100vw - 32px));
+  padding: 12px 14px 12px 16px;
+  border: 2px solid var(--accent);
+  border-radius: 14px;
+  background: rgba(10, 16, 26, 0.9);
+  text-align: left;
+  font-size: 13px;
+}
+#live.pop { animation: live-pop 0.5s ease-out; }
+@keyframes live-pop {
+  from { transform: translate(-50%, -16px); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
+}
+.live-dot {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ff3b3b;
+  animation: live-blink 1s infinite;
+}
+@keyframes live-blink { 50% { opacity: 0.25; } }
+.live-text { display: grid; gap: 2px; }
+.live-text > b { font-size: 15px; }
+.live-text span { opacity: 0.9; }
+#live button {
+  flex: none;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #1a1400;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+#live kbd { margin-left: 4px; padding: 0 5px; border-radius: 4px; background: rgba(0, 0, 0, 0.15); font: inherit; font-size: 11px; }
+@media (prefers-reduced-motion: reduce) {
+  #live.pop, .live-dot { animation: none; }
+}
+
+/* ---------- Nombre del jugador ---------- */
+#player {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 12, 20, 0.75);
+}
+#player form {
+  width: min(380px, calc(100vw - 32px));
+  padding: 24px 22px;
+  border-radius: 16px;
+  background: rgba(10, 16, 26, 0.95);
+  text-align: center;
+}
+#player h1 { margin: 0 0 6px; font-size: 26px; }
+#player p { margin: 0 0 14px; font-size: 14px; opacity: 0.85; }
+#player input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink);
+  font: inherit;
+  font-size: 18px;
+}
+#player input:focus { outline: none; border-color: var(--accent); }
+#player button {
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #1a1400;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 800;
+  cursor: pointer;
+}
+#player-error { margin: 10px 0 0 !important; color: #ffb347; opacity: 1 !important; }
 
 /* ---------- HUD ---------- */
 #hud { position: fixed; inset: 0; pointer-events: none; }
@@ -144,6 +301,9 @@ html, body {
   #help { display: none; }
   .card { width: 100%; }
 }
+@media (max-width: 1100px), (max-height: 700px) {
+  #ranking { display: none; }
+}
 
 /* ---------- Lugar ---------- */
 #places {
@@ -164,6 +324,31 @@ html, body {
   cursor: pointer;
 }
 .place.active { border-color: var(--accent); color: var(--accent); }
+
+/* Secciones de autos: pestañas, para no confundirlas con los lugares */
+#sections {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.section {
+  padding: 6px 14px 8px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  opacity: 0.6;
+  cursor: pointer;
+  transition: opacity 0.15s, border-color 0.15s;
+}
+.section small { font-size: 12px; font-weight: 600; opacity: 0.7; }
+.section:hover { opacity: 0.9; }
+.section.active { opacity: 1; border-bottom-color: var(--accent); color: var(--accent); }
 
 /* ---------- Carrera ---------- */
 #race {
@@ -283,15 +468,15 @@ html, body {
 }
 #lobby h1, #results h1 { margin: 0 0 6px; font-size: 26px; }
 #lobby .count { font-size: 54px; font-weight: 900; color: var(--accent); line-height: 1.1; min-height: 1em; }
-#lobby label { display: block; margin: 8px 0 12px; font-size: 14px; opacity: 0.9; }
-#lobby input {
-  margin-left: 8px;
-  padding: 6px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--ink);
-  font: inherit;
+#lobby .me-name { margin: 8px 0 12px; font-size: 14px; opacity: 0.9; }
+#lobby .dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--c);
+  vertical-align: 0;
 }
 #lobby ul, #results ol { list-style: none; margin: 0; padding: 0; text-align: left; }
 #lobby li, #results li {

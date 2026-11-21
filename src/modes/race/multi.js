@@ -1,6 +1,7 @@
 // Multijugador: sala de espera, grilla, bots, autos de los demás, posiciones y resultados.
-import { MULTI, CARS } from '../../config.js';
+import { MULTI, CARS, COLORS } from '../../config.js';
 import { connect } from '../../net/net.js';
+import { playerName } from '../../net/player.js';
 import { Vehicle } from '../driving/vehicle.js';
 import { createCarModel } from '../driving/carModel.js';
 import { carAsset, physicsProfile } from '../driving/carAssets.js';
@@ -8,7 +9,6 @@ import { BotDriver } from './ai.js';
 import { RemoteCar, nameTag } from './remoteCar.js';
 
 const $ = (id) => document.getElementById(id);
-const NAME_KEY = 'sport-games:nombre';
 const fmt = (t) => {
   if (t == null) return '—';
   const m = Math.floor(t / 60), s = t - m * 60;
@@ -17,7 +17,7 @@ const fmt = (t) => {
 
 /**
  * world: el mundo de Mónaco (physics, scene, track, gridSpot)
- * me: { vehicle(), carId(), teleport(spot) } para manejar el auto propio
+ * me: { vehicle(), carId(), color(), teleport(spot) } para manejar el auto propio
  */
 export function createMulti(world, me) {
   const ui = {
@@ -42,17 +42,10 @@ export function createMulti(world, me) {
   let goAtServer = 0;
   let raceLaps = MULTI.LAPS;
 
-  ui.name.value = loadName();
-  ui.name.addEventListener('input', () => {
-    saveName(ui.name.value);
-    net?.send({ t: 'nombre', name: ui.name.value });
-  });
-  // que escribir el nombre no maneje el auto
-  ui.name.addEventListener('keydown', (e) => e.stopPropagation());
-
   function enter() {
     active = true;
     phase = 'sala';
+    ui.name.textContent = playerName() ?? '';
     showLobby(true);
     ui.status.textContent = 'Conectando…';
     ui.list.innerHTML = '';
@@ -87,7 +80,7 @@ export function createMulti(world, me) {
   }
 
   function join() {
-    net.send({ t: 'entrar', name: ui.name.value || 'Jugador', car: me.carId() });
+    net.send({ t: 'entrar', name: playerName(), car: me.carId(), color: me.color() });
   }
 
   function onLobby(m) {
@@ -95,7 +88,7 @@ export function createMulti(world, me) {
     hostId = m.host;
     if (phase !== 'sala') return;
     ui.list.innerHTML = m.players
-      .map((p) => `<li class="${p.id === net.id ? 'me' : ''}"><b>${esc(p.name)}</b><span>${CARS[p.car]?.name ?? p.car}</span></li>`)
+      .map((p) => `<li class="${p.id === net.id ? 'me' : ''}"><b>${colorDot(p.color)}${esc(p.name)}</b><span>${CARS[p.car]?.name ?? p.car}</span></li>`)
       .join('');
     const bots = Math.max(0, m.grid - m.players.length);
     ui.status.textContent = m.phase === 'carrera'
@@ -132,7 +125,7 @@ export function createMulti(world, me) {
   function addBot(g) {
     const profile = physicsProfile(g.car);
     const vehicle = new Vehicle(world.physics, profile, world.gridSpot(g.slot));
-    const model = createCarModel(g.car, profile, vehicle, carAsset(g.car));
+    const model = createCarModel(g.car, profile, vehicle, carAsset(g.car), g.color);
     const tag = nameTag(g.name, '#9fd8ff');
     tag.position.y = profile.HEIGHT / 2 + 1.4;
     model.group.add(tag);
@@ -289,17 +282,9 @@ function pack(v) {
   const r = (x, d = 100) => Math.round(x * d) / d;
   return [r(t.x), r(t.y), r(t.z), r(q.x, 1e4), r(q.y, 1e4), r(q.z, 1e4), r(q.w, 1e4), r(v.speed, 10), r(v.steer, 100)];
 }
-function loadName() {
-  try {
-    return localStorage.getItem(NAME_KEY) || '';
-  } catch {
-    return '';
-  }
-}
-function saveName(n) {
-  try {
-    localStorage.setItem(NAME_KEY, n.slice(0, 16));
-  } catch {}
+function colorDot(color) {
+  const hex = COLORS[color]?.hex;
+  return hex == null ? '' : `<i class="dot" style="--c:#${hex.toString(16).padStart(6, '0')}"></i>`;
 }
 function esc(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);

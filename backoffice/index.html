@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Backoffice · Sport Games</title>
+    <link rel="stylesheet" href="/src/backoffice/style.css" />
+  </head>
+  <body>
+    <main id="login" hidden>
+      <form id="login-form">
+        <h1>Backoffice</h1>
+        <label>Usuario <input name="user" autocomplete="username" required /></label>
+        <label>Clave <input name="password" type="password" autocomplete="current-password" required /></label>
+        <button type="submit">Entrar</button>
+        <p id="login-error" role="alert" hidden></p>
+      </form>
+    </main>
+
+    <main id="panel" hidden>
+      <header>
+        <h1>Sport Games · Backoffice</h1>
+        <div class="actions">
+          <button type="button" id="reload">Actualizar</button>
+          <button type="button" id="logout">Salir</button>
+        </div>
+      </header>
+      <section id="summary"></section>
+      <nav id="tabs">
+        <button type="button" data-tab="players" class="active">Jugadores</button>
+        <button type="button" data-tab="records">Últimos tiempos</button>
+        <button type="button" data-tab="ranking">Ranking</button>
+        <input id="search" type="search" placeholder="Buscar nombre, IP o ciudad…" aria-label="Buscar" />
+      </nav>
+      <section id="content"></section>
+    </main>
+
+    <script type="module" src="/src/backoffice/main.js"></script>
+  </body>
+</html>

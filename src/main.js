@@ -27,6 +27,10 @@ import { askName } from './modes/driving/playerForm.js';
 import { createRanking } from './modes/driving/ranking.js';
 import { createLiveRoom } from './modes/driving/liveRoom.js';
 import { playerName, registerPlayer } from './net/player.js';
+import { buildMapa } from './world/mapa.js';
+import { createExplore } from './modes/mapa/explore.js';
+import { createShop } from './modes/mapa/shop.js';
+import { wallet, ownedIds } from './modes/mapa/wallet.js';
 
 // ---------- Render ----------
 const canvas = document.getElementById('game');
@@ -53,6 +57,7 @@ window.addEventListener('orientationchange', () => setTimeout(onResize, 300));
 // ---------- Lugares ----------
 // Cada lugar tiene su propia escena y su propio mundo de física.
 const PLACES = {
+  mapa: { name: 'Mapa grande', world: 'mapa' },
   monaco: { name: 'Mónaco – circuito', world: 'monaco' },
   multi: { name: 'Mónaco – multijugador', world: 'monaco', multi: true },
   rally: { name: 'Rally – Tête de Chien', world: 'rally' },
@@ -66,7 +71,12 @@ async function getWorld(name) {
   const physics = await createPhysics();
   const scene = new THREE.Scene();
   let w;
-  if (name === 'rally' || name === 'condor') {
+  if (name === 'mapa') {
+    const sky = createSky(scene, renderer, lightOpts(LIGHT.mapa), camera);
+    const m = buildMapa(physics, scene);
+    w = { physics, scene, sky, builder: m.builder, spawn: m.spawn, gates: m.gates, heightAt: m.heightAt, map: m, update: m.update };
+    w.explore = createExplore(m);
+  } else if (name === 'rally' || name === 'condor') {
     const sky = createSky(scene, renderer, lightOpts(LIGHT[name]), camera);
     const data = await loadRallyData(name);
     const m = buildRally(physics, scene, data);
@@ -104,7 +114,8 @@ function lightOpts(L) {
 const LAST_CAR_KEY = 'sport-games:auto';
 const LAST_PLACE_KEY = 'sport-games:lugar';
 let carId = load(LAST_CAR_KEY, (v) => CARS[v], 'f1');
-let placeId = load(LAST_PLACE_KEY, (v) => PLACES[v], 'monaco');
+let placeId = load(LAST_PLACE_KEY, (v) => PLACES[v], 'mapa');
+let returnFrom = null; // al volver al mapa: de qué lugar venís (para aparecer en su entrada)
 let world = null;
 let vehicle = null;
 let model = null;
@@ -259,6 +270,7 @@ const liveRoom = createLiveRoom({
 
 /** Arrancar a jugar con un auto en un lugar. color: para forzar uno (si no, el del auto). */
 async function play(id, place, color = carColor(id)) {
+  if (!wallet.owns(id)) id = 'f1';
   touchUi.prepare();
   select.close();
   liveRoom.stop();
@@ -274,6 +286,7 @@ async function play(id, place, color = carColor(id)) {
     removeCar();
     removeGhost();
     if (world?.race) world.race.show(false);
+    world?.explore?.show(false);
     world = await getWorld(P.world);
     placeId = place;
     loadingEl.hidden = true;
@@ -300,21 +313,74 @@ async function play(id, place, color = carColor(id)) {
     world.race.start(id);
     makeGhost(id);
   } else if (!vehicle || changedPlace) {
-    spawnCar(id, world.spawn, color);
+    // al mapa: si venís de otro lugar, aparecés en su entrada
+    const gate = world.gates?.find((g) => g.place === returnFrom);
+    spawnCar(id, gate?.back ?? world.spawn, color);
   } else if (id !== carId || color !== myColor) {
     spawnCar(id, currentSpot(), color);
   }
-  renderer.toneMappingExposure = world.sky.exposure;
+  returnFrom = null;
   save(LAST_CAR_KEY, id);
   save(LAST_PLACE_KEY, place);
   document.body.classList.toggle('race', !!world.race);
+  dynRes.reset();
+  resumeDriving();
+}
+
+/** Volver a manejar (después de cargar un lugar o de salir de la tienda). */
+function resumeDriving() {
+  renderer.toneMappingExposure = world.sky.exposure;
   hud.show(true);
   touchUi.show(true);
-  dynRes.reset();
+  world.explore?.show(true);
   carSound?.setActive(true);
   state = 'driving';
   chase.snap();
   clearPressed();
+}
+
+// ---------- Mapa grande: entradas y tienda ----------
+/** Enter cerca de un arco: a la tienda o al lugar. */
+function useGate(g) {
+  if (g.place === 'tienda') return openShop();
+  if (!wallet.owns(carId)) carId = 'f1';
+  play(carId, g.place, myColor);
+}
+
+/** B: desde cualquier lugar, volver al mapa grande (a la entrada de donde venís). */
+function backToMap() {
+  if (PLACES[placeId].world === 'mapa') return;
+  returnFrom = placeId;
+  play(carId, 'mapa', myColor);
+}
+
+const shop = createShop({
+  onHighlight: (id) => showroom.show(id, carColor(id)),
+  onUse(id) {
+    shop.close();
+    spawnCar(id, world.gates[0].back);
+    save(LAST_CAR_KEY, id);
+    resumeDriving();
+  },
+  onExit: closeShop,
+});
+
+function openShop() {
+  state = 'shop';
+  carSound?.setActive(false);
+  hud.show(false);
+  touchUi.show(false);
+  world.explore.show(false);
+  renderer.toneMappingExposure = 0.75;
+  shop.open();
+}
+
+function closeShop() {
+  shop.close();
+  // salís a la calle, delante de la tienda
+  vehicle.teleport(world.gates[0].back);
+  syncTransforms();
+  resumeDriving();
 }
 
 function openMenu() {
@@ -325,6 +391,7 @@ function openMenu() {
   hud.show(false);
   touchUi.show(false);
   world?.race?.show(false);
+  world?.explore?.show(false);
   renderer.toneMappingExposure = 0.75;
   meName.textContent = playerName() ?? '';
   select.open(carId, placeId);
@@ -384,7 +451,7 @@ function frame(now) {
 function tick(dt) {
   handleKeys();
 
-  if (state === 'menu') {
+  if (state === 'menu' || state === 'shop') {
     showroom.update(dt, renderer);
     return;
   }
@@ -424,6 +491,14 @@ function tick(dt) {
   world.builder.sync();
   world.update(dt);
   world.race?.update(dt, vehicle);
+  if (world.explore) {
+    // si te metiste al mar, volvés a la orilla
+    const back = world.explore.update(dt, vehicle, yawOf(vehicle.body.rotation()));
+    if (back) {
+      vehicle.teleport(back);
+      syncTransforms();
+    }
+  }
   world.multi?.update(dt);
   updateGhost();
 
@@ -454,7 +529,7 @@ function wallEffects(hit, dt) {
 }
 
 function render() {
-  if (state === 'menu') pipeline.render(showroom.scene, showroom.camera);
+  if (state === 'menu' || state === 'shop') pipeline.render(showroom.scene, showroom.camera);
   else if (state === 'driving' || state === 'paused') pipeline.render(world.scene, camera);
 }
 
@@ -469,6 +544,13 @@ function handleKeys() {
     if (justPressed('KeyC')) select.nextColor();
     if (justPressed('KeyJ')) liveRoom.join();
     if (justPressed('KeyN')) changeName();
+    return;
+  }
+  if (state === 'shop') {
+    if (justPressed('ArrowLeft', 'KeyA', 'Pad14')) shop.move(-1);
+    if (justPressed('ArrowRight', 'KeyD', 'Pad15')) shop.move(1);
+    if (justPressed('Enter', 'Space', 'Pad0')) shop.act();
+    if (justPressed('Escape', 'Pad1', 'Pad9')) closeShop();
     return;
   }
   if (state === 'paused') {
@@ -495,7 +577,10 @@ function handleKeys() {
     }
     syncTransforms();
   }
-  if (world.multi?.active) {
+  if (justPressed('KeyB')) return backToMap();
+  if (world.explore) {
+    if (justPressed('Enter', 'Pad0') && world.explore.near) return useGate(world.explore.near);
+  } else if (world.multi?.active) {
     if (justPressed('Enter')) world.multi.again();
   } else if (justPressed('Enter') && world.race) {
     // reiniciar la carrera desde la grilla
@@ -506,7 +591,7 @@ function handleKeys() {
   }
   if (justPressed('KeyC', 'Pad2')) chase.nextMode();
   toggleKeys();
-  const ids = CAR_IDS;
+  const ids = ownedIds(CAR_IDS);
   for (let i = 0; i < ids.length; i++) {
     if (!world.multi?.active && justPressed(`Digit${i + 1}`) && ids[i] !== carId) {
       // cambiar de auto en el mismo lugar (para comparar)

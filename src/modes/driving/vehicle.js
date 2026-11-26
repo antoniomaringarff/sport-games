@@ -171,7 +171,7 @@ export class Vehicle {
     let onGround = 0;
     const counts = {};
     for (let i = 0; i < 4; i++) {
-      const s = this.physics.surfaceOf(ctrl.wheelGroundObject(i)) ?? this.wheelSurface[i];
+      const s = this.physics.surfaceOf(ctrl.wheelGroundObject(i), ctrl.wheelContactPoint(i)) ?? this.wheelSurface[i];
       this.wheelSurface[i] = s;
       const surf = SURFACES[s] ?? SURFACES.asfalto;
       const off = p.OFFROAD[s] ?? 1;

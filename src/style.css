@@ -834,3 +834,105 @@ body.touch .card .key { display: none; }
 @media (prefers-reduced-motion: reduce) {
   body.touch #rotate span { animation: none; }
 }
+
+/* ---------- Mapa grande ---------- */
+#coins {
+  position: absolute;
+  left: 20px;
+  top: 128px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: var(--panel);
+  font-size: 18px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+/* en el celular (o pantalla chica) solo en el mapa, abajo de los botones de arriba */
+body.touch #coins { top: calc(max(10px, env(safe-area-inset-top)) + 56px); left: max(12px, env(safe-area-inset-left)); }
+body.touch:not(.mapa) #coins { display: none; }
+@media (max-width: 700px) {
+  #coins { top: 12px; left: 50%; transform: translateX(-50%); }
+  body:not(.mapa) #coins { display: none; }
+}
+#coins em { font-style: normal; color: #5ee07a; opacity: 0; transition: opacity 0.3s; }
+#coins em.show { opacity: 1; transition: none; }
+#map-mini {
+  display: none;
+  position: fixed;
+  right: 20px;
+  top: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+  pointer-events: none;
+}
+body.mapa #map-mini { display: block; }
+body.mapa .no-mapa, body:not(.mapa) .mapa-only { display: none; }
+#map-prompt {
+  position: fixed;
+  left: 50%;
+  bottom: 28%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 26px;
+  border: 3px solid var(--accent);
+  border-radius: 16px;
+  background: rgba(12, 18, 28, 0.8);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  animation: prompt-pulse 1.2s ease-in-out infinite;
+}
+#map-prompt b { font-size: 22px; }
+#map-prompt small { opacity: 0.75; font-size: 13px; }
+@keyframes prompt-pulse { 50% { transform: translateX(-50%) scale(1.05); } }
+
+#shop {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 20px 16px 24px;
+  background: linear-gradient(transparent, rgba(8, 12, 20, 0.88) 30%);
+  text-align: center;
+}
+#shop header { display: flex; justify-content: center; align-items: baseline; gap: 24px; margin-bottom: 14px; }
+#shop h1 { margin: 0; font-size: clamp(24px, 4vw, 38px); text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5); }
+#shop .wallet { font-size: 26px; font-weight: 800; color: var(--accent); }
+#shop-cards { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.shop-card { width: 190px; cursor: default; }
+.shop-card .buy {
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #1a1a1a;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.shop-card .buy:disabled { background: rgba(255, 255, 255, 0.2); color: rgba(255, 255, 255, 0.6); cursor: not-allowed; }
+.shop-card.owned .buy { background: #5ee07a; }
+#shop-msg { margin: 12px auto 0; font-size: 17px; font-weight: 700; color: var(--accent); }
+#shop-exit {
+  margin-left: 12px;
+  padding: 6px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+/* autos del menú que todavía no compraste */
+.card.locked { opacity: 0.55; }
+.card.locked h2::after { content: ' 🔒'; }
+.card .price { margin-top: 8px; font-size: 13px; font-weight: 700; color: var(--accent); }
+body.touch #shop-cards { flex-wrap: nowrap; overflow-x: auto; justify-content: safe center; }
+body.touch .shop-card { flex: none; width: 160px; }
+body.touch #shop .stat { display: none; }
+body.touch #map-mini { width: 120px !important; height: 120px !important; top: 12px; right: 12px; }

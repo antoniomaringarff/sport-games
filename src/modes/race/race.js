@@ -1,5 +1,6 @@
 // Modo carrera: semáforo de largada, vueltas, sectores, mejor vuelta y "contramano".
-import { CARS, COPILOT } from '../../config.js';
+import { CARS, COPILOT, MAPA } from '../../config.js';
+import { wallet } from '../mapa/wallet.js';
 import { createCodriver } from './codriver.js';
 import { createMinimap } from './minimap.js';
 import { beep } from '../../core/audio.js';
@@ -219,12 +220,15 @@ export function createRace(track, place) {
           phase = 'fin';
           say(`¡LLEGASTE! ${fmt(finishTime)}`, 3);
           onFinish?.(finishTime);
+          wallet.add(MAPA.REWARD_RACE);
         }
         const lapTime = clock - lapStart;
         if (validLap && passed.size === 2) {
           sectorTimes[2] = clock - sectorStart;
           last = lapTime;
           submitRecord({ place, car: carId, time: lapTime, sectors: [...sectorTimes] });
+          // premio en monedas (para la tienda del mapa)
+          if (!laps) wallet.add(MAPA.REWARD_LAP + (best == null || lapTime < best ? MAPA.REWARD_RECORD : 0));
           if (best == null || lapTime < best) {
             best = lapTime;
             bestSectors = [...sectorTimes];

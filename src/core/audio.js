@@ -76,6 +76,26 @@ export function beep(freq = 660, dur = 0.16, vol = 0.25) {
   o.stop(t + dur + 0.02);
 }
 
+/** "Cling" de moneda: dos notas que suben (la grande, un acorde más largo). */
+export function coinSound(big = false) {
+  if (!ctx) return;
+  const t = ctx.currentTime;
+  const notes = big ? [988, 1319, 1568, 1976] : [988, 1319];
+  notes.forEach((f, i) => {
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'triangle';
+    o.frequency.value = f;
+    const t0 = t + i * 0.07;
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(0.22, t0 + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + (big ? 0.5 : 0.25));
+    o.connect(g).connect(dry);
+    o.start(t0);
+    o.stop(t0 + 0.6);
+  });
+}
+
 /** Golpe contra algo: strength en m/s. */
 export function impactSound(strength) {
   if (!ctx || strength < 1.5) return;

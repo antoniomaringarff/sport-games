@@ -1,6 +1,7 @@
 // HUD (velocímetro) y pantalla de elección de auto. HTML encima del canvas.
 import { CARS, CAR_IDS, SECTIONS, SURFACES, COLORS } from '../../config.js';
 import { carColor, savedColor, chooseColor } from './colors.js';
+import { wallet } from '../mapa/wallet.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -15,6 +16,22 @@ export function createHud() {
     fps: $('fps'),
   };
   let fpsAcc = 0, fpsFrames = 0, hudT = 0, worst = 0;
+  // monedas: el número y un "+10" que aparece un ratito
+  const coinsN = $('coins-n'), coinsGain = $('coins-gain');
+  let gainSum = 0, gainTimer = null;
+  coinsN.textContent = wallet.coins;
+  wallet.onChange((coins, gain) => {
+    coinsN.textContent = coins;
+    if (gain <= 0) return;
+    gainSum += gain;
+    coinsGain.textContent = `+${gainSum}`;
+    coinsGain.classList.add('show');
+    clearTimeout(gainTimer);
+    gainTimer = setTimeout(() => {
+      coinsGain.classList.remove('show');
+      gainSum = 0;
+    }, 1200);
+  });
   const last = new Map();
   // tocar el texto de la página obliga al navegador a recalcular: solo si cambió
   const set = (node, v) => {
@@ -104,7 +121,8 @@ export function createCarSelect({ places, onHighlight, onChoose, onPlace = () =>
       ${Object.entries(c.stats)
         .map(([k, v]) => `<div class="stat"><span>${k}</span><i style="--v:${v}"></i></div>`)
         .join('')}
-      <div class="record" data-record></div>`;
+      <div class="record" data-record></div>
+      <div class="price" data-price hidden></div>`;
     card.addEventListener('pointerenter', (e) => e.pointerType === 'mouse' && set(i));
     // con el dedo, el primer toque marca el auto (se ve en el showroom) y el segundo lo elige
     let tapByTouch = false, wasActive = false;
@@ -191,7 +209,19 @@ export function createCarSelect({ places, onHighlight, onChoose, onPlace = () =>
     onPlace(place);
   }
   function choose() {
+    // los de la tienda se compran en el mapa
+    if (!wallet.owns(ids[index])) return;
     onChoose(ids[index], place);
+  }
+  /** Candado y precio en los autos que todavía no compraste. */
+  function renderLocks() {
+    [...list.children].forEach((card, k) => {
+      const locked = !wallet.owns(ids[k]);
+      card.classList.toggle('locked', locked);
+      const p = card.querySelector('[data-price]');
+      p.hidden = !locked;
+      if (locked) p.textContent = `🪙 ${CARS[ids[k]].price} · se compra en la tienda del mapa`;
+    });
   }
 
   return {
@@ -205,6 +235,7 @@ export function createCarSelect({ places, onHighlight, onChoose, onPlace = () =>
         const t = bestLap('monaco', ids[k]);
         card.querySelector('[data-record]').textContent = t ? `🏁 Récord Mónaco: ${fmtLap(t)}` : '🏁 Sin vueltas en Mónaco';
       });
+      renderLocks();
       setPlace(places[currentPlace] ? currentPlace : placeIds[0]);
       set(Math.max(0, ids.indexOf(currentId)));
     },

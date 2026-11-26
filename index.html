@@ -59,8 +59,9 @@
         <div>Piso: <span id="surface"></span></div>
         <div>Cámara: <span id="cam-mode"></span></div>
       </div>
+      <div id="coins">🪙 <b id="coins-n">0</b> <em id="coins-gain"></em></div>
       <div id="help">
-        W/↑ acelerar · S/↓ frenar/atrás · A/D doblar · Espacio freno de mano · R reubicar · C cámara (4 vistas) · M sonido · G fantasma · V copiloto · 1–7 cambiar auto · Esc menú
+        W/↑ acelerar · S/↓ frenar/atrás · A/D doblar · Espacio freno de mano · R reubicar · C cámara (4 vistas) · M sonido · G fantasma · V copiloto · 1–9 cambiar auto · <span class="mapa-only">Enter entrar</span><span class="no-mapa">B volver al mapa</span> · Esc menú
       </div>
       <div id="fps"></div>
     </section>
@@ -120,6 +121,7 @@
         <button type="button" id="t-pause" aria-label="Pausa">❚❚</button>
         <button type="button" data-key="KeyC" aria-label="Cambiar cámara">🎥</button>
         <button type="button" data-key="KeyR" aria-label="Volver a la pista">↺</button>
+        <button type="button" class="no-mapa" data-key="KeyB" aria-label="Volver al mapa">🗺</button>
       </div>
     </section>
     <section id="pause" hidden>
@@ -137,6 +139,18 @@
       </div>
     </section>
     <div id="rotate">Girá el teléfono para jugar <span aria-hidden="true">↻</span></div>
+    <button type="button" id="map-prompt" data-key="Enter" hidden></button>
+    <canvas id="map-mini"></canvas>
+    <section id="shop" hidden>
+      <header>
+        <h1>Tienda de autos</h1>
+        <div class="wallet">🪙 <b id="shop-coins">0</b></div>
+      </header>
+      <div id="shop-cards"></div>
+      <p id="shop-msg" hidden></p>
+      <p class="hint">← → elegir · Enter comprar / manejar · Esc salir
+        <button type="button" id="shop-exit">Salir de la tienda</button></p>
+    </section>
     <div id="credits">Mapa © OpenStreetMap contributors · Modelos Kenney (CC0)</div>
 
     <script type="module" src="/src/main.js"></script>

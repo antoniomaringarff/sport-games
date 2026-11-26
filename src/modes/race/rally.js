@@ -1,6 +1,7 @@
 // Modo rally: etapa de punta a punta con cuenta regresiva, parciales, llegada, récord y fantasma.
 // Usa el mismo panel que la carrera de Mónaco y la misma forma de hablar con main.js.
-import { CARS, COPILOT } from '../../config.js';
+import { CARS, COPILOT, MAPA } from '../../config.js';
+import { wallet } from '../mapa/wallet.js';
 import { createCodriver } from './codriver.js';
 import { createMinimap } from './minimap.js';
 import { beep } from '../../core/audio.js';
@@ -165,6 +166,7 @@ export function createRally(track, finishIdx, place = 'rally') {
           last = finishTime;
           phase = 'fin';
           submitRecord({ place, car: carId, time: finishTime, sectors: [...splitTimes] });
+          wallet.add(MAPA.REWARD_STAGE + (best == null || finishTime < best ? MAPA.REWARD_RECORD : 0));
           if (best == null || finishTime < best) {
             best = finishTime;
             bestSplits = [...splitTimes];

@@ -13,6 +13,8 @@ export async function createPhysics() {
   const surfaces = new Map();
   // paredes y guardrails: el auto las "raspa" en vez de rebotar (ver vehicle.js)
   const walls = new Set();
+  // pisos grandes (el terreno del mapa) cuya superficie depende de dónde se pisa: handle -> fn(x, z)
+  const zoned = new Map();
 
   return {
     RAPIER,
@@ -21,14 +23,20 @@ export async function createPhysics() {
     setSurface(collider, surface) {
       surfaces.set(collider.handle, surface);
     },
+    /** La superficie de este collider depende del lugar: fn(x, z) -> 'arena', 'pasto', ... */
+    setSurfaceZones(collider, fn) {
+      zoned.set(collider.handle, fn);
+    },
     markWall(collider) {
       walls.add(collider.handle);
     },
     isWall(collider) {
       return walls.has(collider.handle);
     },
-    surfaceOf(collider) {
+    surfaceOf(collider, point = null) {
       if (!collider) return null;
+      const fn = point && zoned.get(collider.handle);
+      if (fn) return fn(point.x, point.z);
       return surfaces.get(collider.handle) ?? 'asfalto';
     },
     step() {

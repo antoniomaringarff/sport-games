@@ -29,6 +29,7 @@ export const SECTIONS = {
   rally:       'Rally',
   todoterreno: 'Todo terreno',
   altagama:    'Alta gama',
+  tienda:      'De la tienda',
 };
 
 // ---------- Los autos ----------
@@ -278,6 +279,124 @@ export const CARS = {
     SOUND: { IDLE_RPM: 1000, MAX_RPM: 9200, GEARS: 7, PULSES: 6, GRIT: 0.3, BRIGHT: 0.95, VOLUME: 0.95 },
     stats: { velocidad: 5, agarre: 4, todoterreno: 1 },
   },
+
+  // ---------- Autos de la tienda del mapa (inventados) ----------
+  // price: cuántas monedas cuesta. shape: qué forma de cajitas tiene (carModel.js).
+  // Sin price = viene de regalo.
+  furgo: {
+    name: 'Furgo Reparto',
+    section: 'tienda', shape: 'van', price: 150,
+    color: 0xf2f2f2,
+    MASS: 2000,                // alta y pesada: cuidado en las curvas que vuelca
+    LENGTH: 5.0, WIDTH: 2.0, HEIGHT: 2.2,
+    WHEEL_RADIUS: 0.38, WHEELBASE: 3.1, TRACK: 1.72,
+    RIDE_HEIGHT: 0.22, CENTER_OF_MASS_Y: -0.55,
+    DRIVE: 'front',
+    ENGINE_FORCE: 7500, TOP_SPEED: 145, REVERSE_SPEED: 30,
+    BRAKE: 11, HANDBRAKE: 7,
+    MAX_STEER: 0.55, STEER_AT_SPEED: 0.16, STEER_SPEED: 2.6,
+    GRIP: 0.95, SIDE_GRIP: 0.9, REAR_GRIP_HANDBRAKE: 0.35,
+    DOWNFORCE: 0, AERO_DRAG: 0.0007,
+    SUSPENSION_STIFFNESS: 26, SUSPENSION_DAMPING: 3.2, SUSPENSION_TRAVEL: 0.2, ANTI_ROLL: 0.45,
+    OFFROAD: { asfalto: 1, adoquin: 1, tierra: 0.9, ripio: 0.85, arena: 0.7, nieve: 0.8, pasto: 0.9 },
+    SOUND: { IDLE_RPM: 800, MAX_RPM: 5000, GEARS: 5, PULSES: 4, GRIT: 0.6, BRIGHT: 0.4, VOLUME: 0.85 },
+    stats: { velocidad: 1, agarre: 2, todoterreno: 2 },
+  },
+  kart: {
+    name: 'Kart Pulga',
+    section: 'tienda', shape: 'kart', price: 300,
+    color: 0x1f9e4a,
+    MASS: 420,                 // chiquito: dobla en cualquier lado
+    LENGTH: 2.4, WIDTH: 1.5, HEIGHT: 0.5,
+    WHEEL_RADIUS: 0.25, WHEELBASE: 1.6, TRACK: 1.3,
+    RIDE_HEIGHT: 0.05, CENTER_OF_MASS_Y: -0.2,
+    DRIVE: 'rear',
+    ENGINE_FORCE: 3600, TOP_SPEED: 125, REVERSE_SPEED: 20,
+    BRAKE: 16, HANDBRAKE: 8,
+    MAX_STEER: 0.5, STEER_AT_SPEED: 0.14, STEER_SPEED: 5.0,
+    GRIP: 1.3, SIDE_GRIP: 1.15, REAR_GRIP_HANDBRAKE: 0.35,
+    DOWNFORCE: 0, AERO_DRAG: 0.0003,
+    SUSPENSION_STIFFNESS: 60, SUSPENSION_DAMPING: 5, SUSPENSION_TRAVEL: 0.05, ANTI_ROLL: 0.6,
+    OFFROAD: { asfalto: 1, adoquin: 0.9, tierra: 0.7, ripio: 0.65, arena: 0.5, nieve: 0.6, pasto: 0.7 },
+    SOUND: { IDLE_RPM: 1800, MAX_RPM: 11000, GEARS: 1, PULSES: 1, GRIT: 0.5, BRIGHT: 1.0, VOLUME: 0.8 },
+    stats: { velocidad: 2, agarre: 4, todoterreno: 1 },
+  },
+  buggy: {
+    name: 'Buggy Médano',
+    section: 'tienda', shape: 'buggy', price: 900,
+    color: 0xff6a13,
+    MASS: 900,                 // el rey de la playa
+    LENGTH: 3.6, WIDTH: 1.9, HEIGHT: 1.4,
+    WHEEL_RADIUS: 0.44, WHEELBASE: 2.4, TRACK: 1.65,
+    RIDE_HEIGHT: 0.3, CENTER_OF_MASS_Y: -0.45,
+    DRIVE: 'all',
+    ENGINE_FORCE: 8200, TOP_SPEED: 165, REVERSE_SPEED: 35,
+    BRAKE: 13, HANDBRAKE: 11,
+    MAX_STEER: 0.6, STEER_AT_SPEED: 0.16, STEER_SPEED: 4.4,
+    GRIP: 1.05, SIDE_GRIP: 0.95, REAR_GRIP_HANDBRAKE: 0.28,
+    DOWNFORCE: 0, AERO_DRAG: 0.0004,
+    SUSPENSION_STIFFNESS: 22, SUSPENSION_DAMPING: 2.8, SUSPENSION_TRAVEL: 0.32, ANTI_ROLL: 0.4,
+    OFFROAD: { asfalto: 1, adoquin: 1.05, tierra: 1.6, ripio: 1.55, arena: 2.0, nieve: 1.5, pasto: 1.4 },
+    SOUND: { IDLE_RPM: 1000, MAX_RPM: 7000, GEARS: 5, PULSES: 2, GRIT: 0.85, BRIGHT: 0.6, VOLUME: 0.95 },
+    stats: { velocidad: 3, agarre: 3, todoterreno: 5 },
+  },
+  muscle: {
+    name: 'Trueno V8',
+    section: 'tienda', shape: 'muscle', price: 1500,
+    color: 0xffc72c,
+    MASS: 1600,                // mucho motor, poco agarre atrás: para derrapar
+    LENGTH: 4.8, WIDTH: 1.9, HEIGHT: 1.25,
+    WHEEL_RADIUS: 0.37, WHEELBASE: 2.8, TRACK: 1.6,
+    RIDE_HEIGHT: 0.12, CENTER_OF_MASS_Y: -0.35,
+    DRIVE: 'rear',
+    ENGINE_FORCE: 12500, TOP_SPEED: 265, REVERSE_SPEED: 30,
+    BRAKE: 14, HANDBRAKE: 9,
+    MAX_STEER: 0.5, STEER_AT_SPEED: 0.1, STEER_SPEED: 3.4,
+    GRIP: 1.0, SIDE_GRIP: 0.92, REAR_GRIP_HANDBRAKE: 0.3,
+    DOWNFORCE: 0.0004, AERO_DRAG: 0.00035,
+    SUSPENSION_STIFFNESS: 34, SUSPENSION_DAMPING: 3.8, SUSPENSION_TRAVEL: 0.15, ANTI_ROLL: 0.5,
+    OFFROAD: { asfalto: 1, adoquin: 0.95, tierra: 0.8, ripio: 0.75, arena: 0.65, nieve: 0.7, pasto: 0.8 },
+    SOUND: { IDLE_RPM: 750, MAX_RPM: 6500, GEARS: 5, PULSES: 4, GRIT: 0.9, BRIGHT: 0.45, VOLUME: 1.0 },
+    stats: { velocidad: 4, agarre: 2, todoterreno: 2 },
+  },
+  monster: {
+    name: 'Monstruo Bravo',
+    section: 'tienda', shape: 'monster', price: 2500,
+    color: 0x6b2fbf,
+    MASS: 2800,                // ruedas gigantes: pasa por arriba de todo
+    LENGTH: 4.6, WIDTH: 2.6, HEIGHT: 1.5,
+    WHEEL_RADIUS: 0.8, WHEELBASE: 3.0, TRACK: 2.4,
+    RIDE_HEIGHT: 0.55, CENTER_OF_MASS_Y: -0.7,
+    DRIVE: 'all',
+    ENGINE_FORCE: 17000, TOP_SPEED: 140, REVERSE_SPEED: 35,
+    BRAKE: 10, HANDBRAKE: 7,
+    MAX_STEER: 0.55, STEER_AT_SPEED: 0.18, STEER_SPEED: 2.6,
+    GRIP: 1.0, SIDE_GRIP: 0.9, REAR_GRIP_HANDBRAKE: 0.35,
+    DOWNFORCE: 0, AERO_DRAG: 0.0006,
+    SUSPENSION_STIFFNESS: 16, SUSPENSION_DAMPING: 2.4, SUSPENSION_TRAVEL: 0.5, ANTI_ROLL: 0.55,
+    OFFROAD: { asfalto: 1, adoquin: 1.1, tierra: 1.5, ripio: 1.5, arena: 1.7, nieve: 1.7, pasto: 1.5 },
+    SOUND: { IDLE_RPM: 650, MAX_RPM: 5000, GEARS: 4, PULSES: 4, GRIT: 1.0, BRIGHT: 0.3, VOLUME: 1.0 },
+    stats: { velocidad: 2, agarre: 3, todoterreno: 5 },
+  },
+  cohete: {
+    name: 'Cohete X',
+    section: 'tienda', shape: 'rocket', price: 6000,
+    color: 0x4fb3e8,
+    MASS: 1100,                // el más rápido del juego
+    LENGTH: 4.6, WIDTH: 2.0, HEIGHT: 0.9,
+    WHEEL_RADIUS: 0.34, WHEELBASE: 2.8, TRACK: 1.7,
+    RIDE_HEIGHT: 0.08, CENTER_OF_MASS_Y: -0.3,
+    DRIVE: 'all',
+    ENGINE_FORCE: 17000, TOP_SPEED: 380, REVERSE_SPEED: 30,
+    BRAKE: 32, HANDBRAKE: 8,
+    MAX_STEER: 0.45, STEER_AT_SPEED: 0.07, STEER_SPEED: 3.8,
+    GRIP: 1.5, SIDE_GRIP: 1.2, REAR_GRIP_HANDBRAKE: 0.38,
+    DOWNFORCE: 0.003, AERO_DRAG: 0.0003,
+    SUSPENSION_STIFFNESS: 60, SUSPENSION_DAMPING: 5.5, SUSPENSION_TRAVEL: 0.08, ANTI_ROLL: 0.6,
+    OFFROAD: { asfalto: 1, adoquin: 0.95, tierra: 0.65, ripio: 0.6, arena: 0.5, nieve: 0.55, pasto: 0.65 },
+    SOUND: { IDLE_RPM: 1500, MAX_RPM: 12000, GEARS: 7, PULSES: 3, GRIT: 0.3, BRIGHT: 1.0, VOLUME: 0.9 },
+    stats: { velocidad: 5, agarre: 5, todoterreno: 1 },
+  },
 };
 
 /** Autos en el orden del menú: sección por sección. */
@@ -320,6 +439,10 @@ export const LIGHT = {
     // mediodía en las Altas Cumbres: aire limpio, sol fuerte, se ve lejísimos
     ELEVATION: 48, AZIMUTH: 20, SUN_COLOR: 0xfff2e2, SUN: 3.8,
     SKY_LIGHT: 1.6, EXPOSURE: 0.66, FOG: [0xb5c8dc, 2500, 26000],
+  },
+  mapa: {
+    ELEVATION: 46, AZIMUTH: 205, SUN_COLOR: 0xffeed6, SUN: 3.5,
+    SKY_LIGHT: 1.45, EXPOSURE: 0.66, FOG: [0xaecbe3, 900, 7000],
   },
   pista: {
     ELEVATION: 40, AZIMUTH: 210, SUN_COLOR: 0xffeed6, SUN: 3.3,
@@ -439,4 +562,17 @@ export const DRIVER_EYE = {
   wrc:    { x: -0.22, y: 0.35, z: -0.3 },
   suv:    { x: -0.2,  y: 0.45, z: -0.38 },
   hyper:  { x: 0.02,  y: 0.3,  z: -0.3 },
+};
+
+// ---------- Mapa grande ----------
+export const MAPA = {
+  START_COINS: 300,     // monedas con las que se arranca
+  COIN: 10,             // cuánto vale cada moneda del mapa
+  BIG_COIN: 100,        // las monedas grandes (arriba de los cerros)
+  COIN_RESPAWN: 120,    // segundos hasta que vuelve a aparecer una moneda agarrada
+  REWARD_LAP: 40,       // por cada vuelta completa en Mónaco
+  REWARD_RECORD: 100,   // extra por récord (vuelta o etapa)
+  REWARD_STAGE: 150,    // por llegar al final de una etapa de rally
+  REWARD_RACE: 100,     // por terminar una carrera multijugador
+  PORTAL_RADIUS: 14,    // qué tan cerca hay que estar de una entrada para poder entrar
 };
